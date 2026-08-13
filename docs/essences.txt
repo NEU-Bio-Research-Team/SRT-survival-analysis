@@ -1,0 +1,51 @@
+Vấn đề NTM bạn gặp là điểm nghẽn thật — nhưng có tin tốt: *literature gốc mà bạn đang dựa vào đã giải quyết đúng vấn đề này*, và có nguồn dữ liệu tốt hơn 3 file bạn đã thử.
+
+## NTM có thực sự cần thiết không
+
+*Cần, và đây là lý do dựa trên chính literature bạn đang trích dẫn.* Có ít nhất 3 paper học thuật dùng đúng khung "NTM → hazard rate/export survival" mà bạn định làm:
+
+- Calì et al. (World Bank, 2021) — dùng chính xác *accelerated failure time (AFT) model* (một biến thể của survival model) để đo tác động của "NTM exposure" lên export survival của doanh nghiệp Indonesia. Kết luận: NTM mang tính bảo hộ (protectionist) làm giảm survival probability rõ rệt, có ý nghĩa thống kê ở hầu hết loại NTM trừ SNI. [documents1.worldbank](https://documents1.worldbank.org/curated/en/994091633707638412/pdf/Non-Tariff-Measures-Import-Competition-and-Exports.pdf)
+- Yue et al., "Non-tariff measures and duration of trade" — mô hình random-effects probit đo tác động NTM lên hazard rate trực tiếp. [semanticscholar](https://www.semanticscholar.org/paper/Non-tariff-measures-and-duration-of-trade-Yue/de708de19415464e466e1637a6f7e205c92df51b)
+- Shepotylo (2016) — NTM tác động lên extensive/intensive margin của xuất khẩu thủy sản toàn cầu 1996–2011. [sciencedirect](https://www.sciencedirect.com/science/article/abs/pii/S0308597X1600066X)
+
+Nói cách khác: *NTM không phải biến "nice to have" mà là biến trung tâm* trong đúng dòng nghiên cứu bạn theo — bỏ nó đi sẽ khiến model của bạn thiếu hẳn phần được coi là đóng góp chính trong các paper gần đây (2016–2021), so với các paper cũ hơn (Besedes-Prusa 2006, Fugazza 2011) chỉ có tariff, RCA, distance.
+
+## Vì sao 3 file bạn thử không dùng được
+
+Đúng như bạn ghi nhận: NTM-Trade-Frequency-Coverage-Ratio (152 dòng, chỉ 2012–2017, không có chiều sản phẩm), NTM-Prevalence-Sector (không có year), NTM-Indicators-Measure-Sector (không có year, chỉ ở mức Sector) — đây là các file *tổng hợp sẵn* trên trang public download của WITS, không phải dữ liệu thô. Cả 3 paper học thuật trên đều *không dùng các file này* — họ lấy trực tiếp từ nguồn khác.
+
+## Nguồn thay thế đáng tin cậy hơn
+
+| Nguồn | Độ chi tiết | Ghi chú |
+|---|---|---|
+| *UNCTAD TRAINS Online* (trainsonline.unctad.org) | HS 6-digit, có file STATA bulk download sẵn, "researcher file" chuyên cho phân tích học thuật | Đây là nguồn Calì et al. và đa số paper NTM-trade dùng; có nút "Download bulk data for researchers in CSV and STATA format" trực tiếp trên trang  [trainsonline.unctad](https://trainsonline.unctad.org/) |
+| *WTO I-TIP Goods* (data.wto.org) | Theo measure type, HS code, nước áp dụng, giai đoạn 1995–2021 | Dataset chính thức, cập nhật hàng năm, tải được nguyên khối  [data.wto](https://data.wto.org/dataset/ext_itip_1) |
+| WITS public download (3 file bạn đã thử) | Sector-level, thiếu year | Chỉ dùng để đối chiếu tổng quan, không dùng làm biến panel |
+
+*Khuyến nghị cụ thể*: vào [trainsonline.unctad.org](https://trainsonline.unctad.org) → phần "About" có nói rõ họ cung cấp file STATA "NTMs aggregated at the HS 6-digit level" — đây chính là cấu trúc coverage × year × product bạn cần, chỉ khác là phải tải theo từng nước/nhóm nước thay vì một file toàn cầu. [trainsonline.unctad](https://trainsonline.unctad.org/about)
+
+## Cách tính NTM một cách uy tín (theo đúng chuẩn học thuật)
+
+Không cần tự sáng tạo công thức — 3 chỉ số chuẩn đã được dùng phổ biến trong toàn literature:
+
+1. *Coverage ratio*: tỷ lệ % số dòng thuế (tariff line) trong một nhóm sản phẩm bị áp NTM. Đây là chỉ số phổ biến nhất, chính là cấu trúc bạn định dùng ban đầu.
+2. *Frequency ratio/index*: tỷ lệ số dòng sản phẩm có ít nhất 1 loại NTM, không quan tâm mức độ nghiêm ngặt.
+3. *NTM count/exposure dummy theo loại* (SPS, TBT, quantity control...): Calì et al. tách riêng từng loại NTM (không gộp chung) vì mỗi loại có tác động khác nhau lên hazard rate — loại "protectionist" (chống bán phá giá, hạn ngạch) làm giảm survival, loại "standard-setting" (SPS/TBT hợp lý) có thể không có tác động rõ hoặc còn giúp tăng uy tín sản phẩm. [documents1.worldbank](https://documents1.worldbank.org/curated/en/994091633707638412/pdf/Non-Tariff-Measures-Import-Competition-and-Exports.pdf)
+
+## Nếu vẫn không lấy đủ dữ liệu panel năm-sản phẩm
+
+Dùng đúng 1 trong 2 cách mà cả literature chấp nhận:
+
+- *NTM dạng biến cố định theo thời gian (time-invariant)*: dùng giá trị NTM tại một năm cụ thể (VD năm giữa cửa sổ quan sát) làm đặc trưng cố định của cặp nước-sản phẩm, thừa nhận hạn chế này trong phần Discussion — đây là cách nhiều paper cũ vẫn làm khi NTM chưa đủ chi tiết theo năm.
+- *Dummy biến động chỉ ở các năm có thay đổi chính sách lớn* (VD EU siết SPS năm nào, WTO ghi nhận biện pháp mới năm nào) — dùng I-TIP Goods để xác định chính xác năm bắt đầu/kết thúc từng biện pháp, thay vì cần panel đầy đủ mọi năm.
+
+Cả hai cách này đều được chấp nhận trong journal review vì NTM data theo bản chất khó có độ phủ đầy đủ như tariff — bản thân Carrère (2011) cũng ghi nhận vấn đề "missing entries ở HS6 level có thể là thiếu dữ liệu hoặc không có NTM, không phân biệt được", nên reviewer trong ngành này đã quen với hạn chế này. [e-jei](https://www.e-jei.org/upload/R2241QP24QM21M73.pdf)
+
+NOTE:
+1.	Các nước importers
+-	Trước hết: Làm thế nào để biết các nước nào có đủ data?
+-	Nếu ko thấy: EU markets (middle/high incomes)
+2.	NTM (2 cách) – ko bỏ
+-	Web mới
+-	Nếu ko có => tìm cácch xử lý từ những thứ đã tìm dc
+3.	Tariff: từng nước nhập khẩu hàng của VN áp mức thuế lên hàng VN

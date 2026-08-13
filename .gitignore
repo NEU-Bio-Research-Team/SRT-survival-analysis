@@ -1,0 +1,33 @@
+# Bí mật — TUYỆT ĐỐI không commit, không gửi cho ai
+.env
+
+# Rác Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Dữ liệu thô tải từ API (~157 MB hiện tại, ~1,2 GB khi tải xong).
+# Tái tạo được bằng scripts/fetch_*.py, không đưa vào git.
+data_raw/
+
+# Kết quả dựng lại được từ data_raw bằng build_*.py + merge_panel.py (~75 MB).
+# Đây là thứ gửi cho cộng sự qua Drive/USB, không qua git.
+analysis/
+
+# Log của các luồng tải — chỉ có ý nghĩa trên máy đang chạy
+logs/
+
+# Output kiểm chứng API, tái tạo bằng scripts/wits_probe.py.
+# Giữ lại đúng nhật ký 22 phép thử vì tài liệu KIEM_CHUNG có trích dẫn.
+probe_out/*
+!probe_out/_probe_log.csv
+
+# Rác hệ điều hành / trình soạn thảo
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
