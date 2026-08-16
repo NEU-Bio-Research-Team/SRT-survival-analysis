@@ -115,29 +115,37 @@ phải thị trường thật.
 
 ## 2. Đã lấy được những gì
 
-### 2.1. Bảng tiến độ tải
+### 2.1. Bảng tiến độ tải — đo trên đĩa 16/08/2026
 
-| Nguồn | Đích | Trạng thái |
-|---|---|---|
-| **Trade VN→importer** (Comtrade, HS6) | 147 × 20 = 2.940 importer-năm | ⏳ đang tải, ~2 giờ |
-| **Trade importer→thế giới** (mẫu số RCA) | 2.940 importer-năm | ⏸ chưa bắt đầu (`--pass world`) |
-| **Trade mirror** (VN tự khai xuất khẩu) | 32 file | ⏸ tạm dừng để nhường rate limit |
-| **Tariff MFN** (WITS TRAINS) | 2.435 reporter-năm | ⏳ đang tải |
-| **Tariff PREF cho VN** | vài trăm call | ⏸ chạy tự động sau MFN |
-| **Concordance HS** | 5 bảng (H1→H0 … H5→H0) | ✅ 100% |
-| **NTM công khai** (3 file WITS) | 3 file | ✅ 100% |
-| **Vĩ mô** (GDP growth, GDP, GNI) | nước × năm | ⚠ cần chạy lại cho 147 nước |
-| **Metadata chọn nước** | `selection/` | ✅ 100% |
-| **Kiểm chứng API** | 22 phép thử `probe_out/` | ✅ 100% |
+Kiểm kê đầy đủ, từng con số đếm bằng cách đọc thẳng file:
+**[docs/DATA_INVENTORY_VN.md](docs/DATA_INVENTORY_VN.md)**.
 
-Con số đo trực tiếp trên đĩa (cập nhật bằng lệnh ở mục 5):
+| Nguồn | Đã có | Đích | Trạng thái |
+|---|---|---|---|
+| **Trade VN→importer** (Comtrade, HS6) | **1.686** importer-năm · **1.101.870 dòng** · **87/147 nước** · 2.810 tỉ USD | 2.940 | ⏸ **hết quota Comtrade**, chờ nạp lại |
+| **Trade importer→thế giới** (mẫu số RCA) | 0 | 2.940 | ⏸ chưa bắt đầu (`--pass world`) |
+| **Trade mirror** (VN tự khai) | 2 | 32 | ⏸ tạm dừng |
+| **Tariff MFN** (WITS TRAINS) | **2.250** reporter-năm · 134 reporter | 2.435 | ✅ xong (224 cái còn lại nước đó năm đó không có biểu thuế) |
+| **Tariff PREF cho VN** | **72** reporter-năm · **13 nước** · 237.414 dòng | — | ✅ đã hỏi hết 2.435 reporter-năm |
+| **Vĩ mô** | **2.940** nước-năm · 147 nước + VN | — | ✅ (thiếu Romania) |
+| **NTM công khai** (3 file WITS) | 1.200 + 3.944 + 150 dòng · 75 nước | 3 file | ✅ 100% |
+| **Concordance HS** | 5/5 bảng | 5 | ✅ 100% |
+| **Sàng lọc đối tác VN** | 3.569 nước-năm, cả hai chiều mirror | — | ✅ 100% |
+| **Kiểm chứng API** | 22 phép thử `probe_out/` | — | ✅ 100% |
+
+Kiểm tra lại bất cứ lúc nào:
 
 ```bash
 ls data_raw/trade       | wc -l    # đích 2.940
 ls data_raw/trade_world | wc -l    # đích 2.940
-ls data_raw/tariffs/mfn | wc -l    # đích 2.435
-ls data_raw/tariffs/pref| wc -l
+ls data_raw/tariffs/mfn | wc -l    # đích 2.435 (2.250 là đủ)
+ls data_raw/tariffs/pref/*_704.csv.gz | wc -l   # ưu đãi dành cho VN
 ```
+
+⚠️ **Comtrade có quota theo ngày, trả `403` khi hết** — khác hẳn `429` (throttle
+vài giây). Lần chạy vừa rồi hết quota giữa chừng nên còn 60 nước chưa có dữ
+liệu. Script nay **dừng ngay khi gặp 403** và in ra thời điểm quota nạp lại,
+thay vì đốt hết các job còn lại rồi đánh dấu "failed".
 
 ### 2.2. 11 biến yêu cầu — nguồn và mức chi tiết
 
@@ -170,15 +178,18 @@ ls data_raw/tariffs/pref| wc -l
 
 ## 3. Còn thiếu những gì
 
-### 3.1. Thiếu do tải chưa xong (chỉ cần thời gian máy)
+### 3.1. Thiếu do tải chưa xong (chỉ cần thời gian máy + quota)
 
-| Hạng mục | Ước tính |
-|---|---|
-| Trade VN→importer | ~2 giờ |
-| Trade importer→thế giới | ~5–6 giờ (nặng hơn: ~5.000 dòng HS6/importer-năm) |
-| Tariff MFN + PREF | ~4 giờ |
-| Vĩ mô cho 147 nước | ~20 phút |
-| Dựng lại `spells.csv` → `panel_final.csv` | ~15–30 phút |
+| Hạng mục | Còn thiếu | Ước tính |
+|---|---|---|
+| Trade VN→importer | **60 nước** (45 hạng B + 15 hạng A) + Nhật Bản 2007–2011 | ~1 giờ, **sau khi quota nạp lại** |
+| Trade importer→thế giới | toàn bộ 2.940 importer-năm | ~5–6 giờ, cần thêm 1 ngày quota |
+| Trade mirror | 30/32 file | ~30 phút |
+| Dựng lại `spells.csv` → `panel_final.csv` | — | ~15–30 phút |
+
+87 nước đã có phủ **89% giá trị xuất khẩu** của VN. 60 nước còn thiếu phần lớn
+là thị trường nhỏ — **nhưng đó đúng là nhóm thu nhập thấp và trung bình thấp**,
+bỏ đi sẽ làm lệch mọi kết quả có dính đến trình độ phát triển. Phải đợi.
 
 ### 3.2. Thiếu do bản chất nguồn dữ liệu (NTM — điểm nghẽn lớn nhất)
 
@@ -212,13 +223,20 @@ Ba hạn chế cố hữu còn lại:
 
 Chi tiết từng nước: [selection/ntm_availability.csv](selection/ntm_availability.csv).
 
-### 3.3. Thuế ưu đãi khai theo nhóm — hạn chế còn lại
+### 3.3. Thuế ưu đãi khai theo nhóm — hạn chế nghiêm trọng nhất của biến thuế
 
-Một nước có thể khai biểu ưu đãi cho Việt Nam dưới **mã nhóm** (ASEAN, AANZFTA,
-RCEP) thay vì dưới mã 704. Những dòng đó không tải được — API không công bố bảng
-thành viên của nhóm — nên episode tương ứng rơi về MFN và **mức thuế bị tính
-cao hơn thực tế**. Cột `tariff_type` đánh dấu rõ MFN hay PREF nên vẫn nhận diện
-được, không bị giấu.
+**Chỉ 13 nước** khai biểu ưu đãi trực tiếp cho Việt Nam (mã 704): JPN, AUS, CHN,
+CHL, KOR, ARM, KAZ, KGZ, RUS, BLR, EUN, GBR, IDN — tổng 72 reporter-năm. Đã hỏi
+**đủ cả 2.435 reporter-năm**, kể cả 380 cái không có partner list để tra, nên đây
+là giới hạn của TRAINS chứ không phải của việc thu thập.
+
+Phần ưu đãi còn lại của VN được khai dưới **mã nhóm** (ASEAN, AANZFTA, danh sách
+thụ hưởng GSP) mà WITS **không công bố bảng thành viên** qua API. Những episode
+đó rơi về MFN → **mức thuế bị tính cao hơn thực tế**. Cột `tariff_type` đánh dấu
+rõ MFN hay PREF nên vẫn nhận diện được, không bị giấu.
+
+EU là trường hợp thiệt nhất: chỉ có 3 năm khai riêng cho VN, trong khi EU cho VN
+hưởng GSP gần như suốt cửa sổ và ưu đãi EVFTA từ 2020.
 
 ### 3.4. Hai việc chỉ bạn mới làm được
 
@@ -238,6 +256,7 @@ wits/
 │
 ├── docs/
 │   ├── THIET_KE_VIET_NAM.md      ★ đổi thiết kế sang exporter = VN, đọc trước
+│   ├── DATA_INVENTORY_VN.md      ★ kiểm kê chính xác dữ liệu VN đang có trên đĩa
 │   ├── essences.txt              yêu cầu gốc về NTM
 │   ├── guide.md                  khảo sát ban đầu về WITS (có chỗ sai)
 │   ├── KIEM_CHUNG_DU_LIEU_WITS.md  kiểm chứng thật 22 phép thử API

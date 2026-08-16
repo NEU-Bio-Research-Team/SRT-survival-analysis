@@ -114,6 +114,45 @@ def selected_importers():
         return {r["iso3"] for r in csv.DictReader(f)}
 
 
+def complete_importers(folder):
+    """Importers whose download has no holes in it.
+
+    A missing importer-year on disk is indistinguishable, once the panel is
+    built, from a year in which the relationship did not exist - so an
+    unfinished download would manufacture spell deaths and births. The screen
+    in selection/vn_partner_screen.csv says which importer-years really do have
+    trade with Viet Nam; every one of those must have a file, or the importer
+    is held back until its download finishes.
+
+    Returns (usable importers, {importer: missing years}).
+    """
+    selected = selected_importers()
+    screen = os.path.join(SEL, "vn_partner_screen.csv")
+    if not os.path.exists(screen):
+        print("  no screen file: cannot verify download completeness")
+        return selected, {}
+    needed = defaultdict(set)
+    with open(screen, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            year = int(r["year"])
+            if float(r["imports_from_vn_usd"] or 0) > 0 \
+                    and YEAR_MIN <= year <= YEAR_MAX \
+                    and (selected is None or r["iso3"] in selected):
+                needed[r["iso3"]].add(year)
+    on_disk = defaultdict(set)
+    for path in glob.glob(os.path.join(folder, "*.csv.gz")):
+        iso, year = os.path.basename(path)[:-7].rsplit("_", 1)
+        on_disk[iso].add(int(year))
+    usable, holes = set(), {}
+    for iso, years in needed.items():
+        gap = sorted(years - on_disk.get(iso, set()))
+        if gap:
+            holes[iso] = gap
+        else:
+            usable.add(iso)
+    return usable, holes
+
+
 def read_folder(u, folder, keep_exporter, importers, label):
     """(importer, family, year) -> value in USD, summed over HS6 lines."""
     panel = defaultdict(float)
@@ -151,16 +190,24 @@ def read_folder(u, folder, keep_exporter, importers, label):
 
 def load_panel(u):
     """Viet Nam's side of the panel: (importer, family, year) -> USD."""
-    importers = selected_importers()
+    importers, holes = complete_importers(RAW_TRADE)
+    if holes:
+        worst = sorted(holes.items(), key=lambda kv: -len(kv[1]))[:8]
+        print(f"  HELD BACK: {len(holes)} importers have download gaps and are "
+              f"excluded so they cannot fake spell deaths")
+        for iso, gap in worst:
+            span = f"{gap[0]}-{gap[-1]}" if len(gap) > 1 else str(gap[0])
+            print(f"    {iso}: {len(gap)} missing year(s) [{span}]")
+        if len(holes) > len(worst):
+            print(f"    ... and {len(holes) - len(worst)} more")
     panel, _, _ = read_folder(u, RAW_TRADE, EXPORTER, importers, "VNM imports")
     if not panel:
         sys.exit(f"No Vietnamese rows in {RAW_TRADE}. Run fetch_trade.py first.")
-    return panel
+    return panel, importers, holes
 
 
-def load_world(u):
+def load_world(u, importers):
     """Same importers' imports from the whole world, for the denominators."""
-    importers = selected_importers()
     panel, _, _ = read_folder(u, RAW_WORLD, "WLD", importers, "world imports")
     if not panel:
         print("  world imports: nothing on disk - RCA and world growth will "
@@ -334,9 +381,9 @@ def main():
     print("Building product families from WITS concordances")
     u = build_families()
     print("Reading trade panel")
-    panel = load_panel(u)
-    world = load_world(u)
-    print(f"  panel cells: {len(panel):,}")
+    panel, importers, holes = load_panel(u)
+    world = load_world(u, importers)
+    print(f"  panel cells: {len(panel):,} from {len(importers)} importers")
     print("Building spells")
     spells, episodes = build_spells(panel)
     print(f"  spells: {len(spells):,}  episodes: {len(episodes):,}")

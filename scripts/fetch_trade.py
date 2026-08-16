@@ -75,6 +75,10 @@ def load_key():
 KEY = load_key()
 
 
+class QuotaExhausted(RuntimeError):
+    """Comtrade's daily call volume is spent; it replenishes on its own clock."""
+
+
 def fetch_json(url, timeout=900, retries=4):
     for attempt in range(retries):
         req = urllib.request.Request(
@@ -84,6 +88,12 @@ def fetch_json(url, timeout=900, retries=4):
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return json.loads(r.read())
         except urllib.error.HTTPError as e:
+            if e.code == 403:
+                # the daily call quota, not a throttle. Every later request will
+                # fail the same way, so say when it comes back and stop the run
+                # instead of marking hundreds of importer-years "failed".
+                body = e.read().decode("utf-8", "replace")
+                raise QuotaExhausted(body.strip())
             # 429 = rate limited, 5xx = transient: back off and retry
             if e.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
                 # 429 here is a short-window throttle, not a daily quota:
@@ -330,14 +340,19 @@ def main():
     print(f"Exporter: Viet Nam ({VN_CODE}) | importers: {len(importers)} | "
           f"years: {years[0]}-{years[-1]}\n")
 
-    if args.which in ("vn", "all"):
-        importer_pass(importers, years, codes, code_to_iso,
-                      partner=VN_CODE, outdir=RAW, label="vn")
-    if args.which in ("world", "all"):
-        importer_pass(importers, years, codes, code_to_iso,
-                      partner=0, outdir=RAW_WORLD, label="world")
-    if args.which in ("mirror", "all"):
-        mirror_pass(importers, years, codes, code_to_iso)
+    try:
+        if args.which in ("vn", "all"):
+            importer_pass(importers, years, codes, code_to_iso,
+                          partner=VN_CODE, outdir=RAW, label="vn")
+        if args.which in ("world", "all"):
+            importer_pass(importers, years, codes, code_to_iso,
+                          partner=0, outdir=RAW_WORLD, label="world")
+        if args.which in ("mirror", "all"):
+            mirror_pass(importers, years, codes, code_to_iso)
+    except QuotaExhausted as e:
+        print(f"\nStopped: {e}\nFinished files are kept; re-run when the quota "
+              f"is back and it will pick up where it left off.")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
