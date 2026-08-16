@@ -1,21 +1,33 @@
-"""Step 6a: pull HS6 bilateral trade values from UN Comtrade.
+"""Step 6a: pull HS6 trade values from UN Comtrade for the Viet Nam design.
 
-The panel is built from the *importer's* filing (flowCode=M): a country that
-reports its imports gives us, for every exporter and every HS6 line, the value
-that crossed the border. Import-side reporting is the reliable side, which is
-why the 53 importers were selected on their filing record.
+The exporter is fixed to **Viet Nam**; the importers are the countries listed in
+selection/importers_vn.csv. That turns the old "every importer x 82 exporters"
+pull (~1,060 heavy files) into three cheap passes:
 
-The API caps a response at 100,000 records. Rather than guessing a safe batch
-size, this script asks for all 82 exporters at once and splits the partner list
-in half whenever a response comes back at exactly the cap (i.e. truncated).
-Most importer-years fit in a single call.
+  vn      importer's own filing of its imports *from Viet Nam*, at HS6.
+          This is the panel itself. Import-side reporting is the reliable side,
+          which is why importers were screened on their filing record.
+  world   the same importer's imports *from the world*, at HS6. Needed for the
+          denominators: Balassa RCA, world growth, and Viet Nam's penetration
+          share inside each importer-product market. Heavier than the vn pass -
+          about 5,000 HS6 lines per importer-year - so it runs separately.
+  mirror  Viet Nam's own export filing towards the same importers. Not used to
+          build spells; kept as the mirror check on the importer-side numbers.
 
-Output: one gzipped CSV per importer-year in data_raw/trade/, keeping only the
-columns the survival dataset needs. Re-running skips finished files.
+Years are requested five at a time and the response is split back into one file
+per importer-year, so a run stays resumable at the same granularity as before.
+
+Files already on disk are skipped. The 119 files pulled under the old design are
+kept as-is: they were pulled with Viet Nam among the partners, so they already
+contain the rows this design needs.
+
+Output: data_raw/trade/, data_raw/trade_world/, data_raw/trade_mirror/
 
 Usage:
-    python3 fetch_trade.py                 # everything
-    python3 fetch_trade.py --importers USA,VNM --years 2018,2019
+    python3 fetch_trade.py                       # vn pass, all importers
+    python3 fetch_trade.py --pass world
+    python3 fetch_trade.py --pass mirror
+    python3 fetch_trade.py --importers USA,DEU --years 2018,2019
 """
 
 import argparse
@@ -26,20 +38,26 @@ import os
 import time
 import urllib.error
 import urllib.request
+from collections import defaultdict
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án (thư mục cha của scripts/)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án
 SEL = os.path.join(HERE, "selection")
 RAW = os.path.join(HERE, "data_raw", "trade")
+RAW_WORLD = os.path.join(HERE, "data_raw", "trade_world")
+RAW_MIRROR = os.path.join(HERE, "data_raw", "trade_mirror")
 API = "https://comtradeapi.un.org/data/v1/get/C/A/HS"
 REF = "https://comtradeapi.un.org/files/v1/app/reference/partnerAreas.json"
 RECORD_CAP = 100000
-# Asking for all 82 exporters at once produces a ~90 MB response that takes ~110s
-# and silently comes back empty often enough to be untrustworthy. Batches of 20
-# stay well under the cap (~50k records for the largest importer-year) and each
-# response arrives in well under a minute.
-PARTNER_BATCH = 20
+# consolidated row only: all customs procedures, all transport modes, no
+# second-partner split. Without it a reporter can return ~20 rows per HS6 line.
+AGGREGATE = "customsCode=C00&motCode=0&partner2Code=0"
+YEAR_BATCH = 5           # 5 years of one importer stays well under the cap
+MIRROR_PARTNER_BATCH = 20
 SLEEP = 2.0
 YEARS = list(range(2002, 2022))
+
+VN_ISO = "VNM"
+VN_CODE = 704
 
 COLS = ["year", "importer", "importer_code", "exporter", "exporter_code",
         "hs6", "import_value_usd", "cif_value", "fob_value", "net_weight_kg",
@@ -110,57 +128,72 @@ def country_codes():
     return {iso: code for iso, (_, code) in best.items()}
 
 
-def pull_batch(importer_code, year, partner_codes, retry_empty=True):
-    """One request; splits if the cap is hit, retries once if oddly empty."""
-    batch = ",".join(str(c) for c in partner_codes)
-    url = (f"{API}?reporterCode={importer_code}&period={year}"
-           f"&partnerCode={batch}&cmdCode=AG6&flowCode=M&includeDesc=false")
+def request(reporter, period, partner):
+    """One Comtrade call; None on failure, list of raw rows otherwise.
+
+    Some reporters (Germany is the clearest case) return the same HS6 line
+    split by customs procedure, mode of transport and second partner - about
+    twenty rows where one is meant. Summing those would multiply the trade
+    value, and the extra rows push a four-year request past the 100,000 cap.
+    AGGREGATE pins the request to the single consolidated row per HS6 line.
+    """
+    url = (f"{API}?reporterCode={reporter}&period={period}"
+           f"&partnerCode={partner}&cmdCode=AG6&flowCode="
+           f"{'X' if reporter == VN_CODE else 'M'}&includeDesc=false"
+           f"&{AGGREGATE}")
     body = fetch_json(url)
     time.sleep(SLEEP)
     if body is None:
         return None
     rows = body.get("data") or []
-    if len(rows) >= RECORD_CAP and len(partner_codes) > 1:
-        mid = len(partner_codes) // 2
-        print(f"    hit {RECORD_CAP} cap, splitting {len(partner_codes)} "
-              f"partners", flush=True)
-        left = pull_batch(importer_code, year, partner_codes[:mid])
-        right = pull_batch(importer_code, year, partner_codes[mid:])
+    if len(rows) >= RECORD_CAP:
+        # a truncated response would silently lose HS6 lines: split the period
+        years = period.split(",")
+        if len(years) == 1:
+            print(f"    hit the {RECORD_CAP} cap on a single year "
+                  f"({reporter}/{period}) - cannot split further", flush=True)
+            return None
+        print(f"    hit the {RECORD_CAP} cap for {reporter}/{period}, "
+              f"splitting", flush=True)
+        mid = len(years) // 2
+        left = request(reporter, ",".join(years[:mid]), partner)
+        right = request(reporter, ",".join(years[mid:]), partner)
         if left is None or right is None:
             return None
         return left + right
-    if not rows and retry_empty and len(partner_codes) > 1:
-        # a large request occasionally returns an empty body instead of an
-        # error; one retry distinguishes that from a genuinely empty cell
-        time.sleep(20)
-        return pull_batch(importer_code, year, partner_codes, retry_empty=False)
     return rows
 
 
-def pull(importer_code, year, partner_codes):
-    """All exporters for one importer-year, in fixed batches."""
-    all_rows = []
-    for i in range(0, len(partner_codes), PARTNER_BATCH):
-        got = pull_batch(importer_code, year,
-                         partner_codes[i:i + PARTNER_BATCH])
-        if got is None:
-            return None
-        all_rows.extend(got)
-    return all_rows
+def tidy(rows, code_to_iso, importer_iso=None):
+    """Raw API rows -> the columns the survival dataset needs.
 
-
-def tidy(rows, importer_iso, code_to_iso):
+    `importer_iso` is set when the reporter is the importer. On the mirror pass
+    Viet Nam is the reporter, so the importer is read from the partner field.
+    """
     out = []
     for r in rows:
         cmd = r.get("cmdCode")
         if not cmd or len(cmd) != 6 or cmd == "999999":
             continue                     # drop the not-classified aggregate
+        if (r.get("customsCode") or "C00").strip() != "C00" \
+                or (r.get("motCode") or 0) != 0 \
+                or (r.get("partner2Code") or 0) != 0:
+            continue                     # guard: only the consolidated row
+        if importer_iso is not None:
+            imp, imp_code = importer_iso, r.get("reporterCode")
+            exp, exp_code = VN_ISO, r.get("partnerCode")
+            if r.get("partnerCode") == 0:
+                exp, exp_code = "WLD", 0
+        else:
+            imp = code_to_iso.get(r.get("partnerCode"), "")
+            imp_code = r.get("partnerCode")
+            exp, exp_code = VN_ISO, r.get("reporterCode")
         out.append({
             "year": r.get("refYear"),
-            "importer": importer_iso,
-            "importer_code": r.get("reporterCode"),
-            "exporter": code_to_iso.get(r.get("partnerCode"), ""),
-            "exporter_code": r.get("partnerCode"),
+            "importer": imp,
+            "importer_code": imp_code,
+            "exporter": exp,
+            "exporter_code": exp_code,
             "hs6": cmd,
             "import_value_usd": r.get("primaryValue"),
             "cif_value": r.get("cifvalue"),
@@ -181,16 +214,106 @@ def save(path, rows):
     os.replace(tmp, path)                # only a complete file appears on disk
 
 
+def by_year(rows):
+    out = defaultdict(list)
+    for r in rows:
+        out[int(r["year"])].append(r)
+    return out
+
+
+def importer_pass(importers, years, codes, code_to_iso, partner, outdir, label):
+    """One file per importer-year, requested in batches of years."""
+    jobs = [(imp, years[i:i + YEAR_BATCH])
+            for imp in importers
+            for i in range(0, len(years), YEAR_BATCH)]
+    started = time.time()
+    done = skipped = failed = empty = 0
+    total_rows = 0
+    for n, (imp, yb) in enumerate(jobs, 1):
+        want = [y for y in yb
+                if not os.path.exists(os.path.join(outdir, f"{imp}_{y}.csv.gz"))]
+        if not want:
+            skipped += len(yb)
+            continue
+        if imp not in codes:
+            print(f"[{n}/{len(jobs)}] {imp}: no Comtrade code, skipped")
+            failed += len(want)
+            continue
+        t0 = time.time()
+        rows = request(codes[imp], ",".join(str(y) for y in want), partner)
+        if rows is None:
+            failed += len(want)
+            print(f"[{n}/{len(jobs)}] {label} {imp} {want}: request failed",
+                  flush=True)
+            continue
+        clean = tidy(rows, code_to_iso, importer_iso=imp)
+        grouped = by_year(clean)
+        for y in want:
+            got = grouped.get(y, [])
+            if not got:
+                # never cache an empty importer-year: far more likely a
+                # throttled response than a year with no trade at all
+                empty += 1
+                continue
+            save(os.path.join(outdir, f"{imp}_{y}.csv.gz"), got)
+            done += 1
+            total_rows += len(got)
+        elapsed = time.time() - started
+        left = (len(jobs) - n) * (elapsed / n) / 3600
+        print(f"[{n}/{len(jobs)}] {label} {imp} {want[0]}-{want[-1]}: "
+              f"{len(clean):,} rows ({time.time() - t0:.0f}s) | "
+              f"total {total_rows:,} | ~{left:.1f}h left", flush=True)
+
+    print(f"\n{label} pass: {done} importer-years written, {skipped} cached, "
+          f"{empty} came back empty, {failed} failed, {total_rows:,} rows")
+
+
+def mirror_pass(importers, years, codes, code_to_iso):
+    """Viet Nam's own export filing, one file per partner batch and year batch."""
+    targets = [codes[i] for i in importers if i in codes]
+    batches = [targets[i:i + MIRROR_PARTNER_BATCH]
+               for i in range(0, len(targets), MIRROR_PARTNER_BATCH)]
+    year_batches = [years[i:i + YEAR_BATCH]
+                    for i in range(0, len(years), YEAR_BATCH)]
+    done = skipped = failed = 0
+    total_rows = 0
+    n = 0
+    for b, batch in enumerate(batches):
+        for yb in year_batches:
+            n += 1
+            name = f"vnx_b{b:02d}_{yb[0]}-{yb[-1]}.csv.gz"
+            path = os.path.join(RAW_MIRROR, name)
+            if os.path.exists(path):
+                skipped += 1
+                continue
+            rows = request(VN_CODE, ",".join(str(y) for y in yb),
+                           ",".join(str(c) for c in batch))
+            if rows is None:
+                failed += 1
+                print(f"[{n}] mirror {name}: request failed", flush=True)
+                continue
+            clean = tidy(rows, code_to_iso)
+            save(path, clean)
+            done += 1
+            total_rows += len(clean)
+            print(f"[{n}] mirror {name}: {len(clean):,} rows", flush=True)
+    print(f"\nmirror pass: {done} files written, {skipped} cached, "
+          f"{failed} failed, {total_rows:,} rows")
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--pass", dest="which", default="vn",
+                    choices=["vn", "world", "mirror", "all"])
     ap.add_argument("--importers", default="")
     ap.add_argument("--years", default="")
     args = ap.parse_args()
 
-    importers = [r["iso3"] for r in csv.DictReader(
-        open(os.path.join(SEL, "importers_selected.csv"), encoding="utf-8"))]
-    exporters = [r["iso3"] for r in csv.DictReader(
-        open(os.path.join(SEL, "exporters_selected.csv"), encoding="utf-8"))]
+    path = os.path.join(SEL, "importers_vn.csv")
+    if not os.path.exists(path):
+        raise SystemExit(f"{path} missing - run select_importers_vn.py first")
+    with open(path, encoding="utf-8") as f:
+        importers = [r["iso3"] for r in csv.DictReader(f)]
     years = YEARS
     if args.importers:
         importers = args.importers.split(",")
@@ -198,58 +321,23 @@ def main():
         years = [int(y) for y in args.years.split(",")]
 
     codes = country_codes()
-    missing = [c for c in importers + exporters if c not in codes]
+    missing = [c for c in importers if c not in codes]
     if missing:
         print(f"WARNING: no Comtrade code for {missing}")
-    exporter_codes = [codes[e] for e in exporters if e in codes]
-    code_to_iso = {codes[i]: i for i in set(importers + exporters) if i in codes}
+    code_to_iso = {codes[i]: i for i in importers if i in codes}
+    code_to_iso[VN_CODE] = VN_ISO
 
-    jobs = [(imp, y) for imp in importers for y in years]
-    print(f"{len(importers)} importers x {len(years)} years = {len(jobs)} "
-          f"importer-years, {len(exporter_codes)} exporters each\n")
+    print(f"Exporter: Viet Nam ({VN_CODE}) | importers: {len(importers)} | "
+          f"years: {years[0]}-{years[-1]}\n")
 
-    started = time.time()
-    done = skipped = failed = 0
-    consecutive_failures = 0
-    total_rows = 0
-    for i, (imp, year) in enumerate(jobs, 1):
-        path = os.path.join(RAW, f"{imp}_{year}.csv.gz")
-        if os.path.exists(path):
-            skipped += 1
-            continue
-        if imp not in codes:
-            failed += 1
-            continue
-        t0 = time.time()
-        rows = pull(codes[imp], year, exporter_codes)
-        clean = tidy(rows, imp, code_to_iso) if rows is not None else []
-        if not clean:
-            # never cache an empty importer-year: it is far more likely a
-            # throttled response than a country importing nothing all year
-            failed += 1
-            consecutive_failures += 1
-            print(f"[{i}/{len(jobs)}] {imp} {year}: no data, not cached",
-                  flush=True)
-            if consecutive_failures >= 5:
-                # the daily quota is the usual cause; stop instead of burning
-                # through the remaining jobs marking everything failed
-                print("\nStopping: 5 importer-years failed in a row. Likely the "
-                      "API quota. Re-run later - finished files are kept.")
-                break
-            continue
-        consecutive_failures = 0
-        save(path, clean)
-        done += 1
-        total_rows += len(clean)
-        elapsed = time.time() - started
-        rate = elapsed / max(done, 1)
-        left = (len(jobs) - i) * rate / 3600
-        print(f"[{i}/{len(jobs)}] {imp} {year}: {len(clean):,} rows "
-              f"({time.time() - t0:.0f}s) | total {total_rows:,} | "
-              f"~{left:.1f}h left", flush=True)
-
-    print(f"\nDone: {done} pulled, {skipped} cached, {failed} failed, "
-          f"{total_rows:,} rows")
+    if args.which in ("vn", "all"):
+        importer_pass(importers, years, codes, code_to_iso,
+                      partner=VN_CODE, outdir=RAW, label="vn")
+    if args.which in ("world", "all"):
+        importer_pass(importers, years, codes, code_to_iso,
+                      partner=0, outdir=RAW_WORLD, label="world")
+    if args.which in ("mirror", "all"):
+        mirror_pass(importers, years, codes, code_to_iso)
 
 
 if __name__ == "__main__":

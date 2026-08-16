@@ -47,7 +47,7 @@ def get(path):
 
 
 def importers():
-    with open(os.path.join(SEL, "importers_selected.csv"),
+    with open(os.path.join(SEL, "importers_vn.csv"),
               encoding="utf-8") as f:
         return [r["iso3"] for r in csv.DictReader(f)]
 

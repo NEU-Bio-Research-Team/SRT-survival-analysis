@@ -1,0 +1,148 @@
+iso3,name,income_group,region,comtrade_years,tariff_years,vn_trade_years,vn_mirror_years,vn_imports_latest_year,vn_imports_latest_usd,vn_imports_mean_usd,avg_records_per_year,tier,reason
+USA,United States,High income,North America,20,20,20,20,2021,108195516670,31278681370,864641,A,"full: 20 filing years, tariff and VN trade throughout"
+CHN,China,Upper middle income,East Asia & Pacific,20,18,20,20,2021,92276691178,25486590264,1009756,A,"full: 20 filing years, tariff and VN trade throughout"
+JPN,Japan,High income,East Asia & Pacific,20,20,20,20,2021,23001580866,12226697176,294827,A,"full: 20 filing years, tariff and VN trade throughout"
+KOR,"Korea, Rep.",High income,East Asia & Pacific,20,19,20,20,2021,23965706578,8105312814,337301,A,"full: 20 filing years, tariff and VN trade throughout"
+DEU,Germany,High income,Europe & Central Asia,20,20,20,20,2021,12532523028,6310941385,9966041,A,"full: 20 filing years, tariff and VN trade throughout"
+HKG,"Hong Kong SAR, China",High income,East Asia & Pacific,20,20,20,20,2021,15138766314,4763852755,424070,A,"full: 20 filing years, tariff and VN trade throughout"
+AUS,Australia,High income,East Asia & Pacific,20,20,20,20,2021,5373412354,3461690101,362312,A,"full: 20 filing years, tariff and VN trade throughout"
+GBR,United Kingdom,High income,Europe & Central Asia,20,20,20,20,2021,6282687294,3455456650,1787754,A,"full: 20 filing years, tariff and VN trade throughout"
+FRA,France,High income,Europe & Central Asia,20,20,20,20,2021,6616440289,3376621226,2076684,A,"full: 20 filing years, tariff and VN trade throughout"
+MYS,Malaysia,Upper middle income,East Asia & Pacific,20,16,20,20,2021,5735376760,3300880624,323964,A,"full: 20 filing years, tariff and VN trade throughout"
+NLD,Netherlands,High income,Europe & Central Asia,20,20,20,20,2021,7300802782,2902002248,550781,A,"full: 20 filing years, tariff and VN trade throughout"
+ARE,United Arab Emirates,High income,"Middle East, North Africa, Afghanistan & Pakistan",20,17,20,20,2021,7601250376,2579223142,434473,A,"full: 20 filing years, tariff and VN trade throughout"
+SGP,Singapore,High income,East Asia & Pacific,20,20,20,20,2021,4380530905,2547723999,310177,A,"full: 20 filing years, tariff and VN trade throughout"
+IND,India,Lower middle income,South Asia,20,19,20,20,2021,7075314753,2436419001,433454,A,"full: 20 filing years, tariff and VN trade throughout"
+MEX,Mexico,Upper middle income,Latin America & Caribbean ,20,17,20,20,2021,8608257391,2365929320,347276,A,"full: 20 filing years, tariff and VN trade throughout"
+CAN,Canada,High income,North America,20,20,20,20,2021,7846669534,2365360336,2236999,A,"full: 20 filing years, tariff and VN trade throughout"
+IDN,Indonesia,Upper middle income,East Asia & Pacific,20,18,20,20,2021,4213236813,2080388045,254034,A,"full: 20 filing years, tariff and VN trade throughout"
+ITA,Italy,High income,Europe & Central Asia,20,20,20,20,2021,4168785608,2000342663,1031126,A,"full: 20 filing years, tariff and VN trade throughout"
+ESP,Spain,High income,Europe & Central Asia,20,20,20,20,2021,3316050107,1943215644,16481653,A,"full: 20 filing years, tariff and VN trade throughout"
+RUS,Russian Federation,High income,Europe & Central Asia,20,17,20,20,2021,4893324139,1859971490,351403,A,"full: 20 filing years, tariff and VN trade throughout"
+SVK,Slovak Republic,High income,Europe & Central Asia,20,19,20,20,2021,4766110301,1758669496,2233046,A,"full: 20 filing years, tariff and VN trade throughout"
+PHL,Philippines,Upper middle income,East Asia & Pacific,20,19,20,20,2021,4469488399,1680152232,134685,A,"full: 20 filing years, tariff and VN trade throughout"
+POL,Poland,High income,Europe & Central Asia,20,20,20,20,2021,4073704390,1248688003,358169,A,"full: 20 filing years, tariff and VN trade throughout"
+BRA,Brazil,Upper middle income,Latin America & Caribbean ,20,20,20,20,2021,3015690259,1103886548,688065,A,"full: 20 filing years, tariff and VN trade throughout"
+TUR,Turkiye,Upper middle income,Europe & Central Asia,20,18,20,20,2021,1573070829,1061858706,6812879,A,"full: 20 filing years, tariff and VN trade throughout"
+SAU,Saudi Arabia,High income,"Middle East, North Africa, Afghanistan & Pakistan",20,15,20,20,2021,1434538954,984472149,145956,A,"full: 20 filing years, tariff and VN trade throughout"
+BEL,Belgium,High income,Europe & Central Asia,20,20,20,20,2021,837326666,676651177,460312,A,"full: 20 filing years, tariff and VN trade throughout"
+SWE,Sweden,High income,Europe & Central Asia,20,20,20,20,2021,1540651420,660833954,1159532,A,"full: 20 filing years, tariff and VN trade throughout"
+AUT,Austria,High income,Europe & Central Asia,20,20,20,20,2021,1426214789,584218055,403260,A,"full: 20 filing years, tariff and VN trade throughout"
+ZAF,South Africa,Upper middle income,Sub-Saharan Africa ,20,20,20,20,2021,1062936091,576095699,1864490,A,"full: 20 filing years, tariff and VN trade throughout"
+CZE,Czechia,High income,Europe & Central Asia,20,20,20,19,2021,1988784178,554029520,968016,A,"full: 20 filing years, tariff and VN trade throughout"
+CHL,Chile,High income,Latin America & Caribbean ,20,19,20,20,2021,1321366687,374087351,166499,A,"full: 20 filing years, tariff and VN trade throughout"
+NOR,Norway,High income,Europe & Central Asia,20,20,20,20,2021,962063496,354081212,695174,A,"full: 20 filing years, tariff and VN trade throughout"
+NZL,New Zealand,High income,East Asia & Pacific,20,19,20,20,2021,913608316,319701944,485778,A,"full: 20 filing years, tariff and VN trade throughout"
+EGY,"Egypt, Arab Rep.",Lower middle income,"Middle East, North Africa, Afghanistan & Pakistan",20,18,20,20,2021,954439237,295222157,127040,A,"full: 20 filing years, tariff and VN trade throughout"
+ARG,Argentina,Upper middle income,Latin America & Caribbean ,20,20,20,20,2021,1184385823,284936668,271792,A,"full: 20 filing years, tariff and VN trade throughout"
+COL,Colombia,Upper middle income,Latin America & Caribbean ,20,20,20,20,2021,916167593,284094246,535647,A,"full: 20 filing years, tariff and VN trade throughout"
+ISR,Israel,High income,"Middle East, North Africa, Afghanistan & Pakistan",20,16,20,20,2021,337469000,281732300,162548,A,"full: 20 filing years, tariff and VN trade throughout"
+DNK,Denmark,High income,Europe & Central Asia,20,20,20,20,2021,469871577,268476962,340990,A,"full: 20 filing years, tariff and VN trade throughout"
+UKR,Ukraine,Upper middle income,Europe & Central Asia,20,17,20,20,2021,565199458,232698526,434517,A,"full: 20 filing years, tariff and VN trade throughout"
+PER,Peru,Upper middle income,Latin America & Caribbean ,20,18,20,20,2021,838744409,213276843,697093,A,"full: 20 filing years, tariff and VN trade throughout"
+HUN,Hungary,High income,Europe & Central Asia,20,19,20,20,2021,973443772,202456552,549319,A,"full: 20 filing years, tariff and VN trade throughout"
+FIN,Finland,High income,Europe & Central Asia,20,20,20,20,2021,643333221,198456125,707757,A,"full: 20 filing years, tariff and VN trade throughout"
+PAN,Panama,High income,Latin America & Caribbean ,20,15,20,20,2021,48041203,195863460,165615,A,"full: 20 filing years, tariff and VN trade throughout"
+PRT,Portugal,High income,Europe & Central Asia,20,20,20,20,2021,530608260,186889196,1556602,A,"full: 20 filing years, tariff and VN trade throughout"
+IRL,Ireland,High income,Europe & Central Asia,20,20,20,20,2021,776236984,170296700,192392,A,"full: 20 filing years, tariff and VN trade throughout"
+QAT,Qatar,High income,"Middle East, North Africa, Afghanistan & Pakistan",20,20,18,20,2021,229677206,152999881,76444,A,"full: 20 filing years, tariff and VN trade throughout"
+GRC,Greece,High income,Europe & Central Asia,20,20,20,20,2021,293128394,148005607,296031,A,"full: 20 filing years, tariff and VN trade throughout"
+CIV,Cote d'Ivoire,Lower middle income,Sub-Saharan Africa ,20,20,20,20,2021,294933884,144407649,150056,A,"full: 20 filing years, tariff and VN trade throughout"
+MAR,Morocco,Lower middle income,"Middle East, North Africa, Afghanistan & Pakistan",20,17,20,20,2021,333893046,126762726,129794,A,"full: 20 filing years, tariff and VN trade throughout"
+ROU,Romania,High income,Europe & Central Asia,20,15,20,20,2021,227251257,99538710,509228,A,"full: 20 filing years, tariff and VN trade throughout"
+SVN,Slovenia,High income,Europe & Central Asia,20,20,20,20,2021,312112454,87716477,1261069,A,"full: 20 filing years, tariff and VN trade throughout"
+JOR,Jordan,Upper middle income,"Middle East, North Africa, Afghanistan & Pakistan",20,17,20,16,2021,200482845,86940627,104608,A,"full: 20 filing years, tariff and VN trade throughout"
+ECU,Ecuador,Upper middle income,Latin America & Caribbean ,20,19,20,20,2021,232193334,76491327,519801,A,"full: 20 filing years, tariff and VN trade throughout"
+LVA,Latvia,High income,Europe & Central Asia,20,18,20,20,2021,212195341,73012435,889401,A,"full: 20 filing years, tariff and VN trade throughout"
+BHR,Bahrain,High income,"Middle East, North Africa, Afghanistan & Pakistan",20,20,20,16,2021,93088936,63995658,111965,A,"full: 20 filing years, tariff and VN trade throughout"
+LUX,Luxembourg,High income,Europe & Central Asia,20,20,20,19,2021,225425663,63801269,1179936,A,"full: 20 filing years, tariff and VN trade throughout"
+GTM,Guatemala,Upper middle income,Latin America & Caribbean ,20,16,20,16,2021,399048398,54684854,112365,A,"full: 20 filing years, tariff and VN trade throughout"
+BGR,Bulgaria,High income,Europe & Central Asia,20,20,20,20,2021,115446112,50076134,617045,A,"full: 20 filing years, tariff and VN trade throughout"
+MOZ,Mozambique,Low income,Sub-Saharan Africa ,20,15,20,20,2021,71198683,48445361,325446,A,"full: 20 filing years, tariff and VN trade throughout"
+MUS,Mauritius,Upper middle income,Sub-Saharan Africa ,20,19,20,12,2021,53356240,44294256,175982,A,"full: 20 filing years, tariff and VN trade throughout"
+CRI,Costa Rica,High income,Latin America & Caribbean ,20,18,20,20,2021,179368099,43129305,126081,A,"full: 20 filing years, tariff and VN trade throughout"
+EST,Estonia,High income,Europe & Central Asia,20,20,20,20,2021,114136203,40166344,2371062,A,"full: 20 filing years, tariff and VN trade throughout"
+BLR,Belarus,Upper middle income,Europe & Central Asia,20,15,20,20,2021,106001200,39069335,203500,A,"full: 20 filing years, tariff and VN trade throughout"
+DOM,Dominican Republic,Upper middle income,Latin America & Caribbean ,20,17,20,19,2021,88050938,38815854,1057801,A,"full: 20 filing years, tariff and VN trade throughout"
+SEN,Senegal,Lower middle income,Sub-Saharan Africa ,20,20,20,20,2021,12511201,36057238,78261,A,"full: 20 filing years, tariff and VN trade throughout"
+SLV,El Salvador,Upper middle income,Latin America & Caribbean ,20,19,20,14,2021,155477447,35771772,88972,A,"full: 20 filing years, tariff and VN trade throughout"
+HRV,Croatia,High income,Europe & Central Asia,20,20,20,20,2021,33383265,35208780,170936,A,"full: 20 filing years, tariff and VN trade throughout"
+OMN,Oman,High income,"Middle East, North Africa, Afghanistan & Pakistan",20,18,20,16,2021,37961974,31885399,99810,A,"full: 20 filing years, tariff and VN trade throughout"
+MAC,"Macao SAR, China",High income,East Asia & Pacific,20,20,20,12,2021,82288861,29991857,100069,A,"full: 20 filing years, tariff and VN trade throughout"
+PRY,Paraguay,Upper middle income,Latin America & Caribbean ,20,20,20,20,2021,126096635,27721121,170544,A,"full: 20 filing years, tariff and VN trade throughout"
+URY,Uruguay,High income,Latin America & Caribbean ,20,19,20,20,2021,81191935,27634833,174488,A,"full: 20 filing years, tariff and VN trade throughout"
+MKD,North Macedonia,Upper middle income,Europe & Central Asia,20,19,20,7,2021,63056314,23219363,198408,A,"full: 20 filing years, tariff and VN trade throughout"
+CYP,Cyprus,High income,Europe & Central Asia,20,19,20,20,2021,43192886,22262551,896953,A,"full: 20 filing years, tariff and VN trade throughout"
+LTU,Lithuania,High income,Europe & Central Asia,20,20,20,20,2021,67314656,21546825,183250,A,"full: 20 filing years, tariff and VN trade throughout"
+MDA,Moldova,Upper middle income,Europe & Central Asia,20,16,20,9,2021,52818284,19884336,569927,A,"full: 20 filing years, tariff and VN trade throughout"
+TZA,Tanzania,Lower middle income,Sub-Saharan Africa ,20,17,20,20,2021,35952797,19026206,99982,A,"full: 20 filing years, tariff and VN trade throughout"
+ARM,Armenia,Upper middle income,Europe & Central Asia,20,19,20,12,2021,36525486,17738191,362043,A,"full: 20 filing years, tariff and VN trade throughout"
+UGA,Uganda,Low income,Sub-Saharan Africa ,20,19,20,17,2021,28094623,16875272,152471,A,"full: 20 filing years, tariff and VN trade throughout"
+ISL,Iceland,High income,Europe & Central Asia,20,17,20,14,2021,59436705,16217408,101025,A,"full: 20 filing years, tariff and VN trade throughout"
+NIC,Nicaragua,Lower middle income,Latin America & Caribbean ,20,20,20,14,2021,49799451,16134547,85336,A,"full: 20 filing years, tariff and VN trade throughout"
+MDG,Madagascar,Low income,Sub-Saharan Africa ,20,20,20,14,2021,37941236,14602008,441354,A,"full: 20 filing years, tariff and VN trade throughout"
+BFA,Burkina Faso,Low income,Sub-Saharan Africa ,20,20,20,15,2021,32952569,14531502,37620,A,"full: 20 filing years, tariff and VN trade throughout"
+BOL,Bolivia,Lower middle income,Latin America & Caribbean ,20,20,20,10,2021,38959358,14252371,227380,A,"full: 20 filing years, tariff and VN trade throughout"
+FJI,Fiji,Upper middle income,East Asia & Pacific,20,16,20,16,2021,21347789,13587508,72683,A,"full: 20 filing years, tariff and VN trade throughout"
+GEO,Georgia,Upper middle income,Europe & Central Asia,20,16,20,16,2021,9188802,9832059,225435,A,"full: 20 filing years, tariff and VN trade throughout"
+ALB,Albania,Upper middle income,Europe & Central Asia,20,20,19,9,2021,24675108,9514869,189388,A,"full: 20 filing years, tariff and VN trade throughout"
+ZMB,Zambia,Lower middle income,Sub-Saharan Africa ,20,17,20,15,2021,14007639,9170180,843253,A,"full: 20 filing years, tariff and VN trade throughout"
+NER,Niger,Low income,Sub-Saharan Africa ,20,20,20,7,2021,12379243,8708586,31669,A,"full: 20 filing years, tariff and VN trade throughout"
+BEN,Benin,Lower middle income,Sub-Saharan Africa ,20,20,20,16,2021,21058040,5995163,82928,A,"full: 20 filing years, tariff and VN trade throughout"
+MLT,Malta,High income,"Middle East, North Africa, Afghanistan & Pakistan",20,20,20,19,2021,5110020,5919664,295694,A,"full: 20 filing years, tariff and VN trade throughout"
+BDI,Burundi,Low income,Sub-Saharan Africa ,20,18,16,8,2021,3323258,5181686,89697,A,"full: 20 filing years, tariff and VN trade throughout"
+RWA,Rwanda,Low income,Sub-Saharan Africa ,20,17,20,9,2021,6490617,5002801,81493,A,"full: 20 filing years, tariff and VN trade throughout"
+MDV,Maldives,Upper middle income,South Asia,20,19,20,8,2021,12976398,4826988,76702,A,"full: 20 filing years, tariff and VN trade throughout"
+KGZ,Kyrgyz Republic,Lower middle income,Europe & Central Asia,20,18,20,8,2021,28626754,3969367,69731,A,"full: 20 filing years, tariff and VN trade throughout"
+BLZ,Belize,Upper middle income,Latin America & Caribbean ,20,18,19,7,2021,5574090,2638466,83613,A,"full: 20 filing years, tariff and VN trade throughout"
+GUY,Guyana,High income,Latin America & Caribbean ,20,17,20,7,2021,2887008,1462888,105897,A,"full: 20 filing years, tariff and VN trade throughout"
+NAM,Namibia,Lower middle income,Sub-Saharan Africa ,20,19,20,10,2021,3110257,1103243,210790,A,"full: 20 filing years, tariff and VN trade throughout"
+CAF,Central African Republic,Low income,Sub-Saharan Africa ,20,15,17,8,2021,409342,887588,7797,A,"full: 20 filing years, tariff and VN trade throughout"
+SWZ,Eswatini,Lower middle income,Sub-Saharan Africa ,20,19,15,6,2021,1092461,616524,63914,A,"full: 20 filing years, tariff and VN trade throughout"
+VCT,St. Vincent and the Grenadines,Upper middle income,Latin America & Caribbean ,20,15,19,2,2021,811088,321762,39174,A,"full: 20 filing years, tariff and VN trade throughout"
+BWA,Botswana,Upper middle income,Sub-Saharan Africa ,20,19,19,8,2021,472759,240906,109740,A,"full: 20 filing years, tariff and VN trade throughout"
+THA,Thailand,Upper middle income,East Asia & Pacific,20,13,20,20,2021,6968131747,2867517371,1991887,B,usable: filing/tariff/VN-trade coverage has gaps
+KHM,Cambodia,Lower middle income,East Asia & Pacific,20,13,20,20,2021,3019091224,1054326010,50213,B,usable: filing/tariff/VN-trade coverage has gaps
+BGD,Bangladesh,Lower middle income,South Asia,16,17,16,20,2018,1395945450,352016843,94850,B,usable: filing/tariff/VN-trade coverage has gaps
+KWT,Kuwait,High income,"Middle East, North Africa, Afghanistan & Pakistan",18,20,17,20,2021,394830635,240951255,373263,B,usable: filing/tariff/VN-trade coverage has gaps
+PAK,Pakistan,Lower middle income,"Middle East, North Africa, Afghanistan & Pakistan",19,19,19,20,2021,577396818,186463679,180888,B,usable: filing/tariff/VN-trade coverage has gaps
+DZA,Algeria,Upper middle income,"Middle East, North Africa, Afghanistan & Pakistan",16,15,16,20,2017,457328750,172005186,83689,B,usable: filing/tariff/VN-trade coverage has gaps
+GHA,Ghana,Lower middle income,Sub-Saharan Africa ,19,14,19,20,2021,393603708,164764591,322546,B,usable: filing/tariff/VN-trade coverage has gaps
+LKA,Sri Lanka,Upper middle income,South Asia,19,17,19,20,2021,426650971,132070588,160056,B,usable: filing/tariff/VN-trade coverage has gaps
+KAZ,Kazakhstan,Upper middle income,Europe & Central Asia,20,14,20,20,2021,35847348,105259496,147107,B,usable: filing/tariff/VN-trade coverage has gaps
+AGO,Angola,Lower middle income,Sub-Saharan Africa ,18,17,18,20,2021,9011287,69502836,465189,B,usable: filing/tariff/VN-trade coverage has gaps
+LBN,Lebanon,Lower middle income,"Middle East, North Africa, Afghanistan & Pakistan",20,12,20,16,2021,42215000,68807072,143366,B,usable: filing/tariff/VN-trade coverage has gaps
+NGA,Nigeria,Lower middle income,Sub-Saharan Africa ,18,14,18,20,2021,104120889,51297357,103230,B,usable: filing/tariff/VN-trade coverage has gaps
+CMR,Cameroon,Lower middle income,Sub-Saharan Africa ,20,14,20,20,2021,14592552,39883791,64551,B,usable: filing/tariff/VN-trade coverage has gaps
+TUN,Tunisia,Lower middle income,"Middle East, North Africa, Afghanistan & Pakistan",20,13,20,20,2021,67634654,39253864,104871,B,usable: filing/tariff/VN-trade coverage has gaps
+KEN,Kenya,Lower middle income,Sub-Saharan Africa ,17,18,16,20,2021,90394016,33475840,136433,B,usable: filing/tariff/VN-trade coverage has gaps
+BIH,Bosnia and Herzegovina,Upper middle income,Europe & Central Asia,19,16,19,6,2021,79268342,33130469,737148,B,usable: filing/tariff/VN-trade coverage has gaps
+HND,Honduras,Lower middle income,Latin America & Caribbean ,18,16,18,16,2021,127309910,30128235,85557,B,usable: filing/tariff/VN-trade coverage has gaps
+MNG,Mongolia,Upper middle income,East Asia & Pacific,15,17,14,14,2021,79716590,29459475,128838,B,usable: filing/tariff/VN-trade coverage has gaps
+ETH,Ethiopia,Low income,Sub-Saharan Africa ,20,10,20,14,2021,32984219,27469084,187102,B,usable: filing/tariff/VN-trade coverage has gaps
+AZE,Azerbaijan,Upper middle income,Europe & Central Asia,20,13,20,18,2021,112699486,22540168,281996,B,usable: filing/tariff/VN-trade coverage has gaps
+BRN,Brunei Darussalam,High income,East Asia & Pacific,19,17,19,19,2021,47785113,17038699,89501,B,usable: filing/tariff/VN-trade coverage has gaps
+TTO,Trinidad and Tobago,High income,Latin America & Caribbean ,20,12,20,16,2021,95943018,14619164,185071,B,usable: filing/tariff/VN-trade coverage has gaps
+GAB,Gabon,Upper middle income,Sub-Saharan Africa ,20,14,19,16,2021,22210228,13474999,50507,B,usable: filing/tariff/VN-trade coverage has gaps
+MLI,Mali,Low income,Sub-Saharan Africa ,16,20,16,15,2021,15022759,8085079,38065,B,usable: filing/tariff/VN-trade coverage has gaps
+PYF,French Polynesia,High income,East Asia & Pacific,20,13,20,2,2021,22224445,7744954,85016,B,usable: filing/tariff/VN-trade coverage has gaps
+JAM,Jamaica,Upper middle income,Latin America & Caribbean ,20,13,20,14,2021,15904898,6937849,78055,B,usable: filing/tariff/VN-trade coverage has gaps
+COG,"Congo, Rep.",Lower middle income,Sub-Saharan Africa ,15,13,15,20,2021,2915797,6693846,73052,B,usable: filing/tariff/VN-trade coverage has gaps
+LSO,Lesotho,Lower middle income,Sub-Saharan Africa ,20,18,13,7,2021,11546654,6685196,247760,B,usable: filing/tariff/VN-trade coverage has gaps
+SLB,Solomon Islands,Lower middle income,East Asia & Pacific,17,13,17,10,2018,27031363,6288804,19709,B,usable: filing/tariff/VN-trade coverage has gaps
+TGO,Togo,Lower middle income,Sub-Saharan Africa ,19,20,19,20,2021,14857485,4480762,124299,B,usable: filing/tariff/VN-trade coverage has gaps
+COM,Comoros,Lower middle income,Sub-Saharan Africa ,20,12,17,5,2021,12696213,3898390,25289,B,usable: filing/tariff/VN-trade coverage has gaps
+MWI,Malawi,Low income,Sub-Saharan Africa ,20,14,20,5,2021,2443192,3040209,124746,B,usable: filing/tariff/VN-trade coverage has gaps
+MRT,Mauritania,Lower middle income,Sub-Saharan Africa ,20,12,19,10,2021,496165,2755055,18177,B,usable: filing/tariff/VN-trade coverage has gaps
+CPV,Cabo Verde,Upper middle income,Sub-Saharan Africa ,20,13,20,3,2021,1726054,1898128,39892,B,usable: filing/tariff/VN-trade coverage has gaps
+BRB,Barbados,High income,Latin America & Caribbean ,20,11,20,5,2021,277422,1770503,70675,B,usable: filing/tariff/VN-trade coverage has gaps
+GMB,"Gambia, The",Low income,Sub-Saharan Africa ,20,11,12,16,2021,350891,1649453,100908,B,usable: filing/tariff/VN-trade coverage has gaps
+SYC,Seychelles,High income,Sub-Saharan Africa ,20,10,20,5,2021,1872359,1566482,170822,B,usable: filing/tariff/VN-trade coverage has gaps
+BMU,Bermuda,High income,North America,17,16,17,6,2021,3034870,1457499,24628,B,usable: filing/tariff/VN-trade coverage has gaps
+SUR,Suriname,Upper middle income,Latin America & Caribbean ,20,10,19,10,2021,1596490,935603,67299,B,usable: filing/tariff/VN-trade coverage has gaps
+DMA,Dominica,Upper middle income,Latin America & Caribbean ,17,12,16,13,2021,26906,615305,26278,B,usable: filing/tariff/VN-trade coverage has gaps
+ATG,Antigua and Barbuda,High income,Latin America & Caribbean ,16,20,16,3,2021,947416,526146,99664,B,usable: filing/tariff/VN-trade coverage has gaps
+TON,Tonga,Upper middle income,East Asia & Pacific,18,10,18,4,2021,1298635,439748,17964,B,usable: filing/tariff/VN-trade coverage has gaps
+LCA,St. Lucia,Upper middle income,Latin America & Caribbean ,19,14,19,3,2020,1361845,364819,42887,B,usable: filing/tariff/VN-trade coverage has gaps
+GRD,Grenada,Upper middle income,Latin America & Caribbean ,20,12,19,6,2021,89707,115432,139713,B,usable: filing/tariff/VN-trade coverage has gaps
+KNA,St. Kitts and Nevis,High income,Latin America & Caribbean ,16,17,14,2,2017,65669,105838,50297,B,usable: filing/tariff/VN-trade coverage has gaps

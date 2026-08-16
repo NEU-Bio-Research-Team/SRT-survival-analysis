@@ -330,7 +330,7 @@ def main():
           PANEL_COLS)
 
     # coverage report: which of the selected importers can actually be served
-    with open(os.path.join(SEL, "importers_selected.csv"),
+    with open(os.path.join(SEL, "importers_vn.csv"),
               encoding="utf-8") as f:
         importers = [r["iso3"] for r in csv.DictReader(f)]
     served, via_eu, missing = [], [], []

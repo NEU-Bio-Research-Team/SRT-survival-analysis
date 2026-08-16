@@ -37,6 +37,9 @@ TARIFFS = os.path.join(HERE, "data_raw", "tariffs")
 SEL = os.path.join(HERE, "selection")
 OUT = os.path.join(HERE, "analysis")
 MAX_CARRY_FORWARD = 3
+# TRAINS numeric partner code -> iso3. Only the exporter of this design needs a
+# translation; everything else is already stored as iso3.
+TRAINS_PARTNER_ISO = {"704": "VNM"}
 
 
 def eu_mapping():
@@ -67,10 +70,13 @@ def load_tariffs(families):
     for path in glob.glob(os.path.join(TARIFFS, "pref", "*.csv.gz")):
         base = os.path.basename(path)[:-7]
         iso, year, partner = base.rsplit("_", 2)
+        # the file name carries the TRAINS numeric partner code; episodes carry
+        # an iso3 exporter, so translate before keying or nothing ever matches
+        partner_iso = TRAINS_PARTNER_ISO.get(partner, partner)
         with gzip.open(path, "rt", encoding="utf-8") as f:
             for r in csv.DictReader(f):
                 fam = bs.family_of(families, r["nomen"] or "H0", r["product"])
-                key = (iso, int(year), partner, fam)
+                key = (iso, int(year), partner_iso, fam)
                 rate = r["rate_simple_avg"]
                 if rate not in (None, ""):
                     prev = pref.get(key)

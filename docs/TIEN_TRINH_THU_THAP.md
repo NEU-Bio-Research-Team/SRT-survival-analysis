@@ -1,6 +1,12 @@
 # Tiến trình thực hiện Phần 5 — thu thập và dựng bộ dữ liệu survival
 
-*Cập nhật: 12/08/2026. Tài liệu này ghi lại những gì đã chạy thật, quyết định nào đã chốt và vì sao. Bổ sung cho [KIEM_CHUNG_DU_LIEU_WITS.md](KIEM_CHUNG_DU_LIEU_WITS.md).*
+*Cập nhật: 16/08/2026. Tài liệu này ghi lại những gì đã chạy thật, quyết định nào đã chốt và vì sao. Bổ sung cho [KIEM_CHUNG_DU_LIEU_WITS.md](KIEM_CHUNG_DU_LIEU_WITS.md).*
+
+> **16/08/2026 — đổi thiết kế.** Exporter thu về **chỉ còn Việt Nam**; importer
+> không còn chốt ở 53 nước mà lấy **tất cả nước đủ dữ liệu (147)**. Mục 3 và mục
+> 5–7 dưới đây mô tả thiết kế cũ; phần thay thế nằm ở
+> [THIET_KE_VIET_NAM.md](THIET_KE_VIET_NAM.md). Các mục còn lại (hướng biến
+> thuế, giới hạn API, xử lý HS revision, NTM) vẫn đúng nguyên vẹn.
 
 ---
 
@@ -8,13 +14,13 @@
 
 | # | Đầu việc (Phần 5) | Trạng thái |
 |---|---|---|
-| 1 | Xác nhận hướng biến Tariff | **Đã chốt theo mặc định** — xem mục 1 |
+| 1 | Xác nhận hướng biến Tariff | **Đã chốt** — xem mục 1 |
 | 2 | API key UN Comtrade | **Xong** — key đã hoạt động, đo được giới hạn thật |
-| 3 | Chọn nước bằng dữ liệu | **Xong** — 53 importers + 82 exporters |
+| 3 | Chọn nước bằng dữ liệu | **Xong, đã làm lại 16/08** — exporter = VNM, 147 importer hạng A+B |
 | 4 | Chốt cửa sổ thời gian | **Xong** — 2002–2021 |
-| 5 | Kéo tariff HS6 | **Đang chạy** — MFN dở dang, PREF chưa có file nào |
-| 6 | Kéo trade value HS6 + dựng spell | **Đang chạy** — code xong, dữ liệu mới ~6% |
-| 7 | Tự tính RCA/HHI ở HS6 | **Xong** — code trong `build_spells.py` |
+| 5 | Kéo tariff HS6 | **Đang chạy** — MFN + PREF cho partner 704 |
+| 6 | Kéo trade value HS6 + dựng spell | **Đang chạy** — partner = VN, nhẹ hơn ~100 lần |
+| 7 | Tự tính RCA/HHI ở HS6 | **Xong, đã định nghĩa lại** — growth theo sản phẩm, RCA có mẫu số thế giới |
 | 8 | Quyết định NTM | **Đã làm phương án time-invariant** — xem mục 8 |
 
 ---

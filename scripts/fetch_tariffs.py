@@ -1,12 +1,21 @@
 """Step 5: pull HS6 tariffs from WITS/TRAINS for the selected importers.
 
-Two passes:
+The exporter is Viet Nam, so the tariff that matters is the one each importer
+levies on Vietnamese goods. Two passes:
+
   A. MFN   - one call per (tariff reporter, year) with product=ALL, partner=000.
-             ~1,060 calls, each returning the country's whole HS6 schedule.
-  B. PREF  - preferential schedules. Instead of trying every importer-exporter
-             pair (86,920 calls), the TRAINS `dataavailability` response lists,
-             per reporter-year, exactly which partners have a schedule
-             (`partnerlist`). Only those are requested.
+             Each call returns the country's whole HS6 schedule.
+  B. PREF  - the preferential schedule the importer grants **Viet Nam**
+             (TRAINS partner code 704). The `dataavailability` response lists,
+             per reporter-year, which partners have a schedule (`partnerlist`);
+             only reporter-years that actually list Viet Nam are requested, so
+             the pass is a few hundred calls instead of thousands.
+
+Caveat that survives this pass: an importer can grant Viet Nam a rate through an
+agreement filed under a *group* code (ASEAN, AANZFTA, RCEP) rather than under
+704. Those rows are not fetched here - the group-to-member mapping is not in the
+API - so such an episode falls back to MFN, which overstates the rate faced.
+`tariff_type` marks which of the two applied.
 
 Everything is cached as gzipped CSV under data_raw/tariffs/, so the run is
 resumable: re-running skips whatever is already on disk.
@@ -35,6 +44,7 @@ WITS = "https://wits.worldbank.org/API/V1"
 UA = "Mozilla/5.0 (compatible; trade-survival-research/1.0)"
 SLEEP = 0.8                     # polite gap between calls
 YEARS = list(range(2002, 2022))
+VN_TRAINS_CODE = "704"          # Viet Nam, the only exporter in this design
 
 COLS = ["reporter", "partner", "year", "product", "tariff_type", "rate_simple_avg",
         "min_rate", "max_rate", "total_lines", "nbr_mfn_lines", "nbr_pref_lines",
@@ -97,8 +107,10 @@ def save(path, rows):
 
 def load_targets():
     """(iso3, tariff reporter numeric code) for every selected importer."""
-    imp = list(csv.DictReader(open(os.path.join(SEL, "importers_selected.csv"),
-                                   encoding="utf-8")))
+    path = os.path.join(SEL, "importers_vn.csv")
+    if not os.path.exists(path):
+        raise SystemExit(f"{path} missing - run select_importers_vn.py first")
+    imp = list(csv.DictReader(open(path, encoding="utf-8")))
     eu = {}
     p = os.path.join(SEL, "eu_tariff_mapping.csv")
     if os.path.exists(p):
@@ -125,14 +137,21 @@ def availability_partnerlists(codes):
     """reporter code -> {year: [partner codes with a schedule]}"""
     out = defaultdict(dict)
     cache = os.path.join(RAW, "_partnerlists.csv")
+    rows = []
+    seen = set()
     if os.path.exists(cache):
         for r in csv.DictReader(open(cache, encoding="utf-8")):
             out[r["reporter"]][int(r["year"])] = [p for p in r["partners"].split(";") if p]
+            rows.append(r)
+            seen.add(r["reporter"])
+    # the cache was built for an earlier, smaller reporter list: top it up
+    # instead of either re-pulling everything or silently missing reporters
+    todo = sorted(set(codes) - seen)
+    if not todo:
         return out
     os.makedirs(RAW, exist_ok=True)
-    rows = []
     ns = "{http://wits.worldbank.org}"
-    for i, code in enumerate(sorted(set(codes)), 1):
+    for i, code in enumerate(todo, 1):
         status, payload = fetch(
             f"{WITS}/wits/datasource/trn/dataavailability/country/{code}/year/ALL")
         if status == 200 and payload:
@@ -145,7 +164,7 @@ def availability_partnerlists(codes):
                     out[code][int(y)] = partners
                     rows.append({"reporter": code, "year": y,
                                  "partners": ";".join(partners)})
-        print(f"  availability {i}/{len(set(codes))}: {code} "
+        print(f"  availability {i}/{len(todo)}: {code} "
               f"({len(out[code])} years)", flush=True)
         time.sleep(SLEEP)
     with open(cache, "w", newline="", encoding="utf-8") as f:
@@ -186,12 +205,26 @@ def pass_pref(targets):
     lists = availability_partnerlists(codes)
 
     jobs = []
+    listed = skipped_no_vn = unknown = 0
     for iso, code, year in targets:
-        for p in lists.get(code, {}).get(year, []):
-            if p != "000":                      # 000 is MFN, done in pass A
-                jobs.append((iso, code, year, p))
-    print(f"Preferential schedules to pull: {len(jobs)} "
-          f"(vs {len(targets) * 82} if every pair were tried)\n")
+        partners = lists.get(code, {}).get(year)
+        if partners and VN_TRAINS_CODE in partners:
+            listed += 1
+            jobs.append((iso, code, year, VN_TRAINS_CODE))
+        elif partners:
+            # the reporter filed preferential schedules that year, just not one
+            # naming Viet Nam directly - it may still sit inside a group code
+            skipped_no_vn += 1
+        else:
+            # no availability record at all: "unknown", not "known absent".
+            # A 404 costs one cheap call and settles it, so ask rather than
+            # assume - a stale partner list would silently lose real rates.
+            unknown += 1
+            jobs.append((iso, code, year, VN_TRAINS_CODE))
+    print(f"Preferential calls to make: {len(jobs)} of {len(targets)} "
+          f"reporter-years ({listed} list VNM explicitly, {unknown} have no "
+          f"partner list to check); {skipped_no_vn} filed preferences for "
+          f"other partners only\n")
 
     done = skipped = failed = 0
     for i, (iso, code, year, partner) in enumerate(jobs, 1):

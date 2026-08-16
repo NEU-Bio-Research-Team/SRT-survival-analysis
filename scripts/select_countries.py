@@ -1,4 +1,14 @@
-"""Step 3-4: pick the 53 importers and 82 exporters from data, not by hand.
+"""Step 3-4 (availability layer): download who files what, and who has tariffs.
+
+Under the Viet Nam design the *final* choice is made by select_importers_vn.py,
+which fixes the exporter to VNM and lists every importer with enough data. This
+script is still the step that produces the availability dumps that choice reads
+(comtrade_da.csv, trains_avail.csv, country_meta.csv, eu_tariff_mapping.csv).
+Its own importers_selected.csv / exporters_selected.csv are the earlier
+53-importer x 82-exporter design and are no longer wired into the pipeline.
+
+Original purpose, kept for reference: pick the 53 importers and 82 exporters
+from data, not by hand.
 
 Three availability sources are joined:
   1. UN Comtrade `getDA`  - which reporter actually filed annual HS data, per year.

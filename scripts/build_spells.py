@@ -1,5 +1,11 @@
 """Step 6b + 7: turn the raw HS6 panel into a survival dataset.
 
+The exporter is Viet Nam. A spell is therefore the life of a
+(importer j, product family k) relationship for Vietnamese goods, and every
+non-Vietnamese row found in the raw files is dropped on the way in - the files
+pulled under the earlier multi-exporter design are still readable, they simply
+contribute their VNM rows only.
+
 Three problems have to be solved before a spell means anything:
 
 1. HS revisions. Countries report under whichever HS revision they have
@@ -38,12 +44,15 @@ from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án (thư mục cha của scripts/)
 RAW_TRADE = os.path.join(HERE, "data_raw", "trade")
+RAW_WORLD = os.path.join(HERE, "data_raw", "trade_world")
 CONC = os.path.join(HERE, "data_raw", "concordance")
+SEL = os.path.join(HERE, "selection")
 OUT = os.path.join(HERE, "analysis")
 
 YEAR_MIN, YEAR_MAX = 2002, 2021
 THRESHOLD_USD = 10_000
 GAP_TOLERANCE = 0          # years below threshold that still break a spell
+EXPORTER = "VNM"
 
 
 # --- product families -------------------------------------------------------
@@ -97,12 +106,20 @@ def family_of(u, rev, code):
 
 
 # --- panel ------------------------------------------------------------------
-def load_panel(u):
-    """(importer, exporter, family, year) -> import value in USD."""
+def selected_importers():
+    path = os.path.join(SEL, "importers_vn.csv")
+    if not os.path.exists(path):
+        return None                      # no list yet: take whatever is on disk
+    with open(path, encoding="utf-8") as f:
+        return {r["iso3"] for r in csv.DictReader(f)}
+
+
+def read_folder(u, folder, keep_exporter, importers, label):
+    """(importer, family, year) -> value in USD, summed over HS6 lines."""
     panel = defaultdict(float)
-    files = sorted(glob.glob(os.path.join(RAW_TRADE, "*.csv.gz")))
+    files = sorted(glob.glob(os.path.join(folder, "*.csv.gz")))
     if not files:
-        sys.exit(f"No trade files in {RAW_TRADE}. Run fetch_trade.py first.")
+        return panel, set(), set()
     codes_seen, codes_mapped = set(), set()
     for n, path in enumerate(files, 1):
         with gzip.open(path, "rt", encoding="utf-8") as f:
@@ -112,27 +129,51 @@ def load_panel(u):
                     value = float(r["import_value_usd"] or 0)
                 except (TypeError, ValueError):
                     continue
-                if not (YEAR_MIN <= year <= YEAR_MAX) or not r["exporter"]:
+                if not (YEAR_MIN <= year <= YEAR_MAX):
+                    continue
+                if r["exporter"] != keep_exporter:
+                    continue             # legacy files carry 82 exporters
+                if importers and r["importer"] not in importers:
                     continue
                 rev, code = r["hs_revision"] or "H0", r["hs6"]
                 codes_seen.add((rev, code))
                 fam = family_of(u, rev, code)
                 if (rev, code) in u.parent:
                     codes_mapped.add((rev, code))
-                panel[(r["importer"], r["exporter"], fam, year)] += value
-        if n % 50 == 0:
-            print(f"  read {n}/{len(files)} files, {len(panel):,} cells",
-                  flush=True)
-    print(f"  distinct reported codes: {len(codes_seen):,}; "
-          f"matched to a family: {len(codes_mapped):,}")
+                panel[(r["importer"], fam, year)] += value
+        if n % 200 == 0:
+            print(f"  {label}: read {n}/{len(files)} files, "
+                  f"{len(panel):,} cells", flush=True)
+    print(f"  {label}: {len(files)} files, {len(panel):,} cells, "
+          f"{len(codes_seen):,} distinct codes ({len(codes_mapped):,} mapped)")
+    return panel, codes_seen, codes_mapped
+
+
+def load_panel(u):
+    """Viet Nam's side of the panel: (importer, family, year) -> USD."""
+    importers = selected_importers()
+    panel, _, _ = read_folder(u, RAW_TRADE, EXPORTER, importers, "VNM imports")
+    if not panel:
+        sys.exit(f"No Vietnamese rows in {RAW_TRADE}. Run fetch_trade.py first.")
+    return panel
+
+
+def load_world(u):
+    """Same importers' imports from the whole world, for the denominators."""
+    importers = selected_importers()
+    panel, _, _ = read_folder(u, RAW_WORLD, "WLD", importers, "world imports")
+    if not panel:
+        print("  world imports: nothing on disk - RCA and world growth will "
+              "fall back to the in-sample total (run fetch_trade.py "
+              "--pass world)")
     return panel
 
 
 # --- spells -----------------------------------------------------------------
 def build_spells(panel):
     by_rel = defaultdict(dict)
-    for (imp, exp, fam, year), value in panel.items():
-        by_rel[(imp, exp, fam)][year] = value
+    for (imp, fam, year), value in panel.items():
+        by_rel[(imp, EXPORTER, fam)][year] = value
 
     spells, episodes = [], []
     for (imp, exp, fam), series in by_rel.items():
@@ -178,75 +219,104 @@ def build_spells(panel):
 
 
 # --- derived covariates at HS6 ---------------------------------------------
-def derived(panel):
-    """Balassa RCA and Herfindahl indices computed at family level."""
-    exp_prod = defaultdict(float)     # exporter, family, year
-    exp_tot = defaultdict(float)      # exporter, year
+def derived(panel, world):
+    """Balassa RCA, Herfindahl indices and growth rates at family level.
+
+    With one exporter, a growth rate measured on Viet Nam's total exports would
+    be one number per year - collinear with any year effect and useless in a
+    Cox model. Growth is therefore product-specific, as WITS defines it in the
+    Trade Outcomes indicators: `country_growth` is how fast Viet Nam's exports
+    of family k grew, `world_growth` how fast world imports of family k grew.
+
+    The world denominators come from the importers' imports from the whole
+    world (data_raw/trade_world). Without that folder the same quantities are
+    approximated by the in-sample Vietnamese totals, which makes RCA a
+    within-Viet-Nam specialisation index rather than a Balassa index - the
+    fallback is reported so the difference is never silent.
+    """
+    vn_prod = defaultdict(float)      # family, year
+    vn_tot = defaultdict(float)       # year
+    vn_part = defaultdict(float)      # importer, year
+
+    for (imp, fam, year), v in panel.items():
+        vn_prod[(fam, year)] += v
+        vn_tot[year] += v
+        vn_part[(imp, year)] += v
+
     wld_prod = defaultdict(float)     # family, year
     wld_tot = defaultdict(float)      # year
-    exp_part = defaultdict(float)     # exporter, importer, year
-
-    for (imp, exp, fam, year), v in panel.items():
-        exp_prod[(exp, fam, year)] += v
-        exp_tot[(exp, year)] += v
+    wld_cell = {}                     # importer, family, year
+    for (imp, fam, year), v in world.items():
         wld_prod[(fam, year)] += v
         wld_tot[year] += v
-        exp_part[(exp, imp, year)] += v
+        wld_cell[(imp, fam, year)] = v
+    using_world = bool(world)
+    if not using_world:
+        wld_prod, wld_tot = vn_prod, vn_tot
 
     rca, prod_share = {}, {}
-    for (exp, fam, year), v in exp_prod.items():
-        et, wp, wt = exp_tot[(exp, year)], wld_prod[(fam, year)], wld_tot[year]
-        if et > 0:
-            prod_share[(exp, fam, year)] = 100 * v / et
+    for (fam, year), v in vn_prod.items():
+        vt, wp, wt = vn_tot[year], wld_prod.get((fam, year), 0), wld_tot.get(year, 0)
+        if vt > 0:
+            prod_share[(fam, year)] = 100 * v / vt
             if wp > 0 and wt > 0:
-                rca[(exp, fam, year)] = (v / et) / (wp / wt)
+                rca[(fam, year)] = (v / vt) / (wp / wt)
 
     partner_share, hhi_market = {}, defaultdict(float)
-    for (exp, imp, year), v in exp_part.items():
-        et = exp_tot[(exp, year)]
-        if et > 0:
-            s = v / et
-            partner_share[(exp, imp, year)] = 100 * s
-            hhi_market[(exp, year)] += s ** 2
+    for (imp, year), v in vn_part.items():
+        vt = vn_tot[year]
+        if vt > 0:
+            s = v / vt
+            partner_share[(imp, year)] = 100 * s
+            hhi_market[year] += s ** 2
 
     hhi_product = defaultdict(float)
-    for (exp, fam, year), v in exp_prod.items():
-        et = exp_tot[(exp, year)]
-        if et > 0:
-            hhi_product[(exp, year)] += (v / et) ** 2
+    for (fam, year), v in vn_prod.items():
+        vt = vn_tot[year]
+        if vt > 0:
+            hhi_product[year] += (v / vt) ** 2
 
-    growth = {}
-    for (exp, year), v in exp_tot.items():
-        prev = exp_tot.get((exp, year - 1))
-        if prev:
-            growth[(exp, year)] = 100 * (v - prev) / prev
-    world_growth = {}
-    for year, v in wld_tot.items():
-        prev = wld_tot.get(year - 1)
-        if prev:
-            world_growth[year] = 100 * (v - prev) / prev
+    def growth_of(series):
+        out = {}
+        for (fam, year), v in series.items():
+            prev = series.get((fam, year - 1))
+            if prev:
+                out[(fam, year)] = 100 * (v - prev) / prev
+        return out
+
+    # Viet Nam's share of the importer's own market for that product: the
+    # single most direct measure of how exposed the relationship is
+    market_share = {}
+    if using_world:
+        for (imp, fam, year), v in panel.items():
+            w = wld_cell.get((imp, fam, year), 0)
+            if w > 0:
+                market_share[(imp, fam, year)] = 100 * min(v / w, 1.0)
 
     return {"rca": rca, "product_share": prod_share,
             "partner_share": partner_share, "hhi_market": dict(hhi_market),
-            "hhi_product": dict(hhi_product), "country_growth": growth,
-            "world_growth": world_growth}
+            "hhi_product": dict(hhi_product),
+            "country_growth": growth_of(vn_prod),
+            "world_growth": growth_of(wld_prod),
+            "market_share": market_share, "using_world": using_world}
 
 
 def attach(episodes, d):
     for e in episodes:
-        exp, imp, fam, y = (e["exporter"], e["importer"],
-                            e["product_family"], e["year"])
-        e["rca"] = round(d["rca"].get((exp, fam, y), float("nan")), 4)
+        imp, fam, y = e["importer"], e["product_family"], e["year"]
+        e["rca"] = round(d["rca"].get((fam, y), float("nan")), 4)
         e["product_share_pct"] = round(
-            d["product_share"].get((exp, fam, y), float("nan")), 4)
+            d["product_share"].get((fam, y), float("nan")), 4)
         e["partner_share_pct"] = round(
-            d["partner_share"].get((exp, imp, y), float("nan")), 4)
-        e["hhi_market"] = round(d["hhi_market"].get((exp, y), float("nan")), 6)
-        e["hhi_product"] = round(d["hhi_product"].get((exp, y), float("nan")), 6)
+            d["partner_share"].get((imp, y), float("nan")), 4)
+        e["vn_market_share_pct"] = round(
+            d["market_share"].get((imp, fam, y), float("nan")), 4)
+        e["hhi_market"] = round(d["hhi_market"].get(y, float("nan")), 6)
+        e["hhi_product"] = round(d["hhi_product"].get(y, float("nan")), 6)
         e["country_growth_pct"] = round(
-            d["country_growth"].get((exp, y), float("nan")), 4)
+            d["country_growth"].get((fam, y), float("nan")), 4)
         e["world_growth_pct"] = round(
-            d["world_growth"].get(y, float("nan")), 4)
+            d["world_growth"].get((fam, y), float("nan")), 4)
     return episodes
 
 
@@ -265,12 +335,16 @@ def main():
     u = build_families()
     print("Reading trade panel")
     panel = load_panel(u)
+    world = load_world(u)
     print(f"  panel cells: {len(panel):,}")
     print("Building spells")
     spells, episodes = build_spells(panel)
     print(f"  spells: {len(spells):,}  episodes: {len(episodes):,}")
     print("Computing HS6-level covariates")
-    episodes = attach(episodes, derived(panel))
+    d = derived(panel, world)
+    episodes = attach(episodes, d)
+    if not d["using_world"]:
+        print("  WARNING: RCA / world growth computed without world imports")
 
     write("spells.csv", spells,
           ["spell_id", "importer", "exporter", "product_family", "start_year",
@@ -279,8 +353,9 @@ def main():
     write("episodes.csv", episodes,
           ["spell_id", "importer", "exporter", "product_family", "year",
            "t_start", "t_stop", "event", "import_value_usd", "rca",
-           "product_share_pct", "partner_share_pct", "hhi_market",
-           "hhi_product", "country_growth_pct", "world_growth_pct"])
+           "product_share_pct", "partner_share_pct", "vn_market_share_pct",
+           "hhi_market", "hhi_product", "country_growth_pct",
+           "world_growth_pct"])
 
     if spells:
         n_cens = sum(s["right_censored"] for s in spells)

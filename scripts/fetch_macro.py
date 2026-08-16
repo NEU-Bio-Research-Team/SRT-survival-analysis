@@ -61,7 +61,7 @@ def fetch(url, timeout=300, retries=3):
 
 def countries():
     out = set()
-    for name in ("importers_selected.csv", "exporters_selected.csv"):
+    for name in ("importers_vn.csv", "exporter_selected.csv"):
         with open(os.path.join(SEL, name), encoding="utf-8") as f:
             out.update(r["iso3"] for r in csv.DictReader(f))
     return sorted(out)
