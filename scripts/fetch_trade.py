@@ -231,29 +231,56 @@ def by_year(rows):
     return out
 
 
+def record_empty(outdir, importer, year, reason):
+    """Note that a year was asked for and genuinely holds no HS6 detail.
+
+    Absence on disk is otherwise ambiguous: it could mean the download never
+    ran, or that the reporter filed only an aggregate for that year. The first
+    would fabricate a spell death if the panel were built on it; the second is
+    real. Writing the confirmed-empty years down keeps the two apart.
+    """
+    path = os.path.join(outdir, "_empty_years.csv")
+    os.makedirs(outdir, exist_ok=True)
+    fresh = not os.path.exists(path)
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        if fresh:
+            w.writerow(["importer", "year", "reason"])
+        w.writerow([importer, year, reason])
+
+
 def importer_pass(importers, years, codes, code_to_iso, partner, outdir, label):
     """One file per importer-year, requested in batches of years."""
     jobs = [(imp, years[i:i + YEAR_BATCH])
             for imp in importers
             for i in range(0, len(years), YEAR_BATCH)]
-    started = time.time()
-    done = skipped = failed = empty = 0
-    total_rows = 0
-    for n, (imp, yb) in enumerate(jobs, 1):
+    # Work out up front which batches still need a request. Counting cached
+    # batches in the progress index would divide the elapsed time by jobs that
+    # cost nothing, and the estimate collapses towards zero on a resumed run.
+    todo, skipped = [], 0
+    for imp, yb in jobs:
         want = [y for y in yb
                 if not os.path.exists(os.path.join(outdir, f"{imp}_{y}.csv.gz"))]
-        if not want:
+        if want:
+            todo.append((imp, want))
+        else:
             skipped += len(yb)
-            continue
+    print(f"{label}: {len(todo)} of {len(jobs)} year-batches still to fetch "
+          f"({skipped} importer-years already on disk)\n", flush=True)
+
+    started = time.time()
+    done = failed = empty = 0
+    total_rows = 0
+    for n, (imp, want) in enumerate(todo, 1):
         if imp not in codes:
-            print(f"[{n}/{len(jobs)}] {imp}: no Comtrade code, skipped")
+            print(f"[{n}/{len(todo)}] {imp}: no Comtrade code, skipped")
             failed += len(want)
             continue
         t0 = time.time()
         rows = request(codes[imp], ",".join(str(y) for y in want), partner)
         if rows is None:
             failed += len(want)
-            print(f"[{n}/{len(jobs)}] {label} {imp} {want}: request failed",
+            print(f"[{n}/{len(todo)}] {label} {imp} {want}: request failed",
                   flush=True)
             continue
         clean = tidy(rows, code_to_iso, importer_iso=imp)
@@ -261,21 +288,91 @@ def importer_pass(importers, years, codes, code_to_iso, partner, outdir, label):
         for y in want:
             got = grouped.get(y, [])
             if not got:
-                # never cache an empty importer-year: far more likely a
-                # throttled response than a year with no trade at all
+                # never cache an empty importer-year as data. But if the rest
+                # of the batch came back full, the request plainly worked, so
+                # this year really has no HS6 detail - record that, because a
+                # later build cannot tell it apart from a download that never
+                # happened.
                 empty += 1
+                if clean:
+                    record_empty(outdir, imp, y, "no HS6 rows in a batch that "
+                                                 "returned data for other years")
                 continue
             save(os.path.join(outdir, f"{imp}_{y}.csv.gz"), got)
             done += 1
             total_rows += len(got)
         elapsed = time.time() - started
-        left = (len(jobs) - n) * (elapsed / n) / 3600
-        print(f"[{n}/{len(jobs)}] {label} {imp} {want[0]}-{want[-1]}: "
+        left = (len(todo) - n) * (elapsed / n) / 3600
+        print(f"[{n}/{len(todo)}] {label} {imp} {want[0]}-{want[-1]}: "
               f"{len(clean):,} rows ({time.time() - t0:.0f}s) | "
               f"total {total_rows:,} | ~{left:.1f}h left", flush=True)
 
     print(f"\n{label} pass: {done} importer-years written, {skipped} cached, "
           f"{empty} came back empty, {failed} failed, {total_rows:,} rows")
+
+
+def gaps_pass(importers, years, codes, code_to_iso):
+    """Settle the importer-years the screen expects but the vn pass never wrote.
+
+    The screen (cmdCode=TOTAL) says trade with Viet Nam happened; the HS6 pull
+    produced no file. Either the download missed it, or the reporter filed only
+    an aggregate that year. Asking one year at a time removes the ambiguity:
+    rows mean the gap was real and is now filled, no rows mean the detail does
+    not exist and the year is recorded as confirmed empty.
+    """
+    screen = os.path.join(SEL, "vn_partner_screen.csv")
+    if not os.path.exists(screen):
+        raise SystemExit(f"{screen} missing - run select_importers_vn.py first")
+    wanted = set(importers)
+    needed = defaultdict(set)
+    with open(screen, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            y = int(r["year"])
+            if r["iso3"] in wanted and y in years \
+                    and float(r["imports_from_vn_usd"] or 0) > 0:
+                needed[r["iso3"]].add(y)
+    known_empty = set()
+    ep = os.path.join(RAW, "_empty_years.csv")
+    if os.path.exists(ep):
+        with open(ep, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                known_empty.add((r["importer"], int(r["year"])))
+
+    holes = []
+    for imp, ys in sorted(needed.items()):
+        for y in sorted(ys):
+            if os.path.exists(os.path.join(RAW, f"{imp}_{y}.csv.gz")):
+                continue
+            if (imp, y) in known_empty:
+                continue
+            holes.append((imp, y))
+    print(f"gaps: {len(holes)} importer-years to settle one at a time\n")
+
+    filled = confirmed = failed = 0
+    for n, (imp, y) in enumerate(holes, 1):
+        if imp not in codes:
+            failed += 1
+            continue
+        rows = request(codes[imp], str(y), VN_CODE)
+        if rows is None:
+            failed += 1
+            print(f"[{n}/{len(holes)}] {imp} {y}: request failed", flush=True)
+            continue
+        clean = tidy(rows, code_to_iso, importer_iso=imp)
+        if clean:
+            save(os.path.join(RAW, f"{imp}_{y}.csv.gz"), clean)
+            filled += 1
+            print(f"[{n}/{len(holes)}] {imp} {y}: FILLED {len(clean):,} rows",
+                  flush=True)
+        else:
+            confirmed += 1
+            why = ("only the unclassified 999999 aggregate" if rows
+                   else "reporter filed no HS6 detail")
+            record_empty(RAW, imp, y, why)
+            print(f"[{n}/{len(holes)}] {imp} {y}: empty confirmed - {why}",
+                  flush=True)
+    print(f"\ngaps pass: {filled} filled, {confirmed} confirmed empty, "
+          f"{failed} still unresolved")
 
 
 def mirror_pass(importers, years, codes, code_to_iso):
@@ -314,7 +411,7 @@ def mirror_pass(importers, years, codes, code_to_iso):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pass", dest="which", default="vn",
-                    choices=["vn", "world", "mirror", "all"])
+                    choices=["vn", "gaps", "world", "mirror", "all"])
     ap.add_argument("--importers", default="")
     ap.add_argument("--years", default="")
     args = ap.parse_args()
@@ -344,6 +441,8 @@ def main():
         if args.which in ("vn", "all"):
             importer_pass(importers, years, codes, code_to_iso,
                           partner=VN_CODE, outdir=RAW, label="vn")
+        if args.which in ("gaps", "all"):
+            gaps_pass(importers, years, codes, code_to_iso)
         if args.which in ("world", "all"):
             importer_pass(importers, years, codes, code_to_iso,
                           partner=0, outdir=RAW_WORLD, label="world")

@@ -143,6 +143,14 @@ def complete_importers(folder):
     for path in glob.glob(os.path.join(folder, "*.csv.gz")):
         iso, year = os.path.basename(path)[:-7].rsplit("_", 1)
         on_disk[iso].add(int(year))
+    # years the fetcher asked for and found genuinely empty at HS6 - the
+    # reporter filed only an aggregate, or only the unclassified 999999 line.
+    # Those count as settled, not as holes.
+    empty = os.path.join(folder, "_empty_years.csv")
+    if os.path.exists(empty):
+        with open(empty, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                on_disk[r["importer"]].add(int(r["year"]))
     usable, holes = set(), {}
     for iso, years in needed.items():
         gap = sorted(years - on_disk.get(iso, set()))
