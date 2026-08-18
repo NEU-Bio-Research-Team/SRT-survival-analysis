@@ -4,7 +4,7 @@ Dự án thu thập và dựng bộ dữ liệu **spell-level** để chạy mô
 (Kaplan-Meier / Cox) trên tuổi thọ của **quan hệ xuất khẩu của Việt Nam** ở mức
 tariff-line.
 
-*Trạng thái trong tài liệu này được đo trực tiếp trên đĩa lúc **16/08/2026**.
+*Trạng thái trong tài liệu này được đo trực tiếp trên đĩa lúc **19/08/2026**.
 Mọi con số đều là số thật, không phải ước lượng từ tài liệu cũ.*
 
 ---
@@ -19,9 +19,10 @@ Mọi con số đều là số thật, không phải ước lượng từ tài l
    ~150 giờ tải trade; nay chỉ cần **partner = Việt Nam** nên toàn bộ trade tải
    xong trong ~2 giờ. Ngân sách tiết kiệm được dùng để tải thêm **nhập khẩu từ
    toàn thế giới** — nhờ đó RCA/world growth mới có mẫu số thật.
-3. **Bộ dữ liệu trong `analysis/` vẫn là bản cũ của thiết kế 82 exporter, CHƯA
-   dùng được.** Phải chạy lại `build_spells.py` → `merge_panel.py` sau khi tải
-   xong — xem mục [Chạy tiếp](#5-chạy-tiếp-từ-đúng-chỗ-đang-dở).
+3. **Trade đã tải đủ 147/147 nước; chỉ còn mẫu số thế giới đang chạy.**
+   Bộ dữ liệu trong `analysis/` vẫn là bản cũ của thiết kế 82 exporter, **chưa
+   dùng được** — phải chạy lại `build_spells.py` → `merge_panel.py` sau khi pha
+   `world` xong — xem mục [Chạy tiếp](#5-chạy-tiếp-từ-đúng-chỗ-đang-dở).
 
 ---
 
@@ -115,16 +116,16 @@ phải thị trường thật.
 
 ## 2. Đã lấy được những gì
 
-### 2.1. Bảng tiến độ tải — đo trên đĩa 16/08/2026
+### 2.1. Bảng tiến độ tải — đo trên đĩa 19/08/2026
 
 Kiểm kê đầy đủ, từng con số đếm bằng cách đọc thẳng file:
 **[docs/DATA_INVENTORY_VN.md](docs/DATA_INVENTORY_VN.md)**.
 
 | Nguồn | Đã có | Đích | Trạng thái |
 |---|---|---|---|
-| **Trade VN→importer** (Comtrade, HS6) | **1.686** importer-năm · **1.101.870 dòng** · **87/147 nước** · 2.810 tỉ USD | 2.940 | ⏸ **hết quota Comtrade**, chờ nạp lại |
-| **Trade importer→thế giới** (mẫu số RCA) | 0 | 2.940 | ⏸ chưa bắt đầu (`--pass world`) |
-| **Trade mirror** (VN tự khai) | 2 | 32 | ⏸ tạm dừng |
+| **Trade VN→importer** (Comtrade, HS6) | **2.813** importer-năm · **1.347.561 dòng** · **147/147 nước** · 2.966 tỉ USD | 2.940 | ✅ **đủ, không còn lỗ hổng** |
+| **Trade mirror** (VN tự khai) | **32/32** file · 656.336 dòng | 32 | ✅ 100% |
+| **Trade importer→thế giới** (mẫu số RCA) | **1.006** importer-năm | 2.940 | ⏳ đang tải, ~34% |
 | **Tariff MFN** (WITS TRAINS) | **2.250** reporter-năm · 134 reporter | 2.435 | ✅ xong (224 cái còn lại nước đó năm đó không có biểu thuế) |
 | **Tariff PREF cho VN** | **72** reporter-năm · **13 nước** · 237.414 dòng | — | ✅ đã hỏi hết 2.435 reporter-năm |
 | **Vĩ mô** | **2.940** nước-năm · 147 nước + VN | — | ✅ (thiếu Romania) |
@@ -133,19 +134,23 @@ Kiểm kê đầy đủ, từng con số đếm bằng cách đọc thẳng file
 | **Sàng lọc đối tác VN** | 3.569 nước-năm, cả hai chiều mirror | — | ✅ 100% |
 | **Kiểm chứng API** | 22 phép thử `probe_out/` | — | ✅ 100% |
 
+> 2.813 < 2.940 không phải thiếu: chênh lệch là những importer-năm mà nước đó
+> **thật sự không nhập gì từ Việt Nam** hoặc năm đó không nộp báo cáo. Đối chiếu
+> với bảng sàng lọc cho kết quả **0 lỗ hổng trên cả 147 nước**.
+
 Kiểm tra lại bất cứ lúc nào:
 
 ```bash
-ls data_raw/trade       | wc -l    # đích 2.940
+ls data_raw/trade       | wc -l    # 2.813, đã đủ
 ls data_raw/trade_world | wc -l    # đích 2.940
 ls data_raw/tariffs/mfn | wc -l    # đích 2.435 (2.250 là đủ)
 ls data_raw/tariffs/pref/*_704.csv.gz | wc -l   # ưu đãi dành cho VN
 ```
 
 ⚠️ **Comtrade có quota theo ngày, trả `403` khi hết** — khác hẳn `429` (throttle
-vài giây). Lần chạy vừa rồi hết quota giữa chừng nên còn 60 nước chưa có dữ
-liệu. Script nay **dừng ngay khi gặp 403** và in ra thời điểm quota nạp lại,
-thay vì đốt hết các job còn lại rồi đánh dấu "failed".
+vài giây). Script **dừng ngay khi gặp 403** và in ra thời điểm quota nạp lại,
+thay vì đốt hết các job còn lại rồi đánh dấu "failed". Pha `world` vì thế phải
+chạy nhiều ngày, mỗi ngày một đợt.
 
 ### 2.2. 11 biến yêu cầu — nguồn và mức chi tiết
 
@@ -182,14 +187,14 @@ thay vì đốt hết các job còn lại rồi đánh dấu "failed".
 
 | Hạng mục | Còn thiếu | Ước tính |
 |---|---|---|
-| Trade VN→importer | **60 nước** (45 hạng B + 15 hạng A) + Nhật Bản 2007–2011 | ~1 giờ, **sau khi quota nạp lại** |
-| Trade importer→thế giới | toàn bộ 2.940 importer-năm | ~5–6 giờ, cần thêm 1 ngày quota |
-| Trade mirror | 30/32 file | ~30 phút |
-| Dựng lại `spells.csv` → `panel_final.csv` | — | ~15–30 phút |
+| Trade VN→importer | — | ✅ xong |
+| Trade mirror | — | ✅ xong |
+| Trade importer→thế giới | ~1.930 importer-năm (66%) | ~2–3 ngày, mỗi ngày một đợt quota |
+| Dựng lại `spells.csv` → `panel_final.csv` | — | ~15–30 phút sau khi `world` xong |
 
-87 nước đã có phủ **89% giá trị xuất khẩu** của VN. 60 nước còn thiếu phần lớn
-là thị trường nhỏ — **nhưng đó đúng là nhóm thu nhập thấp và trung bình thấp**,
-bỏ đi sẽ làm lệch mọi kết quả có dính đến trình độ phát triển. Phải đợi.
+Trade phía Việt Nam đã phủ **toàn bộ 147 nước**, đối chiếu bảng sàng lọc cho
+**0 lỗ hổng**. Pha `world` chỉ ảnh hưởng ba biến mẫu số (RCA, world growth,
+`vn_market_share_pct`); mọi biến khác đã dựng được ngay.
 
 ### 3.2. Thiếu do bản chất nguồn dữ liệu (NTM — điểm nghẽn lớn nhất)
 
@@ -319,6 +324,14 @@ python3 fetch_macro.py
 python3 build_ntm.py
 python3 build_spells.py
 python3 merge_panel.py
+```
+
+⚠️ **Dùng `setsid` cho mọi lượt tải dài.** `nohup ... &` vẫn bị kill khi phiên
+terminal (hoặc phiên Claude Code) kết thúc, vì tiến trình còn nằm chung process
+group. Đúng cách:
+
+```bash
+setsid nohup python3 -u fetch_trade.py --pass world >> ../logs/trade_world.log 2>&1 < /dev/null &
 ```
 
 ⚠️ **Đừng chạy quá 2 luồng Comtrade cùng lúc.** Ba luồng trở lên là `429` xuất
