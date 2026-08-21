@@ -1,6 +1,12 @@
 # Tiến trình thực hiện Phần 5 — thu thập và dựng bộ dữ liệu survival
 
-*Cập nhật: 16/08/2026. Tài liệu này ghi lại những gì đã chạy thật, quyết định nào đã chốt và vì sao. Bổ sung cho [KIEM_CHUNG_DU_LIEU_WITS.md](KIEM_CHUNG_DU_LIEU_WITS.md).*
+*Nhật ký thi công, cập nhật lần cuối 21/08/2026. Tài liệu này ghi lại những gì đã chạy thật, quyết định nào đã chốt và vì sao. Bổ sung cho [KIEM_CHUNG_DU_LIEU_WITS.md](KIEM_CHUNG_DU_LIEU_WITS.md).*
+
+> **Đây là nhật ký, không phải bản trạng thái.** Muốn biết hiện đang ở đâu, đọc
+> [MAPPING_IDEA_DATA.md](MAPPING_IDEA_DATA.md) hoặc mục 2–3 của
+> [README](../README.md). Các mục dưới đây giữ nguyên nội dung tại thời điểm
+> viết, kể cả những chỗ sau này đã thay đổi — cột "Trạng thái" ngay dưới mới là
+> phần được cập nhật.
 
 > **16/08/2026 — đổi thiết kế.** Exporter thu về **chỉ còn Việt Nam**; importer
 > không còn chốt ở 53 nước mà lấy **tất cả nước đủ dữ liệu (147)**. Mục 3 và mục
@@ -17,11 +23,14 @@
 | 1 | Xác nhận hướng biến Tariff | **Đã chốt** — xem mục 1 |
 | 2 | API key UN Comtrade | **Xong** — key đã hoạt động, đo được giới hạn thật |
 | 3 | Chọn nước bằng dữ liệu | **Xong, đã làm lại 16/08** — exporter = VNM, 147 importer hạng A+B |
-| 4 | Chốt cửa sổ thời gian | **Xong** — 2002–2021 |
-| 5 | Kéo tariff HS6 | **Đang chạy** — MFN + PREF cho partner 704 |
-| 6 | Kéo trade value HS6 + dựng spell | **Đang chạy** — partner = VN, nhẹ hơn ~100 lần |
-| 7 | Tự tính RCA/HHI ở HS6 | **Xong, đã định nghĩa lại** — growth theo sản phẩm, RCA có mẫu số thế giới |
-| 8 | Quyết định NTM | **Đã làm phương án time-invariant** — xem mục 8 |
+| 4 | Chốt cửa sổ thời gian | **Đã mở rộng 21/08** — spell chạy **2003–2023** (dữ liệu thô tới 2024) |
+| 5 | Kéo tariff HS6 | ⚠️ **Xong tới 2021, thiếu 2022–2023** — `fetch_tariffs.py:46` còn `range(2002, 2022)` |
+| 6 | Kéo trade value HS6 + dựng spell | ✅ **Xong 21/08** — 3.216 file, 147/147 nước, 205.607 spell |
+| 7 | Tự tính RCA/HHI ở HS6 | ✅ **Xong 21/08** — cả 8 biến 100% độ phủ, `rca` có phương sai thật |
+| 8 | Quyết định NTM | **Đã làm phương án time-invariant** — 79,6% độ phủ; nâng lên HS6 × năm cần tài khoản TRAINS Online |
+| 9 | Covariate bổ sung (FTA, TTB, gravity, sốc chung) | ✅ **Xong 19–21/08** — xem [COVARIATES_ADDED.md](COVARIATES_ADDED.md) |
+| 10 | Ghép `panel_final.csv` | ✅ **Xong 21/08** — 647.014 × 91 cột, 5/5 kiểm tra đạt |
+| 11 | Chạy mô hình survival | ❌ **Chưa bắt đầu** — việc kế tiếp |
 
 ---
 
