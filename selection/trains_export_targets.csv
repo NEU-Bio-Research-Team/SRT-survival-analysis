@@ -1,0 +1,135 @@
+iso3,trains_id,name
+ALB,2,Albania
+ARE,225,United Arab Emirates
+ARG,10,Argentina
+ARM,16,Armenia
+ATG,8,Antigua and Barbuda
+AUS,11,Australia
+AUT,12,Austria
+AZE,9,Azerbaijan
+BDI,33,Burundi
+BEL,18,Belgium
+BEN,59,Benin
+BFA,242,Burkina Faso
+BGD,15,Bangladesh
+BGR,31,Bulgaria
+BHR,14,Bahrain
+BIH,22,Bosnia and Herzegovina
+BLR,34,Belarus
+BOL,21,Bolivia
+BRA,25,Brazil
+BRB,17,Barbados
+BRN,30,Brunei Darussalam
+BWA,23,Botswana
+CAN,37,Canada
+CHL,43,Chile
+CHN,44,China
+CIV,110,Côte d'Ivoire
+CMR,36,Cameroon
+COG,51,Congo
+COL,48,Colombia
+COM,49,Comoros
+CPV,38,Cabo Verde
+CRI,54,Costa Rica
+CYP,57,Cyprus
+CZE,58,Czech Republic
+DEU,84,Germany
+DMA,61,Dominica
+DNK,60,Denmark
+DZA,4,Algeria
+ECU,63,Ecuador
+EGY,234,Egypt
+ESP,209,Spain
+EST,68,Estonia
+ETH,66,Ethiopia
+EUN,279,European Union
+FIN,73,Finland
+FJI,72,Fiji
+FRA,75,France
+GAB,80,Gabon
+GEO,81,Georgia
+GHA,85,Ghana
+GMB,82,Gambia
+GRC,88,Greece
+GRD,90,Grenada
+GTM,93,Guatemala
+GUY,95,Guyana
+HKG,100,Hong Kong
+HND,99,Honduras
+HRV,55,Croatia
+HUN,101,Hungary
+IDN,104,Indonesia
+IND,103,India
+IRL,107,Ireland
+ISL,102,Iceland
+ISR,108,Israel
+ITA,109,Italy
+JAM,111,Jamaica
+JOR,114,Jordan
+JPN,112,Japan
+KAZ,113,Kazakhstan
+KEN,115,Kenya
+KGZ,119,Kyrgyzstan
+KHM,35,Cambodia
+KOR,117,South Korea
+KWT,118,Kuwait
+LBN,121,Lebanon
+LKA,41,Sri Lanka
+LSO,122,Lesotho
+LTU,127,Lithuania
+LUX,128,Luxembourg
+LVA,123,Latvia
+MAR,145,Morocco
+MDA,142,Moldova
+MEX,139,Mexico
+MKD,233,North Macedonia
+MLI,134,Mali
+MLT,135,Malta
+MOZ,146,Mozambique
+MRT,137,Mauritania
+MUS,138,Mauritius
+MWI,131,Malawi
+MYS,132,Malaysia
+NAM,148,Namibia
+NER,160,Niger
+NGA,161,Nigeria
+NIC,159,Nicaragua
+NLD,151,Netherlands
+NOR,164,Norway
+NZL,158,New Zealand
+OMN,147,Oman
+PAK,170,Pakistan
+PAN,171,Panama
+PER,174,Peru
+PHL,175,Philippines
+POL,177,Poland
+PRT,178,Portugal
+PRY,173,Paraguay
+QAT,182,Qatar
+ROU,184,Romania
+RUS,185,Russia
+RWA,186,Rwanda
+SAU,197,Saudi Arabia
+SEN,198,Senegal
+SGP,202,Singapore
+SLB,28,Solomon Islands
+SLV,64,El Salvador
+SUR,213,Suriname
+SVK,203,Slovakia
+SVN,205,Slovenia
+SWE,216,Sweden
+SWZ,215,Eswatini
+SYC,200,Seychelles
+TGO,221,Togo
+THA,220,Thailand
+TON,223,Tonga
+TTO,224,Trinidad and Tobago
+TUN,226,Tunisia
+TUR,227,Türkiye
+TZA,239,Tanzania
+UGA,231,Uganda
+URY,243,Uruguay
+USA,240,United States
+VNM,204,Viet Nam
+ZAF,207,South Africa
+ZMB,249,Zambia
