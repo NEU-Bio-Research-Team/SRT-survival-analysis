@@ -1,7 +1,7 @@
 # Tổng hợp ý tưởng nghiên cứu — hợp nhất hai tài liệu định hướng
 
-*Viết 21/08/2026. Nguồn: `TÓM TẮT DỰ ÁN NGHIÊN CỨU.md` (từ đây gọi là **Doc A**)
-và `detail idea.md` (**Doc B**). Tài liệu này không thêm ý tưởng mới — nó đặt hai
+*Viết 21/08/2026. Nguồn: `docs/idea/TÓM TẮT DỰ ÁN NGHIÊN CỨU.md` (từ đây gọi là **Doc A**)
+và `docs/idea/detail idea.md` (**Doc B**). Tài liệu này không thêm ý tưởng mới — nó đặt hai
 tài liệu cạnh nhau, chỉ ra chỗ trùng, chỗ lệch, và đề xuất một cách hợp nhất.*
 
 **Tiến độ dữ liệu tương ứng:** [MAPPING_IDEA_DATA.md](MAPPING_IDEA_DATA.md).

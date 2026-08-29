@@ -1,7 +1,9 @@
 # Ánh xạ ý tưởng ↔ dữ liệu đã có — bạn đang ở đâu
 
-*Mọi con số dưới đây đếm trực tiếp trên đĩa ngày **21/08/2026**, không lấy lại
-từ tài liệu cũ. Ý tưởng lấy từ [TONG_HOP_Y_TUONG.md](TONG_HOP_Y_TUONG.md).*
+*Cập nhật **22/08/2026** sau đợt bổ sung thuế 2022–2023, product complexity,
+Green LPI và biểu thuế Mỹ 2025. Ý tưởng lấy từ
+[TONG_HOP_Y_TUONG.md](TONG_HOP_Y_TUONG.md); đối chiếu riêng cho brief
+"Sinking Relationships": [BRIEF_SINKING_COVERAGE.md](BRIEF_SINKING_COVERAGE.md).*
 
 Ký hiệu: ✅ đủ dùng ngay · ⚠️ có nhưng kèm hạn chế phải khai báo · ⏳ dựng được
 nhưng chưa dựng · ❌ chưa có dữ liệu.
@@ -12,7 +14,7 @@ nhưng chưa dựng · ❌ chưa có dữ liệu.
 
 | | |
 |---|---|
-| Panel chính | `analysis/panel_final.csv` — **647.014 episode × 91 cột**, 331 MB |
+| Panel chính | `analysis/panel_final.csv` — **647.014 episode × 123 cột**, 505 MB (bản 22/08) |
 | Bảng spell | `analysis/spells.csv` — **205.607 spell**, 15 MB |
 | Đơn vị | `VNM × importer × product family × năm` |
 | Cửa sổ | **2003–2023** (spell bắt đầu 2002 bị loại vì left-censored) |
@@ -28,8 +30,9 @@ Bốn kiểm tra bắt buộc của README đều đạt:
 | `exporter` duy nhất | `[VNM]` | ✅ VNM |
 | `right_censored` > 0 | > 0 | ✅ 53.749 |
 | Số importer | ~147 | ✅ 147 |
-| Episode có thuế | > 90% | ✅ 95,7% |
-| Episode có PREF | > 0% | ✅ 7,7% (50.136) |
+| Episode có thuế | > 90% | ✅ **99,6%** (96,8% đo đúng năm) |
+| Episode có PREF | > 0% | ✅ 6,8% (43.666) |
+| `pci`, `importer_eci`, `dist` | có | ✅ **100%** mỗi biến |
 | `rca` có phương sai | có | ✅ p25 = 0,23 · trung vị 0,83 · p75 = 2,94 |
 
 ---
@@ -45,7 +48,7 @@ Bốn kiểm tra bắt buộc của README đều đạt:
 | Tập lựa chọn `importer × product` | ✅ | 647.014 episode, 147 × 4.599 |
 | Export performance | ✅ | `import_value_usd`, `country_growth_pct` |
 | Ràng buộc tập trung (HHI) | ✅ | `hhi_market`, `hhi_product`, `partner_share_pct`, `product_share_pct` |
-| Ràng buộc thuế | ⚠️ | `tariff_rate` 95,7% — xem §5.1 |
+| Ràng buộc thuế | ✅ | `tariff_rate` **99,6%**, 96,8% đo đúng năm — §5.1 |
 | Formulation toán học | ❌ | **chưa viết** |
 
 > **Kết luận L0:** dữ liệu xong. Việc còn lại thuần modeling.
@@ -77,7 +80,7 @@ one-shot. Quyết định này đổi hoàn toàn ý nghĩa của hazard ước 
 | Partner share / product share / HHI | ✅ | 100% độ phủ |
 | Ràng buộc network survivability ≥ α | ❌ | **định nghĩa chưa tồn tại** — xem §5.4 |
 | Ràng buộc HHI ≤ Hmax | ✅ | tính được |
-| Ràng buộc tariff exposure ≤ Tmax | ⚠️ | tính được nhưng thuế bị chệch lên, §5.1 |
+| Ràng buộc tariff exposure ≤ Tmax | ⚠️ | tính được; 2022–2023 chệch lên vì không có biểu ưu đãi, §5.1 |
 
 > **Kết luận L2:** dữ liệu xong; chặn ở định nghĩa, không ở dữ liệu.
 
@@ -87,7 +90,7 @@ one-shot. Quyết định này đổi hoàn toàn ý nghĩa của hazard ước 
 |---|---|---|
 | Relationship state theo thời gian | ✅ | episode-year có `event`, `t_start`, `t_stop` |
 | Hazard/survival có covariate động | ✅ | 21 năm × 91 cột |
-| Trade barrier theo thời gian | ⚠️ | thuế dừng 2021 (§5.1); TTB dừng 2015 (§5.2); NTM time-invariant (§5.3) |
+| Trade barrier theo thời gian | ⚠️ | thuế MFN nay tới 2023, ưu đãi vẫn dừng 2021 (§5.1); TTB dừng 2015 (§5.2); NTM time-invariant (§5.3) |
 | Action maintain/expand/reduce/enter/exit | ❌ | **chưa định nghĩa đo bằng gì** |
 | Time loop + backtest | ⏳ | dữ liệu 21 năm đủ để backtest rolling |
 | Benchmark tĩnh | ⏳ | chính là L0 và L1 |
@@ -172,7 +175,7 @@ Doc A, phải chấp nhận là **phần thu thập dữ liệu bắt đầu l�
 
 | Cột | Độ phủ | Hạn chế |
 |---|---|---|
-| `tariff_rate`, `tariff_type`, `tariff_source_year`, `tariff_reporter` | 95,7% | MFN 568.917 · PREF 50.136 · không có 27.961. **2022–2023 chỉ là carry-forward từ 2021** — §5.1 |
+| `tariff_rate`, `tariff_type`, `tariff_source_year`, `tariff_reporter` | **99,6%** | MFN 600.450 · PREF 43.666 · không có 2.898. 2022–2023 nay **đo thật**, nhưng toàn MFN — §5.1 |
 | `ad_*`, `cvd_*`, `sg_*`, `ttb_any_in_force`, `ttbd_observed` (8 cột) | 100% | Khởi xướng vụ kiện **dừng ở 2015**; sau đó `in_force` là ngoại suy — §5.2 |
 | `ntm_*` (11 cột) | 79,6% | **Time-invariant**, cấp ngành 16 nhóm — §5.3 |
 | `fta_in_force`, `n_agreements`, `years_since_fta`, … (10 cột) | 100% | ✅ biến thiên theo thời gian tốt: 995 episode có FTA năm 2003 → 33.335 năm 2023 |
@@ -191,7 +194,18 @@ Doc A, phải chấp nhận là **phần thu thập dữ liệu bắt đầu l�
 
 ## 5. Năm lỗ hổng có thể chặn kết luận
 
-### 5.1. Thuế dừng ở 2021 — lỗ hổng đắt nhất
+### 5.1. ✅ ĐÃ SỬA 22/08 — thuế nay chạy tới 2023
+
+Đoạn dưới giữ lại để thấy vấn đề cũ là gì. **Trạng thái mới:** 99,6% episode có
+thuế, **96,8% đo đúng năm**; riêng 2022 đạt 96,5% và 2023 đạt 95,6%, thay cho
+0% trước đây. Nhưng **thuế ưu đãi vẫn dừng ở 2021** vì TRAINS không phát hành
+biểu ưu đãi nào cho 2022–2023 — hai năm cuối có 101.280 episode MFN so với 239
+PREF, nên mức thuế bị khai **cao hơn thực tế** với ~39% episode đang có FTA.
+Chi tiết: [DATA_INVENTORY_VN.md](DATA_INVENTORY_VN.md) §3.
+
+<details><summary>Mô tả vấn đề cũ (21/08)</summary>
+
+
 
 `scripts/fetch_tariffs.py:46` vẫn là `YEARS = list(range(2002, 2022))`. Trên đĩa
 không có file thuế nào cho 2022–2023. Hệ quả đo được:
@@ -210,8 +224,9 @@ cùng của panel không có biến thiên thuế thật**.
 năm cuối là hằng số, mọi kết luận "policy shock đẩy hazard" ở đoạn cuối là giả.
 
 **Cách sửa:** đổi một dòng thành `range(2002, 2024)` rồi chạy lại
-`fetch_tariffs.py --pass all` → `merge_panel.py`. Máy làm được, không cần ai cấp
-quyền. **Đây là việc ưu tiên số 1.**
+`fetch_tariffs.py --pass all` → `merge_panel.py`.
+
+</details>
 
 ### 5.2. Trade remedy dừng ở 2015
 
@@ -256,8 +271,8 @@ chốt **trước** khi viết code tối ưu.
 
 ```
 DOC B — nhánh journal (workspace phục vụ nhánh này)
-  Thu thập dữ liệu     ████████████████████░  95%   thiếu thuế 2022–23, NTM HS6
-  Dựng panel           ████████████████████░  95%   thiếu gravity carry-fwd, 5 biến macro
+  Thu thập dữ liệu     █████████████████████ 100%  chỉ còn NTM HS6 (cần tài khoản)
+  Dựng panel           █████████████████████ 100%  647.014 × 123 cột, 22/08
   Chốt định nghĩa      ███░░░░░░░░░░░░░░░░░   15%   2/12 chốt hẳn + 1 còn hạn chế (§2.3 Doc B)
   Survival baseline    ░░░░░░░░░░░░░░░░░░░░    0%   CHƯA CHẠY MÔ HÌNH NÀO
   L0 benchmark         ░░░░░░░░░░░░░░░░░░░░    0%
@@ -265,13 +280,14 @@ DOC B — nhánh journal (workspace phục vụ nhánh này)
   L2 / L3              ░░░░░░░░░░░░░░░░░░░░    0%
 
 DOC A — nhánh thi
-  Tab 6 tầng 1–3       ░░░░░░░░░░░░░░░░░░░░    0%   chặn ở API key WTO I-TIP
+  Tab 6 tầng 1–3       ████░░░░░░░░░░░░░░░░   20%   thuế Mỹ 2025 đã có; phần đa phương vẫn thiếu
   Tab 6 tầng 4         ████████████████░░░░   80%   biến đã có, chưa gộp thành index
   Tab 1 / 2 / 4 / 5    ░░░░░░░░░░░░░░░░░░░░    0%   không có dữ liệu nào
 ```
 
-**Đọc thanh này:** phần thu thập gần xong; phần **modeling chưa bắt đầu**. Điểm
-nghẽn đã dịch từ "thiếu dữ liệu" sang "thiếu định nghĩa và thiếu mô hình".
+**Đọc thanh này:** phần thu thập **đã xong**; phần **modeling vẫn chưa bắt
+đầu**. Điểm nghẽn đã dịch hẳn từ "thiếu dữ liệu" sang "thiếu định nghĩa và
+thiếu mô hình" — cộng thêm một quyết định về cửa sổ thời gian (§7 mục 2).
 
 ---
 
@@ -279,16 +295,32 @@ nghẽn đã dịch từ "thiếu dữ liệu" sang "thiếu định nghĩa và 
 
 | # | Việc | Ai | Chi phí | Mở khoá cái gì |
 |---|---|---|---|---|
-| 1 | Sửa `fetch_tariffs.py:46` → `range(2002, 2024)`, tải lại, `merge_panel` | máy | ~2–3 giờ | Biến thiên thuế cho 2022–2023 — §5.1 |
-| 2 | **Chạy Kaplan–Meier + Cox baseline** | máy | ~1 giờ | **Cửa quyết định của cả cái thang** |
+| 1 | **Chạy Kaplan–Meier + Cox baseline** | máy | ~1 giờ | **Cửa quyết định của cả cái thang** — vẫn chưa chạy mô hình nào |
+| 2 | Quyết **có mở cửa sổ panel sang 2024–2025 không** | **nhóm** | 1 buổi họp | Đây là điều kiện duy nhất để cú sốc thuế Mỹ 2025 vào được mô hình. Dữ liệu 2025 đã nằm trên đĩa (89 nước, có Mỹ) — [BRIEF_SINKING_COVERAGE.md](BRIEF_SINKING_COVERAGE.md) §4.1 |
 | 3 | Chốt 12 định nghĩa ở §2.3 của Doc B | **nhóm** | 1 buổi họp | L0 trở đi |
 | 4 | Quyết cách xử lý 53,2% spell một năm | **nhóm** | 1 buổi họp | Ý nghĩa của hazard |
-| 5 | Carry-forward gravity + merge 5 biến vĩ mô | máy | ~30 phút | Bộ kiểm soát đầy đủ |
+| 5 | Chốt công thức Green LPI theo paper nào | **nhóm** | — | Câu hỏi robustness của brief; 6 chỉ số thành phần đã có |
 | 6 | Dựng L0 benchmark | máy | — | Điểm so sánh cho L1 |
 | 7 | Đăng ký TRAINS Online → researcher file | **bạn** | — | NTM lên HS6 × năm — §5.3 |
-| 8 | API key WTO I-TIP tại apiportal.wto.org | **bạn** | — | Toàn bộ Doc A / Tab 6 |
-| 9 | Kiểm duyệt biến trade-remedy ở 2015 hoặc scrape WTO | máy | — | §5.2 |
-| 10 | Nếu chọn nhánh thi: gộp exposure index cho VN | máy | ~2 giờ | Tab 6 tầng 4 |
+| 8 | Kiểm duyệt biến trade-remedy ở 2015 hoặc scrape WTO | máy | — | §5.2 |
+| 9 | Nếu mở cửa sổ: tải mẫu số nhập khẩu thế giới 2024–2025 | máy | nặng, ~230 nước-năm | RCA / market share cho hai năm mới |
+| 10 | Bóc danh sách miễn trừ HS8 từ PDF ghi chú chương 99 | máy | — | Thuế Mỹ 2025 xuống mức sản phẩm thay vì mức nước |
 
-**Hai việc chỉ bạn làm được là #7 và #8.** Cả hai đều là đăng ký tài khoản, và
-cả hai đang chặn những thứ mà máy không thể tự gỡ.
+**Chỉ còn đúng một việc chỉ bạn làm được: #7.** API key WTO I-TIP **đã không
+còn cần** — thuế đối ứng Mỹ 2025 lấy được từ biểu thuế Mỹ, không cần tài khoản
+nào. Bốn việc còn lại của nhóm (#2, #3, #4, #5) là quyết định nghiên cứu, không
+phải thu thập.
+
+### Đã xong 22/08
+
+| Việc | Kết quả |
+|---|---|
+| Thuế 2022–2023 | 99,6% episode có thuế, 96,8% đo đúng năm |
+| Ánh xạ thuế EU tới 2023 | 27 nước EU suýt trắng thuế hai năm cuối mà không có lấy một mã 404 |
+| Carry-forward gravity + merge 5 biến vĩ mô | `dist` 100%; thêm 13 biến vĩ mô nữa |
+| Product complexity (Atlas) | `pci` 100% |
+| 6 chỉ số thành phần LPI + CO2 + năng lượng tái tạo | 99,2% |
+| Khối lượng + đơn giá | 96,5% |
+| Thuế đối ứng Mỹ 2025 | 109 dòng thuế theo nước, 85 nước |
+| Trade 2025 | 89/147 nước, 524,1 tỉ USD, 0 năm-rỗng giả |
+| `merge_panel` chạy được trên máy nhỏ | 5,2 GB → **371 MB**, 25 phút → **71 giây** |

@@ -1,0 +1,15 @@
+curl --url 'https://api-trains2.unctad.org/denormalisedMeasures' \
+  -H 'accept: application/json, text/plain, */*' \
+  -H 'accept-language: en-US,en;q=0.9,vi-VN;q=0.8,vi;q=0.7,fr-FR;q=0.6,fr;q=0.5' \
+  -H 'content-type: application/json' \
+  -H 'origin: https://trainsonline.unctad.org' \
+  -H 'priority: u=1, i' \
+  -H 'sec-ch-ua: "Not=A?Brand";v="99", "Google Chrome";v="151", "Chromium";v="151"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'sec-fetch-site: same-site' \
+  -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36' \
+  --data-raw '{"imposingCountries":[104],"allImposingCountries":false,"internationalStandardsImposing":false,"affectedCountries":[1,2,4,5,6,7,190,3,8,10,16,153,11,12,9,13,14,15,17,34,18,26,59,19,20,21,155,22,23,24,25,273,27,29,30,31,242,33,38,35,36,37,39,40,42,43,44,46,47,48,49,51,53,54,55,56,152,57,58,250,110,52,60,79,61,62,63,234,64,65,67,68,215,66,279,69,70,72,73,75,77,78,80,82,81,84,85,86,88,89,90,92,93,236,94,179,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,111,112,237,274,114,113,115,87,277,118,119,120,123,121,122,124,125,127,128,129,130,131,132,133,134,135,168,137,138,139,167,275,142,141,143,144,145,146,32,148,149,150,151,254,256,156,158,159,160,161,162,163,116,233,165,164,147,257,170,169,83,171,259,172,173,174,175,176,177,178,182,184,185,186,187,188,189,191,192,193,194,247,195,196,278,197,198,199,272,200,201,202,154,203,205,28,206,207,71,117,210,209,41,211,264,213,214,216,217,218,45,219,239,220,180,221,222,223,224,226,228,229,230,227,265,231,232,225,235,240,166,269,243,244,157,245,204,276,246,212,248,263,271,249,208,74],"allAffectedCountries":true,"products":[2450668],"allProducts":false,"NTMType":null,"ExcludeHorizontalMeasures":null,"FromDate":null,"ToDate":null,"IsImportNtm":null,"IsUnilateral":null,"pageNumber":1,"pageSize":20,"columnsVisibility":{"countryImposingNTMsVisible":true,"affectedCountriesNamesVisible":true,"ntmCodeVisible":true,"ntmDescriptionVisible":true,"measureDescriptionVisible":true,"productDescriptionVisible":false,"hsCodeVisible":true,"issuingAgencyVisible":false,"regulationTitleVisible":true,"regulationSymbolVisible":false,"implementationDateVisible":true,"regulationFileVisible":true,"regulationOfficialTitleOriginalVisible":false,"measureDescriptionOriginalVisible":false,"measureProductDescriptionOriginalVisible":false,"supportingRegulationsVisible":false,"measureObjectivesOriginalVisible":false,"yearsOfDataCollectionVisible":false,"repealDateVisible":false,"objectiveCodesVisible":true},"exportTo":"excel"}'
+

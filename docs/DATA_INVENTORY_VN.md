@@ -1,28 +1,47 @@
 # What is actually on disk for Viet Nam
 
-*Recounted by reading the files themselves on **21/08/2026**, after the
-2022-2024 extension and the panel rebuild. The exporter is fixed to Viet Nam;
-the importer list is the 147 countries chosen in
+*Recounted by reading the files themselves on **22/08/2026**, after the 2025
+trade pull, the tariff extension and the covariate batch that closed the last
+items in the `Sinking Relationships.md` data brief. The exporter is fixed to
+Viet Nam; the importer list is the 147 countries chosen in
 [THIET_KE_VIET_NAM.md](THIET_KE_VIET_NAM.md). Which parts of the research
 architecture each of these serves:
-[MAPPING_IDEA_DATA.md](MAPPING_IDEA_DATA.md).*
+[MAPPING_IDEA_DATA.md](MAPPING_IDEA_DATA.md); the brief itself, item by item:
+[BRIEF_SINKING_COVERAGE.md](BRIEF_SINKING_COVERAGE.md).*
 
 ---
 
 ## 1. The one-line answer
 
 Viet Nam's exports are on disk as **1.47 million HS6 cells covering all 147
-importing countries over 2002-2024**, alongside the world-import denominators,
-the tariff schedules those importers levy, macro series, non-tariff-measure
-tables, four covariate panels and Viet Nam's own export filing as a mirror
-check. **Every pull has finished.** The panel built from them -
-`analysis/panel_final.csv`, **647,014 episodes x 91 columns** over 2003-2023 -
-passes all five build checks.
+importing countries over 2002-2024, plus 2025 for the 89 importers that have
+filed it**, alongside the world-import denominators, the tariff schedules those
+importers levy **through 2023**, macro series, non-tariff-measure tables, six
+covariate panels, the 2025 US reciprocal tariff schedule, and Viet Nam's own
+export filing as a mirror check. **Every pull has finished.**
 
-**The collection phase is done. The one remaining data gap is tariffs, which
-stop at 2021** while the panel runs to 2023 - so the last two years carry a
-2021 rate forward rather than a real one. That is now the highest-priority fix,
-and it is a one-line change plus a re-pull.
+The panel built from them - `analysis/panel_final.csv`, **747,719 episodes x
+128 columns** over **2003-2025** (extended 23/08 on the team's decision) -
+carries a tariff in 96.9% of episodes. **83.8% were measured in their own year**;
+the shortfall is entirely 2024 and 2025, for which TRAINS publishes nothing at
+all and the rate is carried from 2023.
+
+**The collection phase is done and the tariff gap is closed.** What remains is
+not a downloading problem:
+
+* **NTM at HS6 x year** needs a TRAINS Online account - user action;
+* **preferential rates stop at 2021** because TRAINS files none for 2022-2023,
+  which no amount of downloading changes (§3);
+* **2024 and 2025 carry no tariff of their own** - TRAINS answers 404 for both,
+  so the only genuinely 2025 tariff variation in the workspace is the US
+  schedule in `analysis/us_tariffs_2025.csv`, at country level.
+
+**The window now reaches 2025**, which is what makes the 2025 US tariff shock
+observable at all: **7,157 relationships are observed to die during 2025**, 157
+of them into the United States. Note the dating convention - an `event` at year
+Y means the last year alive was Y, so the relationship died in **Y+1**, and
+`event` is 0 throughout 2025 by construction. Anything that joins a tariff to an
+event has to respect that one-year offset.
 
 ---
 
@@ -30,15 +49,15 @@ and it is a one-line change plus a re-pull.
 
 | Measure | Value |
 |---|---|
-| Files (one per importer-year) | **3,216** |
+| Files (one per importer-year) | **3,305** (3,216 through 2024 + **89 for 2025**) |
 | HS6 records for Vietnamese goods | **1,687,841** |
 | Distinct cells (importer x HS6 x year) | **1,473,471** |
 | Distinct HS6 product codes seen | **6,225** (27,801 counting revisions separately; 27,800 mapped to a family) |
 | Stable product families after concordance | **4,599** |
 | Importing countries with data | **147 of 147** ✅ |
 | Importers with a download hole | **0** (checked against the partner screen at 2021, 2023 and 2024) |
-| Years | **2002-2024**, complete |
-| Total value | **USD 4,366 bn** |
+| Years | **2002-2024** complete, **2025** for the 89 importers that filed |
+| Total value | **USD 4,366 bn** through 2024, plus **USD 524.1 bn** in 2025 |
 
 3,216 files against a nominal 147 x 23 = 3,381 is not a shortfall: the
 difference is importer-years in which the country genuinely bought nothing from
@@ -60,11 +79,28 @@ that filed at all):
 | 2008 | 65.6 | 139 | 2016 | 228.6 | 146 | **2024** | 495.9 | **126** |
 | 2009 | 58.3 | 139 | 2017 | 287.7 | 146 | | | |
 
-**The reporter count is why the spell window stops at 2023.** At 2024 seventeen
-importers that filed in 2021 have not filed yet, and Viet Nam itself has filed
-nothing - so the mirror check disappears too. Buying one year for that much
-manufactured mortality is a bad trade. The 2024 files stay on disk; raise
-`YEAR_MAX` in `build_spells.py` once Comtrade fills in.
+**2025 was pulled on 22/08 and is not in the panel.** Comtrade now answers for
+2025, and 89 of the 147 importers have filed - **including the United States**,
+which reports USD 199.0 bn of Vietnamese goods for the year, 42% above 2024.
+Only the importers Comtrade's own availability endpoint listed were requested,
+so nothing was recorded as a confirmed-empty year that had simply not been filed
+yet: **zero rows were added to `_empty_years.csv`**, which is what keeps the
+build from manufacturing deaths at the trailing edge.
+
+| Year | Importers that filed worldwide | Of our 147 | On disk |
+|---|---|---|---|
+| 2023 | 167 | 147 | ✅ all |
+| 2024 | 140 | 126 | ✅ all 126 |
+| 2025 | 98 | **89** | ✅ pulled 22/08 |
+
+**The reporter count is why the spell window still stops at 2023.** At 2024
+seventeen importers that filed in 2021 have not filed yet, and Viet Nam itself
+has filed neither 2024 nor 2025 - so the mirror check disappears too. Whether to
+buy 2025 anyway, for the sake of the one year in which the US tariff shock is
+observable, is the open design decision in
+[BRIEF_SINKING_COVERAGE.md](BRIEF_SINKING_COVERAGE.md) §4.1. Raising `YEAR_MAX`
+in `build_spells.py` is the switch; the world-import denominators for 2024-2025
+would have to be pulled with it.
 
 **Two of the absences are permanent, not a lag.** Russia stopped publishing
 detailed customs data in April 2022 and Belarus followed. Both are VN-EAEU
@@ -111,28 +147,56 @@ and a new one to be born in 2022.
 
 | Measure | Value |
 |---|---|
-| MFN schedules (reporter-year files) | **2,250** across **134 reporters** |
-| Reporter-years with no schedule filed | 224 (a genuine 404, not a failure) |
-| **Preferential schedules naming Viet Nam** | **72 reporter-years**, 237,414 tariff lines |
-| Reporter-years checked for a VN preference | 2,435 (every one) |
-| **Years covered** | **2002-2021 only** ⚠️ |
+| MFN schedules (reporter-year files) | **2,482** across **134 reporters** |
+| Of those, added 22/08 for 2022-2023 | **232** (115 + 117) |
+| Reporter-years TRAINS answers 404 for | 901, now recorded in `_no_schedule.csv` |
+| **Preferential schedules naming Viet Nam** | **72 reporter-years**, unchanged |
+| **Years covered** | **2002-2023** ✅ |
 
-> ⚠️ **Tariffs stop two years short of the panel.** `fetch_tariffs.py:46` is
-> still `YEARS = list(range(2002, 2022))`, and nothing on disk covers 2022 or
-> 2023. `merge_panel.py` carries a rate forward up to three years, which is why
-> those years still show a tariff at all - **75.3% of 2022 episodes and 74.3% of
-> 2023 episodes, every one of them a 2021 value**. Across the whole panel that
-> is 90,721 carried-forward episodes, 14.0%.
+**The gap that dominated the previous two inventories is closed.** On the 21/08
+build the last two panel years carried a 2021 rate forward and had no real
+tariff variation at all. Measured on the 22/08 panel:
+
+| Year | Episodes | With a tariff | **Measured in its own year** |
+|---|---|---|---|
+| 2019 | 44,975 | 99.5% | 98.5% |
+| 2020 | 44,489 | 99.7% | 98.3% |
+| 2021 | 48,358 | 99.7% | 95.2% |
+| **2022** | 49,989 | **99.7%** | **96.5%** (was 0%) |
+| **2023** | 52,245 | **98.9%** | **95.6%** (was 0%) |
+| whole panel | 647,014 | **99.6%** | **96.8%** |
+
+Three things had to be true for that, and only the first was obvious:
+
+1. **`fetch_tariffs.py` had to ask for the years.** It was hardcoded to
+   `range(2002, 2022)`. TRAINS does answer for 2022 and 2023 - checked against
+   the USA, the EU and China, each returning its own `TIME_PERIOD` rather than
+   falling back to an earlier year. 2024 is still a 404.
+2. **The partner-list cache had to be rebuilt.** It had been written under the
+   old year range, so every 2022-2023 reporter-year looked like a country with
+   no preferential filing rather than one never asked. It is now stamped with
+   the window it was built for.
+3. **The EU mapping had to be extended.** `selection/eu_tariff_mapping.csv`
+   stopped at 2021, so for 2022-2023 the twenty-seven EU members mapped to
+   themselves - and TRAINS has no code for them individually, so they were
+   dropped from the target list silently, without even a 404 to show for it.
+   **All 27 would have had no tariff for the last two years** while every other
+   reporter had one. Fixed by adding 2022-2023 rows pointing at EUN; Great
+   Britain is deliberately excluded, since it left the customs union on 1
+   January 2021 and files its own schedule.
+
+> ⚠️ **What did *not* improve: preferential rates.** TRAINS publishes **no
+> preferential schedule at all for 2022 or 2023** - asked directly of Japan
+> (392), Korea (410), India (152) and the EU (918) with partner 704, every one
+> returns 404 while 2021 returns real data. In the panel, 2022-2023 carry
+> **101,280 MFN episodes against 239 PREF**, where 2020 and 2021 had 11,703 and
+> 12,640 PREF respectively.
 >
-> The consequence is not cosmetic: **the last two years of the panel contain no
-> real tariff variation**, so any finding about policy shocks moving the hazard
-> at the end of the window would be an artefact. Fix is one line plus a re-pull.
-
-| Year band | Episodes | With a tariff |
-|---|---|---|
-| 2003-2021 | 605,780 | 98.6-100% |
-| **2022** | 49,989 | **75.3%**, all carried forward |
-| **2023** | 52,245 | **74.3%**, all carried forward |
+> The consequence is precise and must be stated in Limitations: **for the last
+> two years the tariff variable overstates the rate actually faced** by the
+> roughly 39% of episodes that had an agreement in force. `fta_in_force` marks
+> exactly which ones, so the bias is identifiable rather than hidden - but it
+> cannot be corrected from any public source.
 
 Only **13 countries** file a preferential schedule against Viet Nam directly:
 
@@ -146,16 +210,41 @@ Only **13 countries** file a preferential schedule against Viet Nam directly:
 | ARM | 2017-2021 (5) | | GBR | 2021 (1) |
 | IDN | 2009 (1) | | | |
 
-This is the sharpest limitation in the tariff data, and it is a property of
-TRAINS, not of the collection: every reporter-year was asked, including the 380
-that had no partner list to check, and they returned nothing. The rest of Viet
-Nam's preferential access is filed under **group codes** (ASEAN, AANZFTA, GSP
-beneficiary lists) whose membership WITS does not publish through the API, so
-those episodes fall back to MFN and the rate faced is overstated. The
-`tariff_type` column marks which of the two applied, so affected episodes stay
-identifiable. The EU is the costliest case: only 3 years of a VN-specific
-schedule, although the EU granted Viet Nam GSP for most of the window and
-EVFTA preferences from 2020.
+This is a property of TRAINS, not of the collection: every reporter-year was
+asked. The rest of Viet Nam's preferential access is filed under **group codes**
+(ASEAN, AANZFTA, GSP beneficiary lists) whose membership WITS does not publish
+through the API, so those episodes fall back to MFN and the rate faced is
+overstated. The `tariff_type` column marks which of the two applied. In the
+panel as built, **43,666 episodes (6.8%) carry a preferential rate**, led by the
+EU (17,238, almost all EVFTA years), Japan (5,862), Korea (5,298) and Australia
+(5,143).
+
+---
+
+## 3b. The 2025 US reciprocal tariff - `analysis/us_tariffs_2025.csv`
+
+New on 22/08, and the item the data brief calls its most important covariate.
+It was believed to need a WTO I-TIP subscription; it does not. The measure is
+written into **chapter 99 of the US tariff schedule**, which USITC publishes
+over an open REST endpoint, with the executive orders behind it in the Federal
+Register API.
+
+| Measure | Value |
+|---|---|
+| Chapter-99 headings parsed | **166** |
+| Headings carrying a country rate | **109**, across **85 countries** |
+| Exemption and definition provisions | 12 |
+| Viet Nam | +46% (9 Apr 2025, terminated) · +10% floor · **+20% (7 Aug 2025)** · +40% transshipment |
+
+Competitors are in the same table, which is what a trade-diversion control
+needs: Cambodia 49→19%, Bangladesh 37→20%, Thailand 36→19%, Taiwan 32→20%,
+Indonesia 32→19%, India 26→25%, Malaysia 24→19%, China 34%.
+
+**Limit:** country-level only. The exempt subheadings live in *U.S. note
+2(v)(iii)(a)*, which the REST endpoint does not return. The note PDF is on disk
+(`data_raw/us_tariffs_2025/hts_chapter99_notes.pdf`, 14 MB); the HS8 list has
+not been extracted from it. For Viet Nam that matters - electronics is both its
+largest export to the US and among the likeliest exemptions.
 
 ---
 
@@ -164,38 +253,54 @@ EVFTA preferences from 2020.
 | Component | What is on disk | Status |
 |---|---|---|
 | **World denominators** (`data_raw/trade_world/`) | **3,260 files**, 107,022 family-years matched into the Vietnamese panel | ✅ **complete** - this was the last pull |
-| **Macro** (`analysis/macro_panel_v2.csv`) | **3,404 country-years**, 147 countries incl. Viet Nam; 9 variables (GDP, GDP growth, GDP per capita, exports/imports %GDP, exchange rate, inflation, population, LPI) | ✅ **Romania now complete** |
+| **Macro** (`analysis/macro_panel_v2.csv`) | **3,404 country-years**, 147 countries incl. Viet Nam; **17 variables** - the 9 as before plus the **six LPI sub-indices**, CO2 per capita and renewable-energy share | ✅ all 17 now reach the panel |
+| **Complexity** (`analysis/complexity_product.csv`, `complexity_country.csv`) | **28,563 product-years** (PCI, HS92 four-digit, 2002-2024) and 3,404 country-years (ECI, COI, diversity) | ✅ new 22/08, **100% join** |
+| **US 2025 tariff** (`analysis/us_tariffs_2025.csv`) | 166 chapter-99 headings; 109 country rates across 85 countries | ✅ new 22/08 - see §3b |
 | **Agreements** (`analysis/fta_vn.csv`) | 3,381 rows x 7 cols, from DESTA | ✅ time-varying, 100% matched |
 | **Trade remedies** (`analysis/ttbd_vn.csv` + 2) | 3,381 rows x 8 cols; 69 AD/CVD cases against VN, 3,231 HS codes | ⚠️ **initiations stop at 2015** - see §5 |
-| **Gravity** (`analysis/gravity_vn.csv`) | 2,940 rows x 20 cols, CEPII V202211 | ⚠️ stops at 2021 |
+| **Gravity** (`analysis/gravity_vn.csv`) | 2,940 rows x 20 cols, CEPII V202211 | ⚠️ source stops at 2021; carried forward to 2023 with a `gravity_source_year` stamp, so the panel is **100% covered** and the carried rows stay identifiable |
 | **Common shocks** (`analysis/shocks_annual.csv`) | 23 rows x 18 cols; 17 World Bank CMO price indices + Global EPU | ✅ complete, 100% matched |
 | **NTM sector** (`analysis/ntm_sector.csv`) | 1,200 rows, 75 countries | ✅ cross-section only |
 | **NTM by MAST chapter** (`analysis/ntm_by_type.csv`) | 3,944 rows | ✅ cross-section only |
 | **NTM country** (`analysis/ntm_country.csv`) | 150 rows, 75 countries, survey years 2012-2017 | ✅ cross-section only |
 | **Screen** (`selection/vn_partner_screen.csv`) | 3,569 country-years; 3,256 importer-reported, 2,786 Viet-Nam-reported; **190 countries** trade with Viet Nam in at least one year | ✅ complete |
 | **HS concordance** | **6 tables** H1→H0 … **H6→H0** | ✅ complete |
-| **Mirror** (`data_raw/trade_mirror/`) | **40 files, 933,834 rows** - Viet Nam's own export filing | ✅ complete through 2023 |
+| **Mirror** (`data_raw/trade_mirror/`) | **40 files, 933,834 rows** - Viet Nam's own export filing | ✅ complete through 2023; Viet Nam has filed neither 2024 nor 2025 |
 
 ### 4.1. And what was built out of them
 
 | File | Size | Contents |
 |---|---|---|
 | `analysis/spells.csv` | 15 MB | **205,607 spells** - 151,858 deaths, 53,749 right-censored (26.1%) |
-| `analysis/episodes.csv` | 77 MB | 647,014 episode-years, 17 core columns |
-| `analysis/panel_final.csv` | 331 MB | **647,014 x 91 columns**, 2003-2023 - the modelling file |
+| `analysis/episodes.csv` | 93 MB | 647,014 episode-years, **22 core columns** |
+| `analysis/panel_final.csv` | **505 MB** | **647,014 x 123 columns**, 2003-2023 - the modelling file |
 
-Built 21/08/2026 (`build_spells` 1m40s / 1.8 GB peak; `merge_panel` 25m40s /
-5.2 GB peak). All five build checks pass:
+Rebuilt 22/08/2026. Both steps are now within reach of a small machine:
+`build_spells` 1.8 GB peak, `merge_panel` **371 MB peak and 71 seconds** - down
+from 5.2 GB and 25 minutes, which is what took the machine down mid-merge on the
+first attempt. The merge now shards the episodes by importer and loads only the
+tariff schedules that importer can read, instead of holding all 11.6 million
+tariff cells and all 647,014 episode dictionaries at once.
 
 | Check | Target | Actual |
 |---|---|---|
 | Single exporter | `['VNM']` | ✅ |
 | Right-censored | > 0 | ✅ 53,749 |
 | Importers | 147 | ✅ 147 |
-| Episodes with a tariff | > 90% | ✅ 95.7% |
-| Episodes with PREF | > 0% | ✅ 7.7% (50,136) |
+| Episodes with a tariff | > 90% | ✅ **99.6%** |
+| Tariff measured in its own year | - | ✅ **96.8%** |
+| Episodes with PREF | > 0% | ✅ 6.8% (43,666) |
 | `rca` has variance | not all 1.0 | ✅ p25 0.23 / med 0.83 / p75 2.94 |
 | `vn_market_share_pct` | populated | ✅ 100% |
+| `pci`, `importer_eci`, `dist` | populated | ✅ **100%** each |
+| `net_weight_kg`, `unit_value_usd_per_kg` | populated | ✅ 96.5% |
+| LPI wave attached | > 0 | ✅ 99.2% |
+
+**The 32 new columns**, all added 22/08: quantity and unit value; the explicit
+`spell_start_year`, `spell_end_year` and `right_censored` the brief asks for;
+product complexity and the four ECI columns; the six LPI sub-indices with their
+survey-wave stamp; six further macro series on the importer side and three on
+the exporter side; CO2 and renewable-energy share; and `gravity_source_year`.
 
 **Duration shape, which the modelling has to reckon with:** median spell length
 is **1 year** and **53.2% of spells last exactly one year**; 8.4% survive ten
@@ -209,22 +314,26 @@ is a decision that changes what the estimated hazard means.
 
 | Gap | Size | Cause | Fix | Who |
 |---|---|---|---|---|
-| **Tariffs 2022-2023** | 102,234 episodes on a carried-forward rate | `fetch_tariffs.py:46` hardcodes `range(2002, 2022)` | one-line change, re-pull, re-merge | machine, ~2-3h |
-| **NTM at HS6 x year** | 20.4% of episodes have no NTM at all, and what exists is one sector-level cross-section | The three public WITS files have no year dimension at product level | TRAINS Online researcher file - needs an Azure AD account | **user** |
+| **NTM at HS6 x year** | 20.4% of episodes have no NTM at all, and what exists is one sector-level cross-section | The three public WITS files have no year dimension at product level. Rechecked 22/08: UNCTAD's open-data API publishes no NTM bulk file either | TRAINS Online researcher file - needs an Azure AD account | **user** |
+| **Preferential rates 2022-2023** | 101,280 episodes read MFN where ~39% had an agreement in force | **TRAINS files no preferential schedule for either year** - asked directly of JPN, KOR, IND and EUN, all 404 | none available. `fta_in_force` marks the affected episodes; state it in Limitations | - |
 | **Trade remedies after 2015** | 8 of 21 panel years | World Bank TTBD stopped updating June 2016. `ttb_any_in_force` stays non-zero to 2023 only because a measure with no recorded revocation is treated as still in force - i.e. **extrapolation** | censor the variable at 2015, or scrape WTO semi-annual reports | machine |
-| **Gravity 2022-2023** | 102,234 episodes, `dist` 84.2% filled | CEPII V202211 stops at 2021 - but `dist`, `contig`, `comlang` are time-invariant | carry the 2021 row forward in `merge_panel.py` | machine, ~30 min |
-| **5 macro variables downloaded but never merged** | `inflation_pct`, `exchange_rate_lcu_per_usd`, `lpi_overall`, `population`, `exports_pct_gdp` are in `macro_panel_v2.csv` and absent from `panel_final.csv` | the merge only pulls the four GDP columns | widen the column list | machine, ~30 min |
+| **Product scope of the 2025 US tariff** | the rate is country-level | The exempt subheadings are in a chapter-99 legal note the REST endpoint does not return | parse the note PDF already on disk | machine |
 | Preferences filed under group codes | unquantifiable | TRAINS does not publish group membership | none available; documented as a limitation | - |
-| ~~World imports at HS6~~ | - | - | ✅ done 19/08 | - |
-| ~~Romania macro~~ | - | - | ✅ done, `macro_panel_v2.csv` | - |
-| ~~Trade 2022-2024~~ | - | - | ✅ done 21/08, 0 failed | - |
+| ~~Tariffs 2022-2023~~ | - | - | ✅ done 22/08 - §3 | - |
+| ~~EU tariff mapping stops at 2021~~ | would have left **all 27 EU importers** with no tariff for 2022-2023 | `selection/eu_tariff_mapping.csv` ended at 2021, so EU members mapped to themselves and were dropped from the target list without even a 404 | ✅ found and fixed 22/08 | - |
+| ~~Gravity 2022-2023~~ | - | - | ✅ carried forward 22/08, `dist` now 100% | - |
+| ~~5 macro variables never merged~~ | - | - | ✅ done 22/08, and eight more with them | - |
+| ~~Product complexity~~ | - | - | ✅ done 22/08, 100% join | - |
+| ~~Green LPI inputs~~ | - | - | ✅ six sub-indices + two environmental series, 22/08 | - |
+| ~~2025 US tariff needs a WTO I-TIP key~~ | - | it never did - the schedule is in the US tariff schedule itself | ✅ done 22/08 without any account | - |
+| ~~World imports at HS6~~ · ~~Romania macro~~ · ~~Trade 2022-2024~~ | - | - | ✅ done 19-21/08 | - |
 
 The importer side of the trade panel is complete for all 147 countries and
-verified against the partner screen: **zero download holes**. Everything left in
-the table above is either a one-line fix or a account registration - no gap
-remains that more downloading alone would close.
+verified against the partner screen: **zero download holes**. What is left is
+one account registration and two limitations that no further downloading can
+close.
 
-Two operational notes worth keeping:
+Four operational notes worth keeping:
 
 * Comtrade's daily quota answers **403** with the time until replenishment -
   not 429, which is a few-second throttle. The fetcher stops on 403 and says
@@ -233,6 +342,19 @@ Two operational notes worth keeping:
   Without it the process stays in the session's process group and is killed
   when the terminal or agent session ends - which is what silently truncated
   the world pull twice.
+* **Both APIs leave sockets open that never answer.** Comtrade's own timeout is
+  900s x 4 retries and WITS's 600s x 4, so one hung request costs an hour of a
+  run that is otherwise minutes. Both pulls were finished under a watchdog that
+  restarts the fetcher after 150-180s of silence in its log; restarting is free
+  because every settled file is already on disk. What made restarts *cheap* was
+  adding two caches: `_no_schedule.csv`, which records the 901 reporter-years
+  TRAINS answers 404 for so they are never re-asked, and per-reporter appends to
+  the partner-list cache so an interrupted availability sweep resumes instead of
+  starting over.
+* **Memory is a real constraint on this machine.** `merge_panel.py` used to hold
+  every tariff cell and every episode at once and peaked at 5.2 GB, which is
+  more than the machine has; it now works one importer at a time at 371 MB.
+  Anything added to the merge should keep that shape.
 
 ## 6. What this supports right now, and what it does not
 
@@ -248,15 +370,28 @@ Two operational notes worth keeping:
   19/08 build and are now complete;
 * tariff faced (MFN throughout, preferential where one of the 13 reporters filed
   it), GDP controls, agreement status, trade-remedy flags, gravity controls,
-  common-shock indices, and the NTM columns.
+  common-shock indices, and the NTM columns;
+* **quantity and unit value** on 96.5% of episodes, which is what separates a
+  relationship dying because the buyer left from one dying because the price
+  collapsed;
+* **product complexity** at 100%, the covariate the data brief named that the
+  project had nothing for until 22/08;
+* the **six LPI sub-indices** a Green Logistics Performance Index is built from,
+  stamped with the survey wave each value comes from.
 
 **Not supported, and no amount of further collection changes it:**
 
 * comparison across exporting countries - the panel has one exporter by design;
 * within-sector variation in NTMs - the source is sector-level;
-* anything about the 2025 US tariff shock - the window ends at 2023 and the
-  tariff schedules at 2021. See [MAPPING_IDEA_DATA.md](MAPPING_IDEA_DATA.md) §3
-  for which research ideas this rules out.
+* **anything estimated about the 2025 US tariff shock.** The schedule itself is
+  now on disk (§3b) and the 2025 trade data with it, but the panel window ends
+  at **2023**, so no relationship in it can be observed dying under that shock.
+  This is the one remaining blocker between the workspace and the central
+  question of `Sinking Relationships.md`, and it is a design decision rather
+  than a gap - see [BRIEF_SINKING_COVERAGE.md](BRIEF_SINKING_COVERAGE.md) §4.1
+  and [MAPPING_IDEA_DATA.md](MAPPING_IDEA_DATA.md) §3;
+* **preference utilisation in 2022-2023** - TRAINS files no preferential
+  schedule for either year (§3).
 
 **A guard sits in `build_spells.py`:** an importer-year that was never
 downloaded is indistinguishable, once spells are built, from a year in which the
@@ -264,6 +399,6 @@ relationship did not exist - so an unfinished download would manufacture spell
 deaths and rebirths. The build cross-checks each importer against the screen and
 **holds back every importer that still has a hole**, printing which ones and
 which years, rather than silently producing a plausible-looking wrong answer.
-As of 21/08/2026 it holds back nothing: all 147 importers pass. It also reports
+As of 22/08/2026 it holds back nothing: all 147 importers pass. It also reports
 the 27 importers with an interior gap and the 6 that stopped filing early, and
 censors the latter administratively rather than recording a death.
