@@ -25,6 +25,20 @@ logs/
 probe_out/*
 !probe_out/_probe_log.csv
 
+# Gói bàn giao cho cộng sự — dựng lại được bằng lệnh tar trong README §8.
+# Chỉ chặn ở thư mục gốc: bản hash của gói đã gửi nằm trong docs/ và được TRACK.
+/wits_data_*.tar.gz
+/wits_data_*.tar.gz.sha256
+# Thư mục gói đã gom sẵn (851 MB) — dựng lại được từ chính lệnh đó
+/wits_data_2*/
+
+# Slide: code và template gốc thì TRACK (deck/src, deck/assets); phần dưới đây
+# đều dựng lại được bằng deck/src/make_figs.py, figs2.py, build_deck.py, build2.py
+deck/fig/
+deck/fig2/
+deck/preview/
+deck/out/
+
 # Rác hệ điều hành / trình soạn thảo
 .DS_Store
 Thumbs.db
