@@ -26,7 +26,7 @@ Three problems have to be solved before a spell means anything:
    research design). A spell still alive in the last year is right-censored and
    kept with the event flag set to 0.
 
-Outputs, in analysis/:
+Outputs, in data/interim/:
   spells.csv    - one row per (importer, exporter, family) spell
   episodes.csv  - one row per spell-year, for Cox models with time-varying
                   covariates (tariff, RCA, HHI, shares, growth, GDP)
@@ -43,11 +43,11 @@ import sys
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án (thư mục cha của scripts/)
-RAW_TRADE = os.path.join(HERE, "data_raw", "trade")
-RAW_WORLD = os.path.join(HERE, "data_raw", "trade_world")
-CONC = os.path.join(HERE, "data_raw", "concordance")
+RAW_TRADE = os.path.join(HERE, "data", "raw", "trade")
+RAW_WORLD = os.path.join(HERE, "data", "raw", "trade_world")
+CONC = os.path.join(HERE, "data", "raw", "concordance")
 SEL = os.path.join(HERE, "selection")
-OUT = os.path.join(HERE, "analysis")
+OUT = os.path.join(HERE, "data", "interim")
 
 # 2025, extended 23/08 on the team's decision. The reason to stop at 2023 was
 # that coverage thins - 147 importers file 2023, 126 file 2024, 89 file 2025 -
@@ -59,7 +59,11 @@ OUT = os.path.join(HERE, "analysis")
 # only year in which the 2025 US tariff shock is observable at all.
 YEAR_MIN, YEAR_MAX = 2002, 2025
 THRESHOLD_USD = 10_000
-GAP_TOLERANCE = 0          # years below threshold that still break a spell
+# B0 (Stage1_Research_Framework.md) chốt quy tắc gap 1 năm, theo chuẩn
+# Besedes-Prusa: một năm tụt dưới ngưỡng rồi quay lại KHÔNG phải là một cái
+# chết cộng một lần tái sinh. Đặt 0 làm vỡ quan hệ liên tục thành nhiều spell
+# ngắn - đo được: 0 -> 21,3% chết/năm, 1 -> 15,1%, 2 -> 12,1% trên EU27.
+GAP_TOLERANCE = 1          # years below threshold that still break a spell
 EXPORTER = "VNM"
 
 
@@ -317,7 +321,7 @@ def load_world(u, importers, vn_panel):
     """World denominators, accumulated without ever holding the world panel.
 
     read_folder() would build one dict entry per (importer, family, year) in
-    data_raw/trade_world - on the order of 15 million against the 1.3 million
+    data/raw/trade_world - on the order of 15 million against the 1.3 million
     the Vietnamese side has. On a 5.6 GB machine that is exactly what killed
     the 19/08 rebuild, silently, halfway through the folder.
 
@@ -419,26 +423,43 @@ def build_spells(panel, last_year=None, weights=None):
 
         for run in runs:
             start, end = run[0], run[-1]
-            left_censored = start == YEAR_MIN
+            # A spell already running in the first year of the raw data has an
+            # unknown true start. B0 asks for it to be kept and flagged rather
+            # than dropped: the window of analysis is 2012-2024 while the data
+            # reach back to 2002, so for the Stage 1 sample the age of a spell
+            # alive in 2012 is *observed*, not imputed. Only spells alive in
+            # YEAR_MIN itself are genuinely truncated.
+            left_trunc = start == YEAR_MIN
             right_censored = end >= last_year.get(imp, YEAR_MAX)
-            if left_censored:
-                continue                     # design decision: excluded
             spell_id = f"{imp}_{exp}_{fam}_{start}"
+            # With GAP_TOLERANCE > 0 a run spans calendar years that sit below
+            # the threshold. They belong to the spell - that is the whole point
+            # of the gap rule - so they are emitted as episodes carrying their
+            # true (sub-threshold) value and flagged, and the counting-process
+            # clock is read off the calendar rather than off the row number.
+            span = list(range(start, end + 1))
+            alive_set = set(run)
             spells.append({
                 "spell_id": spell_id, "importer": imp, "exporter": exp,
                 "product_family": fam, "start_year": start, "end_year": end,
                 "duration": end - start + 1,
                 "event": 0 if right_censored else 1,
                 "right_censored": int(right_censored),
+                "left_trunc": int(left_trunc),
+                "n_gap_years": len(span) - len(run),
                 "first_year_value_usd": round(series[start], 2),
                 "mean_value_usd": round(
                     sum(series[y] for y in run) / len(run), 2),
             })
-            for k, y in enumerate(run, 1):
+            for y in span:
+                k = y - start + 1
                 kg = weights.get((imp, fam, y), 0.0)
+                val = series.get(y, 0.0)
                 episodes.append({
                     "spell_id": spell_id, "importer": imp, "exporter": exp,
                     "product_family": fam, "year": y,
+                    "left_trunc": int(left_trunc),
+                    "gap_filled": int(y not in alive_set),
                     # The counting-process pair (t_start, t_stop) is what Cox
                     # reads; the three columns beside it restate the same spell
                     # in the form the data brief asks for, so a reader does not
@@ -449,10 +470,10 @@ def build_spells(panel, last_year=None, weights=None):
                     "right_censored": int(right_censored),
                     "t_start": k - 1, "t_stop": k,
                     "event": 1 if (y == end and not right_censored) else 0,
-                    "import_value_usd": round(series[y], 2),
+                    "import_value_usd": round(val, 2),
                     "net_weight_kg": round(kg, 2) if kg else "",
-                    "unit_value_usd_per_kg": round(series[y] / kg, 4)
-                    if kg else "",
+                    "unit_value_usd_per_kg": round(val / kg, 4)
+                    if kg and val else "",
                 })
     return spells, episodes
 
@@ -468,7 +489,7 @@ def derived(panel, world):
     of family k grew, `world_growth` how fast world imports of family k grew.
 
     The world denominators come from the importers' imports from the whole
-    world (data_raw/trade_world). Without that folder the same quantities are
+    world (data/raw/trade_world). Without that folder the same quantities are
     approximated by the in-sample Vietnamese totals, which makes RCA a
     within-Viet-Nam specialisation index rather than a Balassa index - the
     fallback is reported so the difference is never silent.
@@ -546,6 +567,12 @@ def derived(panel, world):
                 market_share[(imp, fam, year)] = 100 * min(v / w, 1.0)
 
     return {"rca": rca, "product_share": prod_share,
+            # The importer's total imports of that product from the whole
+            # world. B3 calls it log_total_import_cp and uses it as the demand
+            # proxy that separates market-wide movement from Viet Nam's own
+            # performance. It was already computed here for market_share and
+            # simply never written out.
+            "total_import_cp": dict(wld_cell) if using_world else {},
             "partner_share": partner_share, "hhi_market": dict(hhi_market),
             "hhi_product": dict(hhi_product),
             "country_growth": growth_of(vn_prod, "country growth"),
@@ -553,22 +580,37 @@ def derived(panel, world):
             "market_share": market_share, "using_world": using_world}
 
 
+def _rnd(value, ndigits):
+    """round(), but missing stays "" (an empty CSV cell) instead of the
+    literal text "nan". csv.DictWriter has no concept of a numeric NaN - it
+    calls str() on whatever it is given, and str(float("nan")) is the four
+    characters "nan", not an empty field. A reader (pandas, polars, R) that
+    infers a column's dtype from the file then sees that text token mixed in
+    with genuine numbers and falls back to reading the whole column as
+    strings, silently - this bit rca, product_share_pct, partner_share_pct,
+    vn_market_share_pct, country_growth_pct and world_growth_pct before this
+    fix. total_import_cp_usd already used the "" convention two lines below
+    where this is called; the others are brought in line with it here."""
+    if value is None:
+        return ""
+    r = round(value, ndigits)
+    return "" if r != r else r  # r != r is true only for float("nan")
+
+
 def attach(episodes, d):
     for e in episodes:
         imp, fam, y = e["importer"], e["product_family"], e["year"]
-        e["rca"] = round(d["rca"].get((fam, y), float("nan")), 4)
-        e["product_share_pct"] = round(
-            d["product_share"].get((fam, y), float("nan")), 4)
-        e["partner_share_pct"] = round(
-            d["partner_share"].get((imp, y), float("nan")), 4)
-        e["vn_market_share_pct"] = round(
-            d["market_share"].get((imp, fam, y), float("nan")), 4)
-        e["hhi_market"] = round(d["hhi_market"].get(y, float("nan")), 6)
-        e["hhi_product"] = round(d["hhi_product"].get(y, float("nan")), 6)
-        e["country_growth_pct"] = round(
-            d["country_growth"].get((fam, y), float("nan")), 4)
-        e["world_growth_pct"] = round(
-            d["world_growth"].get((fam, y), float("nan")), 4)
+        e["rca"] = _rnd(d["rca"].get((fam, y)), 4)
+        e["product_share_pct"] = _rnd(d["product_share"].get((fam, y)), 4)
+        e["partner_share_pct"] = _rnd(d["partner_share"].get((imp, y)), 4)
+        e["vn_market_share_pct"] = _rnd(
+            d["market_share"].get((imp, fam, y)), 4)
+        e["hhi_market"] = _rnd(d["hhi_market"].get(y), 6)
+        e["hhi_product"] = _rnd(d["hhi_product"].get(y), 6)
+        e["country_growth_pct"] = _rnd(d["country_growth"].get((fam, y)), 4)
+        e["world_growth_pct"] = _rnd(d["world_growth"].get((fam, y)), 4)
+        tot = d["total_import_cp"].get((imp, fam, y))
+        e["total_import_cp_usd"] = round(tot, 2) if tot else ""
     return episodes
 
 
@@ -614,14 +656,16 @@ def main():
 
     write("spells.csv", spells,
           ["spell_id", "importer", "exporter", "product_family", "start_year",
-           "end_year", "duration", "event", "right_censored",
-           "first_year_value_usd", "mean_value_usd"])
+           "end_year", "duration", "event", "right_censored", "left_trunc",
+           "n_gap_years", "first_year_value_usd", "mean_value_usd"])
     write("episodes.csv", episodes,
           ["spell_id", "importer", "exporter", "product_family", "year",
            "spell_start_year", "spell_end_year", "right_censored",
+           "left_trunc", "gap_filled",
            "t_start", "t_stop", "event", "import_value_usd", "net_weight_kg",
            "unit_value_usd_per_kg", "rca",
            "product_share_pct", "partner_share_pct", "vn_market_share_pct",
+           "total_import_cp_usd",
            "hhi_market", "hhi_product", "country_growth_pct",
            "world_growth_pct"])
 

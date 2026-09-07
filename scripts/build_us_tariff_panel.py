@@ -1,6 +1,6 @@
 """Step 9c: put the 2025 US reciprocal tariff into the panel's shape.
 
-`analysis/us_tariffs_2025.csv` has been on disk since 22/08 and had never been
+`data/interim/us_tariffs_2025.csv` has been on disk since 22/08 and had never been
 merged - so the covariate the brief calls its central one was, until now, absent
 from `panel_final.csv` entirely. This turns that table into two files the merge
 can read.
@@ -13,7 +13,7 @@ missing value.
 
 **The within-year path.** The brief asks for the 2025 history by month, and the
 rate did move four times. The dates below are read out of the orders themselves,
-whose texts are archived under `data_raw/us_tariffs_2025/fr_text/` - not
+whose texts are archived under `data/raw/us_tariffs_2025/fr_text/` - not
 inferred from the schedule, which records only the end state:
 
 | From | Rate | Authority |
@@ -44,7 +44,7 @@ the year's exposure by a factor of two or more.
 
     python3 build_us_tariff_panel.py
 
-Output: analysis/us_tariff_vn.csv, analysis/us_tariff_2025_monthly.csv
+Output: data/interim/us_tariff_vn.csv, data/interim/us_tariff_2025_monthly.csv
 """
 
 import csv
@@ -53,7 +53,7 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(HERE, "analysis")
+OUT = os.path.join(HERE, "data", "interim")
 SRC = os.path.join(OUT, "us_tariffs_2025.csv")
 
 EXPORTER = "VNM"          # the one exporter this design has

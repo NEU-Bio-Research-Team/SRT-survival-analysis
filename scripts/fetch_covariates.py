@@ -13,11 +13,11 @@ they can be fetched today, unlike TRAINS Online (Azure AD login) or WTO I-TIP
                          six sub-indices, and two environmental series
   Atlas (Growth Lab)     product complexity (PCI) and economic complexity (ECI)
 
-Everything lands in data_raw/. Re-running skips what is already on disk, so an
+Everything lands in data/raw/. Re-running skips what is already on disk, so an
 interrupted pull is resumed by running the same command again.
 
-Output: data_raw/gravity/, data_raw/rta/, data_raw/ttbd/, data_raw/wdi/,
-        data_raw/shocks/, data_raw/complexity/
+Output: data/raw/gravity/, data/raw/rta/, data/raw/ttbd/, data/raw/wdi/,
+        data/raw/shocks/, data/raw/complexity/
 """
 
 import json
@@ -30,7 +30,7 @@ import urllib.request
 import zipfile
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW = os.path.join(HERE, "data_raw")
+RAW = os.path.join(HERE, "data", "raw")
 UA = "Mozilla/5.0 (compatible; trade-survival-research/1.0)"
 
 DOWNLOADS = [

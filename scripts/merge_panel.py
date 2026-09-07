@@ -33,7 +33,7 @@ Three joins here are deliberately *not* exact-year:
 Each carries a `*_source_year` column, so an episode on a carried value is
 always separable from one measured in its own year. Nothing is filled silently.
 
-Output: analysis/panel_final.csv
+Output: data/interim/panel_final.csv
 """
 
 import csv
@@ -47,9 +47,9 @@ import build_ntm6 as bn6
 import build_spells as bs
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án (thư mục cha của scripts/)
-TARIFFS = os.path.join(HERE, "data_raw", "tariffs")
+TARIFFS = os.path.join(HERE, "data", "raw", "tariffs")
 SEL = os.path.join(HERE, "selection")
-OUT = os.path.join(HERE, "analysis")
+OUT = os.path.join(HERE, "data", "interim")
 MAX_CARRY_FORWARD = 3
 # CEPII Gravity V202211 ends at 2021 and the panel now at 2025, so four years of
 # controls hang on this. Kept separate from the tariff limit because it answers
@@ -482,6 +482,75 @@ def attach_cbam(e, table, cols, eu, stats):
         stats["cbam"] += 1
 
 
+def load_evfta():
+    """product_family -> best-available EU tariff row, from
+    build_eu_tariff_panel.py (data/interim/eu_tariff_panel.csv).
+
+    That table already resolves four sources into the rate an exporter
+    actually faces (GSP pre-2020, EVFTA schedule vs. MFN floor after), so this
+    is a lookup, not a computation. It exists only for EU27 importers - the
+    common external tariff means one row per (product_family, year) serves all
+    27, unlike the generic TRAINS-based attach_tariff() above which is keyed by
+    reporter and is what the other 120 importers still use.
+    """
+    path = os.path.join(OUT, "eu_tariff_panel.csv")
+    cols = ["tariff_mfn_pct", "tariff_applied_pct", "tariff_applied_source",
+            "pref_margin_pp", "staging_cat", "staging_cat_slowest",
+            "staging_mixed", "evfta_cut_cum_pp", "evfta_cut_cum_share",
+            "years_since_evfta_policy"]
+    if not os.path.exists(path):
+        print("  eu_tariff_panel.csv: not on disk - EU27 policy columns skipped")
+        return {}, []
+    table = {}
+    with open(path, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            base = r["evfta_base_pct"]
+            evf = r["evfta_pct"]
+            if base and evf and float(base) > 0:
+                cut_pp = float(base) - float(evf)
+                cut_share = round(cut_pp / float(base), 4)
+            else:
+                cut_pp = cut_share = 0.0
+            table[(r["product_family"], int(r["year"]))] = {
+                "tariff_mfn_pct": r["mfn_pct"],
+                "tariff_applied_pct": r["applied_pct"],
+                "tariff_applied_source": r["applied_source"],
+                "pref_margin_pp": r["pref_margin_pp"],
+                "staging_cat": r["staging_cat"],
+                "staging_cat_slowest": r["staging_cat_slowest"],
+                "staging_mixed": r["staging_mixed"],
+                "evfta_cut_cum_pp": round(cut_pp, 4),
+                "evfta_cut_cum_share": cut_share,
+                "years_since_evfta_policy": r["years_since_evfta"],
+            }
+    print(f"  eu_tariff_panel.csv: {len(table):,} (family, year) rows, "
+          f"{len(cols)} columns")
+    return table, cols
+
+
+def attach_evfta(e, table, cols, eu, stats):
+    """B6's treatment variable. Written on EU27 importers only - the common
+    external tariff and the EVFTA staging schedule are both EU-wide, so a
+    non-EU importer has no value to carry here, unlike attach_tariff() which
+    is generic across all 147."""
+    if not cols:
+        return
+    year = int(e["year"])
+    is_eu = eu.get((e.get("importer"), min(year, 2023))) == "EUN"
+    if not is_eu:
+        for c in cols:
+            e[c] = ""
+        return
+    hit = table.get((e.get("product_family"), year))
+    if hit is None:
+        for c in cols:
+            e[c] = ""
+        return
+    for c in cols:
+        e[c] = hit[c]
+    stats["evfta"] += 1
+
+
 def attach_complexity(e, pci, eci, stats, pci_last=None, eci_last=None):
     year = int(e["year"])
     # H0 is HS1992, which is the classification the Atlas publishes PCI in, so
@@ -563,6 +632,7 @@ def main():
             eci_last[iso] = y
     us_exempt, us_exempt_cols = load_us_exempt()
     cbam, cbam_cols = load_cbam()
+    evfta, evfta_cols = load_evfta()
     ntm_lookup, ntm_eu = bn.build()
     # HS6 NTMs come off disk one reporter at a time - the aggregate does not fit
     # in this machine's spare memory. EUN is read once and kept, exactly as the
@@ -622,6 +692,7 @@ def main():
                 attach_complexity(e, pci, eci, stats, pci_last, eci_last)
                 attach_us_exempt(e, us_exempt, us_exempt_cols, stats)
                 attach_cbam(e, cbam, cbam_cols, eu, stats)
+                attach_evfta(e, evfta, evfta_cols, eu, stats)
             stats["ntm"] += bn.attach(rows, ntm_lookup, ntm_eu)
             if bn6.attach(rows, ntm6_survey, ntm6_inforce,
                           ntm6_years.get(ntm6_rep, [])):
@@ -663,6 +734,10 @@ def main():
     if cbam_cols:
         print(f"  CBAM in scope:          {stats['cbam']:,} EU episodes on a "
               f"family in Annex I of Regulation (EU) 2023/956")
+    if evfta_cols:
+        print(f"  EVFTA policy attached:  {stats['evfta']:,} of {total:,} "
+              f"EU27 episodes - staging_cat / pref_margin_pp / "
+              f"evfta_cut_cum_pp for B6")
     print(f"  NTM at HS6 attached:    {stats['ntm6']:,} "
           f"({100*stats['ntm6']/total:.1f}%) - see ntm6_source_year "
           f"and ntm6_observed")

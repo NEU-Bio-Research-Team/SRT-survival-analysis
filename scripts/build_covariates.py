@@ -1,9 +1,9 @@
 """Step 7b: turn the raw covariate downloads into panels keyed the same way as
-analysis/panel_final.csv, so merge_panel.py can join them on (importer, year).
+data/interim/panel_final.csv, so merge_panel.py can join them on (importer, year).
 
 Four outputs, each answering a gap the WITS pull leaves open:
 
-  analysis/fta_vn.csv       Which importers had a trade agreement in force with
+  data/interim/fta_vn.csv       Which importers had a trade agreement in force with
                             Viet Nam, and since when. This is the repair for the
                             group-code problem in the tariff data: TRAINS files
                             ASEAN/AANZFTA/GSP preferences under codes whose
@@ -12,7 +12,7 @@ Four outputs, each answering a gap the WITS pull leaves open:
                             treatment those episodes actually received, even
                             though the rate itself stays unobserved.
 
-  analysis/ttbd_vn.csv      Antidumping, countervailing and safeguard actions,
+  data/interim/ttbd_vn.csv      Antidumping, countervailing and safeguard actions,
                             by importer and year, with the in-force window. This
                             is the only *time-varying* trade barrier in the whole
                             project - the NTM tables are a cross-section - which
@@ -20,23 +20,23 @@ Four outputs, each answering a gap the WITS pull leaves open:
                             model. It stops in 2015 (see the caveat printed at
                             the end).
 
-  analysis/gravity_vn.csv   Distance, contiguity, shared language, colonial ties.
+  data/interim/gravity_vn.csv   Distance, contiguity, shared language, colonial ties.
                             Standard controls in the trade-duration literature
                             and absent here until now.
 
-  analysis/macro_panel_v2.csv  The four existing WITS macro series re-pulled from
+  data/interim/macro_panel_v2.csv  The four existing WITS macro series re-pulled from
                             the World Bank directly - which is what fills
                             Romania's 20 empty country-years - plus exchange
                             rate, inflation, population, LPI and imports/GDP.
 
-  analysis/complexity_*.csv  Product complexity (PCI) by HS92 four-digit
+  data/interim/complexity_*.csv  Product complexity (PCI) by HS92 four-digit
                             product-year and economic complexity (ECI) by
                             country-year, from the Atlas of Economic
                             Complexity. PCI is the product-side covariate
                             the data brief asks for and nothing else here
                             supplies.
 
-Output: analysis/{fta_vn,ttbd_vn,ttbd_vn_cases,gravity_vn,macro_panel_v2,
+Output: data/interim/{fta_vn,ttbd_vn,ttbd_vn_cases,gravity_vn,macro_panel_v2,
         complexity_product,complexity_country}.csv
 """
 
@@ -52,9 +52,9 @@ import zipfile
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW = os.path.join(HERE, "data_raw")
+RAW = os.path.join(HERE, "data", "raw")
 SEL = os.path.join(HERE, "selection")
-OUT = os.path.join(HERE, "analysis")
+OUT = os.path.join(HERE, "data", "interim")
 YEARS = list(range(2002, 2026))
 TTBD_LAST_YEAR = 2015   # TTBD was last updated June 2016 (data through 2015Q4)
 VN_ISO3, VN_NUM = "VNM", 704

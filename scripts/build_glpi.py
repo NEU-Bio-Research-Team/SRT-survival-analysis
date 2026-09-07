@@ -41,11 +41,11 @@ name rather than a re-run of this script.
                           against 3 rather than used.
 
 Inputs
-  analysis/macro_panel_v2.csv   LPI headline + six sub-indices (survey waves),
+  data/interim/macro_panel_v2.csv   LPI headline + six sub-indices (survey waves),
                                 CO2 per capita, renewable energy share (annual)
-  data_raw/epi/epi2026results.xlsx   Yale EPI, one cross-section
+  data/raw/epi/epi2026results.xlsx   Yale EPI, one cross-section
 
-Output: analysis/glpi.csv, keyed (iso3, year), one column per variant.
+Output: data/interim/glpi.csv, keyed (iso3, year), one column per variant.
 """
 
 import csv
@@ -57,8 +57,8 @@ import zipfile
 import numpy as np
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW = os.path.join(HERE, "data_raw")
-OUT = os.path.join(HERE, "analysis")
+RAW = os.path.join(HERE, "data", "raw")
+OUT = os.path.join(HERE, "data", "interim")
 
 LPI_SUB = ["lpi_customs", "lpi_infrastructure", "lpi_intl_shipments",
            "lpi_logistics_competence", "lpi_tracking_tracing", "lpi_timeliness"]

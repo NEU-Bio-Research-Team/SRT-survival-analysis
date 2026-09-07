@@ -31,7 +31,7 @@ which the 2023 edition predates. Checked against 5.41m rows of the file itself:
 have `ntm_all == 1`, so for most cells the pair is one measure's own in-force
 window rather than an envelope over several.
 
-Output: data_raw/ntm/researcher/ntm_researcher_filtered.csv.gz
+Output: data/raw/ntm/researcher/ntm_researcher_filtered.csv.gz
 """
 
 import gzip
@@ -41,7 +41,7 @@ import time
 import urllib.request
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(HERE, "data_raw", "ntm", "researcher")
+OUT = os.path.join(HERE, "data", "raw", "ntm", "researcher")
 URL = "https://api-trains2.unctad.org/get-researcher-file/2"
 DOC = "https://api-trains2.unctad.org/get-researcher-file/3"
 

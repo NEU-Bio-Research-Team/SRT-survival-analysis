@@ -9,12 +9,22 @@ __pycache__/
 .venv/
 venv/
 
-# Dữ liệu thô tải từ API (~157 MB hiện tại, ~1,2 GB khi tải xong).
-# Tái tạo được bằng scripts/fetch_*.py, không đưa vào git.
-data_raw/
+# Toàn bộ dữ liệu sống dưới data/ kể từ 03/09/2026.
+#   data/raw/     — tải từ API/nguồn gốc, tái tạo bằng scripts/fetch_*.py
+#   data/interim/ — bảng trung gian, dựng bằng build_*.py + merge_panel.py
+#   data/final/   — dataframe Stage 1, dựng bằng build_stage1_df.py
+# Không đưa vào git; gửi cộng sự qua Drive/USB. Từ điển biến thì TRACK.
+# `data/*` (không phải `data/`) là bắt buộc: một pattern trơ "dir/" loại trừ
+# cả thư mục như một khối kín, git sẽ không descend vào để áp các dòng "!"
+# phía sau (xem "It is not possible to re-include a file if a parent
+# directory of that file is excluded" trong gitignore(5)). "dir/*" chỉ loại
+# từng file con nên các dòng "!" bên dưới vẫn có hiệu lực.
+data/*
+!data/final/
+data/final/*
+!data/final/README.md
 
-# Kết quả dựng lại được từ data_raw bằng build_*.py + merge_panel.py (~75 MB).
-# Đây là thứ gửi cho cộng sự qua Drive/USB, không qua git.
+# Kết quả mô hình (KM, hazard, sensitivity) — dựng lại bằng survival_baseline.py
 analysis/
 
 # Log của các luồng tải — chỉ có ý nghĩa trên máy đang chạy
@@ -33,9 +43,11 @@ probe_out/*
 /wits_data_2*/
 
 # Slide: code và template gốc thì TRACK (deck/src, deck/assets); phần dưới đây
-# đều dựng lại được bằng deck/src/make_figs.py, figs2.py, build_deck.py, build2.py
+# đều dựng lại được bằng deck/src/make_figs.py, figs2.py, figs4.py,
+# build_deck.py, build2.py, build4.py
 deck/fig/
 deck/fig2/
+deck/fig4/
 deck/preview/
 deck/out/
 

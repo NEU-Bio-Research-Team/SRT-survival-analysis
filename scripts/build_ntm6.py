@@ -43,10 +43,10 @@ which is how it already handles tariff schedules.
 
     python3 build_ntm6.py            # build the shards
 
-Input:  data_raw/ntm/researcher/ntm_researcher_filtered.csv.gz
-        data_raw/concordance/H4_to_H0   (the file is HS 2012; the panel is H0)
+Input:  data/raw/ntm/researcher/ntm_researcher_filtered.csv.gz
+        data/raw/concordance/H4_to_H0   (the file is HS 2012; the panel is H0)
         selection/eu_tariff_mapping.csv (EUN files once for its members)
-Output: analysis/_ntm6/{REPORTER}.csv.gz, analysis/ntm6_observed.csv
+Output: data/interim/_ntm6/{REPORTER}.csv.gz, data/interim/ntm6_observed.csv
 """
 
 import csv
@@ -56,11 +56,11 @@ import sys
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(HERE, "data_raw", "ntm", "researcher",
+SRC = os.path.join(HERE, "data", "raw", "ntm", "researcher",
                    "ntm_researcher_filtered.csv.gz")
-CONC = os.path.join(HERE, "data_raw", "concordance", "H4_to_H0")
+CONC = os.path.join(HERE, "data", "raw", "concordance", "H4_to_H0")
 SEL = os.path.join(HERE, "selection")
-OUT = os.path.join(HERE, "analysis")
+OUT = os.path.join(HERE, "data", "interim")
 SHARDS = os.path.join(OUT, "_ntm6")
 OBSERVED = os.path.join(OUT, "ntm6_observed.csv")
 

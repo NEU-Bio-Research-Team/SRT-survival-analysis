@@ -21,12 +21,12 @@ exemption is clean, and the panel column built from it should be read as "this
 product family contains exempt tariff lines", not "this product was exempt".
 
 HTS 2026 is HS 2022, i.e. H6 in this project's vocabulary, so the join to the
-panel's H0 product families runs through data_raw/concordance/H6_to_H0.
+panel's H0 product families runs through data/raw/concordance/H6_to_H0.
 
     python3 extract_us_exemptions.py
 
-Output: analysis/us_tariff_exemptions_2025.csv  (hs6 level, H6 and H0)
-        analysis/us_tariff_exemptions_2025_hs8.csv  (the raw list, audit trail)
+Output: data/interim/us_tariff_exemptions_2025.csv  (hs6 level, H6 and H0)
+        data/interim/us_tariff_exemptions_2025_hs8.csv  (the raw list, audit trail)
 """
 
 import csv
@@ -37,9 +37,9 @@ import sys
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PDF = os.path.join(HERE, "data_raw", "us_tariffs_2025", "hts_chapter99_notes.pdf")
-CONC = os.path.join(HERE, "data_raw", "concordance", "H6_to_H0")
-OUT = os.path.join(HERE, "analysis")
+PDF = os.path.join(HERE, "data", "raw", "us_tariffs_2025", "hts_chapter99_notes.pdf")
+CONC = os.path.join(HERE, "data", "raw", "concordance", "H6_to_H0")
+OUT = os.path.join(HERE, "data", "interim")
 
 HS8 = re.compile(r"\b(\d{4}\.\d{2}\.\d{2})\b")
 # Chapter 98 and 99 codes are cross-references to other headings, never products.

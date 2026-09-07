@@ -29,9 +29,9 @@ exemption list gets.
 
     python3 fetch_cbam_scope.py
 
-Output: data_raw/cbam/reg_2023_956.xhtml   (the source text, kept for audit)
-        analysis/cbam_products.csv         (product_family level, H0)
-        analysis/cbam_products_cn.csv      (the CN lines, audit trail)
+Output: data/raw/cbam/reg_2023_956.xhtml   (the source text, kept for audit)
+        data/interim/cbam_products.csv         (product_family level, H0)
+        data/interim/cbam_products_cn.csv      (the CN lines, audit trail)
 """
 
 import csv
@@ -42,9 +42,9 @@ import urllib.request
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW = os.path.join(HERE, "data_raw", "cbam")
-CONC = os.path.join(HERE, "data_raw", "concordance", "H6_to_H0")
-OUT = os.path.join(HERE, "analysis")
+RAW = os.path.join(HERE, "data", "raw", "cbam")
+CONC = os.path.join(HERE, "data", "raw", "concordance", "H6_to_H0")
+OUT = os.path.join(HERE, "data", "interim")
 CELLAR = "http://publications.europa.eu/resource/celex/32023R0956"
 SECTORS = {"Cement", "Electricity", "Fertilisers", "Iron and steel",
            "Aluminium", "Chemicals"}

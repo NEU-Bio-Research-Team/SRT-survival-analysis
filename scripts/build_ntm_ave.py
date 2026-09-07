@@ -35,8 +35,8 @@ right, so the panel carries both exactly as it carries four Green LPI variants.
 
     python3 build_ntm_ave.py
 
-Input:  data_raw/ntm/ave_gtap/UNCTADGTAP11_AVEborder.csv
-Output: analysis/ntm_ave_vn.csv, keyed (importer, year)
+Input:  data/raw/ntm/ave_gtap/UNCTADGTAP11_AVEborder.csv
+Output: data/interim/ntm_ave_vn.csv, keyed (importer, year)
 """
 
 import csv
@@ -45,10 +45,10 @@ import sys
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(HERE, "data_raw", "ntm", "ave_gtap",
+SRC = os.path.join(HERE, "data", "raw", "ntm", "ave_gtap",
                    "UNCTADGTAP11_AVEborder.csv")
 SEL = os.path.join(HERE, "selection")
-OUT = os.path.join(HERE, "analysis")
+OUT = os.path.join(HERE, "data", "interim")
 EXPORTER = "VNM"
 SOURCE_YEAR = 2017
 FIRST_YEAR, LAST_YEAR = 2003, 2025

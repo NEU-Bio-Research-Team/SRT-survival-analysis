@@ -29,7 +29,7 @@ one year and no smooth function would fit it.
 Estimation is Newton-Raphson (IRLS) in numpy: no new dependency, and on this
 panel it converges in a handful of iterations.
 
-Output: analysis/km_survival.csv, analysis/hazard_baseline.csv
+Output: data/interim/km_survival.csv, data/interim/hazard_baseline.csv
 """
 
 import csv
@@ -41,8 +41,9 @@ from collections import Counter, defaultdict
 import numpy as np
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(HERE, "analysis")
-PANEL = os.path.join(OUT, "panel_final.csv")
+DATA = os.path.join(HERE, "data", "interim")
+OUT = os.path.join(HERE, "analysis")   # model results, not data
+PANEL = os.path.join(DATA, "panel_final.csv")
 MAX_DURATION_DUMMY = 10        # 10+ collapses into one category
 
 

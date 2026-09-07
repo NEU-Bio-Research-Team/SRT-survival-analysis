@@ -21,7 +21,7 @@ What to look for:
     making.
 
 Usage:  python3 scripts/spell_threshold_sensitivity.py [10000 50000 ...]
-Output: analysis/threshold_sensitivity.csv
+Output: data/interim/threshold_sensitivity.csv
 """
 
 import collections
@@ -31,7 +31,7 @@ import sys
 
 import build_spells as bs
 
-OUT = os.path.join(bs.HERE, "analysis")
+OUT = os.path.join(bs.HERE, "analysis")   # model results, not data
 DEFAULT = [1_000, 10_000, 50_000, 100_000, 500_000]
 
 

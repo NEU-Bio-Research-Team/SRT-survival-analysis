@@ -25,7 +25,7 @@ one left off rather than re-discovering the limit.
     python3 fetch_ntm_trains.py                # the pull itself, resumable
     python3 fetch_ntm_trains.py --countries IDN,THA
 
-Output: data_raw/ntm/trainsonline/{iso3}_{page}.json.gz
+Output: data/raw/ntm/trainsonline/{iso3}_{page}.json.gz
 """
 
 import argparse
@@ -40,7 +40,7 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEL = os.path.join(HERE, "selection")
-RAW = os.path.join(HERE, "data_raw", "ntm", "trainsonline")
+RAW = os.path.join(HERE, "data", "raw", "ntm", "trainsonline")
 API = "https://api-trains2.unctad.org"
 STATE = os.path.join(RAW, "_pacing.json")
 

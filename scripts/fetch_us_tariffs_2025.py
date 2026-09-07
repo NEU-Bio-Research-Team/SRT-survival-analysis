@@ -24,7 +24,7 @@ exemption headings (9903.01.32, 9903.01.33) are recorded as flags without their
 enumerated product lists. Treat the rate as country-level until that list is
 added by hand from the HTS notes.
 
-Output: data_raw/us_tariffs_2025/
+Output: data/raw/us_tariffs_2025/
 """
 
 import json
@@ -36,7 +36,7 @@ import urllib.error
 import urllib.request
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW = os.path.join(HERE, "data_raw", "us_tariffs_2025")
+RAW = os.path.join(HERE, "data", "raw", "us_tariffs_2025")
 UA = "Mozilla/5.0 (compatible; trade-survival-research/1.0)"
 
 # Subchapter III opens at 9903.01 (IEEPA actions: Canada, Mexico, China, then

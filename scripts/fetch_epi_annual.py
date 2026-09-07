@@ -23,8 +23,8 @@ weighting is the team's to choose.
 
     python3 fetch_epi_annual.py
 
-Output: data_raw/epi/{epi2026indicatorsna.zip,epi2026indicatorsmvc.zip,methods}
-        analysis/epi_indicators_annual.csv  (iso3, year, indicator, value)
+Output: data/raw/epi/{epi2026indicatorsna.zip,epi2026indicatorsmvc.zip,methods}
+        data/interim/epi_indicators_annual.csv  (iso3, year, indicator, value)
 """
 
 import csv
@@ -36,8 +36,8 @@ import urllib.request
 import zipfile
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW = os.path.join(HERE, "data_raw", "epi")
-OUT = os.path.join(HERE, "analysis")
+RAW = os.path.join(HERE, "data", "raw", "epi")
+OUT = os.path.join(HERE, "data", "interim")
 BASE = "https://epi.yale.edu/downloads/"
 FILES = [
     "epi2026indicatorsna.zip",

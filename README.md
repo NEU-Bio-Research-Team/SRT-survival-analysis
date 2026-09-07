@@ -13,6 +13,10 @@ liệu cũ.*
 > từng cột mới, và cách dựng lại toàn bộ từ số không.
 > **Bản đồ nguồn ↔ brief:** §2.3 ngay dưới đây.
 > **Tiến độ ý tưởng ↔ dữ liệu:** [docs/MAPPING_IDEA_DATA.md](docs/MAPPING_IDEA_DATA.md).
+> **Đối chiếu với B0 bản chốt của thầy:** [docs/DOI_CHIEU_B0_VOI_DU_LIEU.md](docs/DOI_CHIEU_B0_VOI_DU_LIEU.md)
+> — `Stage1_Research_Framework.md` yêu cầu gì, trên đĩa có gì, còn phải lấy thêm gì.
+> **EVFTA staging schedule & thuế EU (29/08/2026):** [docs/DU_LIEU_EVFTA_VA_THUE_EU.md](docs/DU_LIEU_EVFTA_VA_THUE_EU.md)
+> — hai lỗ hổng cuối của Stage 1 đã đóng; nguồn, cách parse, và ba phép kiểm chứng.
 
 ---
 

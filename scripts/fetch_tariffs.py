@@ -17,7 +17,7 @@ agreement filed under a *group* code (ASEAN, AANZFTA, RCEP) rather than under
 API - so such an episode falls back to MFN, which overstates the rate faced.
 `tariff_type` marks which of the two applied.
 
-Everything is cached as gzipped CSV under data_raw/tariffs/, so the run is
+Everything is cached as gzipped CSV under data/raw/tariffs/, so the run is
 resumable: re-running skips whatever is already on disk.
 
 Usage:
@@ -39,7 +39,7 @@ from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án (thư mục cha của scripts/)
 SEL = os.path.join(HERE, "selection")
-RAW = os.path.join(HERE, "data_raw", "tariffs")
+RAW = os.path.join(HERE, "data", "raw", "tariffs")
 WITS = "https://wits.worldbank.org/API/V1"
 UA = "Mozilla/5.0 (compatible; trade-survival-research/1.0)"
 SLEEP = 0.8                     # polite gap between calls
@@ -54,7 +54,7 @@ VN_TRAINS_CODE = "704"          # Viet Nam, the only exporter in this design
 # A 404 from TRAINS is definitive - the reporter filed no schedule that year -
 # and 224 reporter-years answer that way. Without a record of it, every restart
 # pays for all of them again, which on a flaky connection is most of the run.
-# Delete data_raw/tariffs/_no_schedule.csv to ask again after TRAINS updates.
+# Delete data/raw/tariffs/_no_schedule.csv to ask again after TRAINS updates.
 NO_DATA = "_no_schedule.csv"
 
 COLS = ["reporter", "partner", "year", "product", "tariff_type", "rate_simple_avg",
