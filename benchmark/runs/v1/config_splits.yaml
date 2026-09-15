@@ -1,0 +1,29 @@
+# Rolling-origin temporal validation (plan section 12.2).
+#
+# The rule that makes this honest: TRAINING OUTCOMES ARE ADMINISTRATIVELY
+# CENSORED AT THE END OF THE TRAINING WINDOW. A row with origin 2013 in fold 1
+# may not carry the knowledge that its spell died in 2018 - that fact did not
+# exist at the moment the model is pretending to be trained. The same rule
+# censors validation outcomes at the end of the validation window. Only the test
+# block reads outcomes forward to `outcome_observed_through`.
+#
+# Without that rule the design leaks the future through the label even though the
+# origin years are disjoint.
+
+folds:
+  - id: 1
+    train: [2003, 2013]
+    valid: [2014, 2015]
+    test:  [2016, 2017]
+  - id: 2
+    train: [2003, 2015]
+    valid: [2016, 2017]
+    test:  [2018, 2019]
+  - id: 3
+    train: [2003, 2017]
+    valid: [2018, 2019]
+    test:  [2020, 2021]
+  - id: 4
+    train: [2003, 2019]
+    valid: [2020, 2021]
+    test:  [2022, 2023]

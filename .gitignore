@@ -57,3 +57,14 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+
+# Benchmark: code, frozen config và bảng kết quả thì TRACK. Phần dưới đây đều
+# dựng lại được bằng benchmark/run_benchmark.py và quá nặng để đưa vào git.
+benchmark/runs/*/predictions/
+benchmark/runs/*/cells/
+benchmark/runs/*/metrics.parquet
+# checkpoint tạm của pycox EarlyStopping (đã đổi hướng ra thư mục tạm, dòng này
+# chỉ để chặn nếu ai đó chạy với biến môi trường mặc định)
+weight_checkpoint_*.pt
+pycox_ckpt_*.pt
+logs/benchmark/
