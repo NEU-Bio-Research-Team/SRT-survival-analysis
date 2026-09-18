@@ -44,7 +44,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from benchmark.evaluation import (antolini_concordance, brier_at,
                                   calibration_table, dynamic_auc,
                                   expected_calibration_error, ibs)
-from benchmark.features.preprocess import FEATURE_SETS, Preprocessor
+from benchmark.features.preprocess import (FEATURE_SETS, Preprocessor,
+                                           load_registry as load_feat_registry)
 from benchmark.models import FitContext, build_registry
 from benchmark.splits.rolling_origin import load_yaml, make_folds
 
@@ -58,6 +59,13 @@ RUNS = os.path.join(ROOT, "benchmark", "runs")
 SHOCK_PERIODS = {"gfc": (2008, 2009), "pre_covid": (2010, 2019),
                  "covid": (2020, 2021), "post_covid": (2022, 2023),
                  "early": (2003, 2007)}
+
+# For a window confined to 2012-2024 (the EU27/B0 rescope), gfc/early fall
+# entirely outside it and would just produce empty subgroups; this variant
+# also gives a first, purely descriptive pre/post-EVFTA split (EVFTA entered
+# force 1 Aug 2020) without doing the full B6 causal identification.
+SHOCK_PERIODS_EU27 = {"pre_evfta": (2012, 2019), "covid": (2020, 2021),
+                      "post_evfta": (2022, 2024)}
 
 
 def age_group(age: np.ndarray) -> np.ndarray:
@@ -82,7 +90,8 @@ def score(S, dur, ev, grid, horizons, ibs_grid, ibs_grid_ext, bins):
     return out
 
 
-def run_cell(model_name, model, fs, fold_id, tr, va, te, prep, cfg, hz, rng):
+def run_cell(model_name, model, fs, fold_id, tr, va, te, prep, cfg, hz, rng,
+            shock_periods=SHOCK_PERIODS):
     grid = hz["grid"]
     Ztr, Zva, Zte = prep.transform(tr), prep.transform(va), prep.transform(te)
 
@@ -138,7 +147,7 @@ def run_cell(model_name, model, fs, fold_id, tr, va, te, prep, cfg, hz, rng):
         row[f"ibs_{g}"] = ibs(Ste[m], dur[m], ev[m], hz["ibs_integrate_over"],
                               grid) if m.sum() > 200 else np.nan
     yrs = te["year"].to_numpy()
-    for nm, (lo, hi) in SHOCK_PERIODS.items():
+    for nm, (lo, hi) in shock_periods.items():
         m = (yrs >= lo) & (yrs <= hi)
         row[f"ibs_{nm}"] = ibs(Ste[m], dur[m], ev[m], hz["ibs_integrate_over"],
                                grid) if m.sum() > 200 else np.nan
@@ -152,10 +161,24 @@ def main() -> int:
     ap.add_argument("--feature-sets", default="")
     ap.add_argument("--folds", default="")
     ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--benchmark-config", default="benchmark.yaml",
+                    help="filename inside benchmark/config/")
+    ap.add_argument("--splits-config", default="splits.yaml",
+                    help="filename inside benchmark/config/")
+    ap.add_argument("--horizons-config", default="horizons.yaml",
+                    help="filename inside benchmark/config/")
+    ap.add_argument("--registry", default="feature_registry.yaml",
+                    help="filename inside benchmark/features/")
+    ap.add_argument("--matrix", default=None,
+                    help="override path to the frozen matrix parquet "
+                         "(default: data/interim/benchmark_matrix.parquet)")
+    ap.add_argument("--shock-periods", choices=["global", "eu27"],
+                    default="global")
     args = ap.parse_args()
 
-    cfg = load_yaml("benchmark.yaml")
-    hz = load_yaml("horizons.yaml")
+    cfg = load_yaml(args.benchmark_config)
+    hz = load_yaml(args.horizons_config)
+    shock_periods = SHOCK_PERIODS_EU27 if args.shock_periods == "eu27" else SHOCK_PERIODS
     run_dir = os.path.join(RUNS, args.run_id)
     cells_dir = os.path.join(run_dir, "cells")
     preds_dir = os.path.join(run_dir, "predictions")
@@ -164,13 +187,14 @@ def main() -> int:
 
     # config snapshot - a metric is only interpretable against the task that
     # produced it, so the task travels with the numbers
-    for f in ("benchmark.yaml", "splits.yaml", "horizons.yaml"):
+    for f in (args.benchmark_config, args.splits_config, args.horizons_config):
         shutil.copy(os.path.join(ROOT, "benchmark", "config", f),
                     os.path.join(run_dir, f"config_{f}"))
-    shutil.copy(os.path.join(ROOT, "benchmark", "features",
-                             "feature_registry.yaml"),
+    shutil.copy(os.path.join(ROOT, "benchmark", "features", args.registry),
                 os.path.join(run_dir, "config_feature_registry.yaml"))
 
+    feat_registry = load_feat_registry(
+        os.path.join(ROOT, "benchmark", "features", args.registry))
     registry = build_registry(cfg)
     models = ([m for m in args.models.split(",") if m] or list(registry))
     fsets = ([f for f in args.feature_sets.split(",") if f] or list(FEATURE_SETS))
@@ -178,16 +202,19 @@ def main() -> int:
     store_preds = {"F0F1F2F3", "F0F1F2F3F4"}
 
     rng_master = np.random.default_rng(cfg["sampling"]["seed"])
-    total = len(models) * len(fsets) * (len(want_folds) or 4)
+    n_fold_guess = len(load_yaml(args.splits_config)["folds"])
+    total = len(models) * len(fsets) * (len(want_folds) or n_fold_guess)
     done = 0
     print(f"run {args.run_id}: {len(models)} models x {len(fsets)} feature sets "
           f"x folds -> {total} cells\n")
 
-    for fold_id, tr, va, te in make_folds():
+    for fold_id, tr, va, te in make_folds(
+            benchmark_config=args.benchmark_config,
+            splits_config=args.splits_config, matrix_path=args.matrix):
         if want_folds and fold_id not in want_folds:
             continue
         for fs in fsets:
-            prep = Preprocessor(fs).fit(tr)
+            prep = Preprocessor(fs, registry=feat_registry).fit(tr)
             for mname in models:
                 done += 1
                 tag = f"{fs}__fold{fold_id}__{mname}"
@@ -199,7 +226,8 @@ def main() -> int:
                     abs(hash((fs, fold_id, mname))) % (2 ** 32))
                 try:
                     row, S = run_cell(mname, registry[mname], fs, fold_id,
-                                      tr, va, te, prep, cfg, hz, rng)
+                                      tr, va, te, prep, cfg, hz, rng,
+                                      shock_periods=shock_periods)
                     with open(out_json, "w") as f:
                         json.dump(row, f)
                     if fs in store_preds:

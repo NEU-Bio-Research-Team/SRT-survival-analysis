@@ -1,0 +1,73 @@
+# Frozen benchmark configuration - EU27/B0-locked scope variant.
+#
+# Same task/metric/model contract as benchmark.yaml (the "literature review"
+# feature and model choices are untouched); the only things that change here
+# are the origin window and the sampling caps, sized for a ~6x smaller,
+# advisor-locked universe: Vietnam x EU-27 x HS6 x 2012-2024, EVFTA staging
+# schedule as the treatment variable (Stage1_Research_Framework.md, "B0").
+#
+# `panel.path` below is still the SOURCE panel (all 147 importers, 2002-2025)
+# - build_matrix.py reads it in full so exp_dest/exp_prod are computed on
+# Vietnam's true global export experience, and only restricts to EU27 rows
+# AFTERWARD (see benchmark/features/eu27_scope.py). Build with:
+#   python benchmark/features/build_matrix.py --eu27-only \
+#     --config benchmark/config/benchmark_eu27.yaml \
+#     --out data/interim/benchmark_matrix_eu27.parquet
+#
+# Nothing in this file may change once a run has been scored: every number in
+# a report is only interpretable against one frozen task definition.
+
+panel:
+  path: data/final/stage1_panel.parquet
+
+target:
+  event_column: event
+  age_column: t_stop
+  spell_column: spell_id
+  formulation: landmark_remaining_lifetime
+  horizons_years: [1, 3, 5]
+  ibs_grid_years: [1, 2, 3]
+  ibs_grid_years_extended: [1, 2, 3, 4, 5]
+  max_horizon_years: 8
+
+window:
+  # B0: "Khung thời gian: 2012-2024" - prediction origins run VN x EU27 x
+  # 2012-2024. History back to 2002 stays in the source panel (read by
+  # build_matrix.py before this filter is applied) so exp_dest/exp_prod and
+  # left_trunc age-counting are correct for an origin as early as 2012.
+  first_origin_year: 2012
+  last_origin_year: 2024
+  outcome_observed_through: 2025
+  prospective_years: [2025]   # only one year exists beyond last_origin_year here
+
+exclusions:
+  drop_gap_filled_rows: true
+
+sampling:
+  # Unchanged from the global config. This machine has 8GB total RAM and has
+  # already been killed by the OOM reaper once during this rescope; keeping
+  # the same caps is deliberately conservative even though the EU27 universe
+  # is ~6x smaller; they will simply bind less often (and not at all in the
+  # earliest, shortest-train folds).
+  train_max_rows: 40000
+  valid_max_rows: 25000
+  test_max_rows: 30000
+  seed: 20260910
+
+tuning:
+  n_trials:
+    cheap: 3
+    tree: 2
+    deep: 2
+  seeds: [1]
+  deep_max_epochs: 20
+  deep_patience: 3
+  deep_batch_size: 1024
+
+evaluation:
+  primary_metric: ibs_1_3
+  valid_metric: brier_1y
+  bootstrap:
+    n_boot: 200
+    unit: spell
+    seed: 4242

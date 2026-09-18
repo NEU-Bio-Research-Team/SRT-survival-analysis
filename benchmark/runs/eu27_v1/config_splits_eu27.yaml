@@ -1,0 +1,30 @@
+# Rolling-origin temporal validation - EU27/B0-locked scope variant.
+#
+# Same censoring rule as splits.yaml: training/validation outcomes are
+# administratively censored at the end of their own block; only the test
+# block reads outcomes forward to `window.outcome_observed_through`.
+#
+# Folds compressed to fit the 2012-2024 window (13 origin years, vs 21 in the
+# global config), advancing the train-window end by 2 years per fold like the
+# original design, so fold 2's test block still isolates the COVID years
+# (2020-2021) the same way the global config's fold 3 did. The window's last
+# year (2024) only supports a 1-year test block once slotted into this
+# cadence - fold 4 is uneven for that reason, not by mistake.
+
+folds:
+  - id: 1
+    train: [2012, 2015]
+    valid: [2016, 2017]
+    test:  [2018, 2019]
+  - id: 2
+    train: [2012, 2017]
+    valid: [2018, 2019]
+    test:  [2020, 2021]   # COVID
+  - id: 3
+    train: [2012, 2019]
+    valid: [2020, 2021]
+    test:  [2022, 2023]
+  - id: 4
+    train: [2012, 2021]
+    valid: [2022, 2023]
+    test:  [2024, 2024]

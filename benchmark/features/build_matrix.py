@@ -34,6 +34,8 @@ Run:  python benchmark/features/build_matrix.py
 
 from __future__ import annotations
 
+import argparse
+import gc
 import os
 import sys
 
@@ -41,11 +43,14 @@ import numpy as np
 import pandas as pd
 import yaml
 
+import eu27_scope
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 REGISTRY = os.path.join(HERE, "feature_registry.yaml")
 CONFIG = os.path.join(ROOT, "benchmark", "config", "benchmark.yaml")
 OUT = os.path.join(ROOT, "data", "interim", "benchmark_matrix.parquet")
+EU_MAPPING = os.path.join(ROOT, "selection", "eu_tariff_mapping.csv")
 
 KEYS = ["spell_id", "importer", "product_family", "hs2", "year", "t_stop",
         "spell_start_year", "right_censored", "event"]
@@ -57,19 +62,22 @@ DERIVED_INPUTS = ["import_value_usd", "importer_exchange_rate_lcu_per_usd",
                   "tariff_rate", "tariff_rate_lag1", "gap_filled"]
 
 
-def load_registry():
-    with open(REGISTRY, encoding="utf-8") as f:
+def load_registry(path=REGISTRY):
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-def load_config():
-    with open(CONFIG, encoding="utf-8") as f:
+def load_config(path=CONFIG):
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
 def transform(name: str, s: pd.Series) -> pd.Series:
     """The registry's transform vocabulary. Deliberately tiny."""
-    x = pd.to_numeric(s, errors="coerce").astype("float64")
+    # float32: rolling_origin.load_matrix() downcasts to float32 immediately
+    # after this file is read anyway, so float64 here is a wasted peak - and
+    # this box only has 8GB total.
+    x = pd.to_numeric(s, errors="coerce").astype("float32")
     if name in ("identity", "precomputed"):
         return x
     if name == "log1p":
@@ -144,9 +152,24 @@ def build_target(panel: pd.DataFrame) -> pd.DataFrame:
     return out[["last_alive_year", "spell_died", "duration_u", "event_u"]]
 
 
+def parse_args():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default=CONFIG)
+    ap.add_argument("--registry", default=REGISTRY)
+    ap.add_argument("--out", default=OUT)
+    ap.add_argument("--eu27-only", action="store_true",
+                    help="restrict origins to the B0 EU-27 main sample (by "
+                         "year, GBR excluded - see eu27_scope.py) - applied AFTER "
+                         "exp_dest/exp_prod are computed on the full panel, "
+                         "so global VN export experience is never undercounted")
+    ap.add_argument("--eu-mapping", default=EU_MAPPING)
+    return ap.parse_args()
+
+
 def main() -> int:
-    reg = load_registry()
-    cfg = load_config()
+    args = parse_args()
+    reg = load_registry(args.registry)
+    cfg = load_config(args.config)
     feats = reg["features"]
 
     src_cols = sorted({v["source"] for v in feats.values()
@@ -156,6 +179,10 @@ def main() -> int:
     print(f"Reading {cfg['panel']['path']}  ({len(need)} columns)")
     panel = pd.read_parquet(os.path.join(ROOT, cfg["panel"]["path"]),
                             columns=need)
+    # Halve the resident footprint immediately - this machine has 8GB total
+    # and build_matrix.py has previously been OOM-killed at this scale.
+    f64 = panel.select_dtypes("float64").columns
+    panel[f64] = panel[f64].astype("float32")
     print(f"  {len(panel):,} episode-years, {panel.spell_id.nunique():,} spells")
 
     # --- origins ------------------------------------------------------------
@@ -176,10 +203,17 @@ def main() -> int:
         src = derived[name] if spec["source"] == "derived" else panel[spec["source"]]
         cols[name] = transform(spec["transform"], src)
     X = pd.DataFrame(cols)
+    keys_only = panel[KEYS].reset_index(drop=True)
 
-    out = pd.concat([panel[KEYS].reset_index(drop=True),
-                     tgt.reset_index(drop=True),
+    out = pd.concat([keys_only, tgt.reset_index(drop=True),
                      X.reset_index(drop=True)], axis=1)
+
+    # This box has 8GB total and has OOM-killed this script before at this
+    # scale; panel/derived/X/cols are fully absorbed into `out` by this point
+    # and are never read again, so free them before the window/EU27 filters
+    # and the write, rather than let them idle until the function returns.
+    del panel, derived, X, cols, keys_only
+    gc.collect()
 
     # --- window -------------------------------------------------------------
     w = cfg["window"]
@@ -187,6 +221,14 @@ def main() -> int:
            (out["year"] <= max(w["last_origin_year"], max(w["prospective_years"])))
     out = out[keep].copy()
     out["in_leaderboard_window"] = (out["year"] <= w["last_origin_year"]).astype("int8")
+
+    # --- EU27 scope (applied AFTER derived features, never before - see
+    # eu27_scope.py docstring and the module docstring above) --------------
+    if args.eu27_only:
+        n0 = len(out)
+        out = eu27_scope.filter_eu27(out, args.eu_mapping)
+        print(f"  --eu27-only: kept {len(out):,}/{n0:,} rows "
+              f"(importer in the B0 EU-27 sample that origin year)")
 
     # --- assertions the whole benchmark rests on ---------------------------
     lead = out[out["in_leaderboard_window"] == 1]
@@ -202,9 +244,9 @@ def main() -> int:
     print(f"  leaderboard window {w['first_origin_year']}-{w['last_origin_year']}: "
           f"{len(lead):,} origins, {int(lead['event_u'].sum()):,} eventually fail, "
           f"{int((lead['duration_u']==1).sum()):,} fail within one year")
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    out.to_parquet(OUT, index=False, compression="zstd")
-    print(f"  wrote {OUT}  ({os.path.getsize(OUT)/1e6:.0f} MB)")
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    out.to_parquet(args.out, index=False, compression="zstd")
+    print(f"  wrote {args.out}  ({os.path.getsize(args.out)/1e6:.0f} MB)")
 
     miss = out[list(feats)].isna().mean().sort_values(ascending=False)
     print("\n  missingness of the ten sparsest features (imputed per fold, "

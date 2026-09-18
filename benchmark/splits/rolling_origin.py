@@ -51,7 +51,7 @@ def load_yaml(name: str) -> dict:
         return yaml.safe_load(f)
 
 
-def load_matrix() -> pd.DataFrame:
+def load_matrix(path: str | None = None) -> pd.DataFrame:
     """The frozen matrix, with the feature columns held in single precision.
 
     889k origins x 60 float64 features is roughly half a gigabyte before a fold
@@ -60,8 +60,11 @@ def load_matrix() -> pd.DataFrame:
     out-of-memory reaper at that point. The preprocessor casts to float32 on the
     way into every model anyway, so carrying float64 through the split buys
     nothing but the peak.
+
+    `path` overrides the default MATRIX (used for a rescoped run, e.g. the
+    EU27-only matrix, without touching the default global one).
     """
-    df = pd.read_parquet(MATRIX)
+    df = pd.read_parquet(path or MATRIX)
     f64 = [c for c in df.columns if df[c].dtype == "float64"]
     df[f64] = df[f64].astype("float32")
     return df
@@ -99,12 +102,18 @@ def subsample(df: pd.DataFrame, max_rows: int, seed: int) -> pd.DataFrame:
     return df[df["spell_id"].isin(set(take))].reset_index(drop=True)
 
 
-def make_folds(df: pd.DataFrame | None = None):
-    """Yield (fold_id, train, valid, test) frames, already censored and sampled."""
-    cfg = load_yaml("benchmark.yaml")
-    spl = load_yaml("splits.yaml")
+def make_folds(df: pd.DataFrame | None = None, benchmark_config: str = "benchmark.yaml",
+               splits_config: str = "splits.yaml", matrix_path: str | None = None):
+    """Yield (fold_id, train, valid, test) frames, already censored and sampled.
+
+    `benchmark_config`/`splits_config` name files inside benchmark/config/;
+    `matrix_path` overrides the default frozen matrix. All three default to
+    the original global-scope run, so existing callers are unaffected.
+    """
+    cfg = load_yaml(benchmark_config)
+    spl = load_yaml(splits_config)
     if df is None:
-        df = load_matrix()
+        df = load_matrix(matrix_path)
     df = df[df["in_leaderboard_window"] == 1]
     smp, seed = cfg["sampling"], cfg["sampling"]["seed"]
     final_obs = cfg["window"]["outcome_observed_through"]

@@ -19,14 +19,18 @@ import pandas as pd
 
 
 def _km_at(duration: np.ndarray, event: np.ndarray, u: int) -> float:
-    """Kaplan-Meier S(u) inside a bin."""
+    """Kaplan-Meier S(u) inside a bin; NaN when follow-up never reaches u.
+
+    Carrying the last estimate forward past the end of follow-up would compare a
+    predicted S(3) with an observed S(1) and call the gap miscalibration.
+    """
     d = np.asarray(duration, dtype="int64")
     e = np.asarray(event, dtype="int64")
     s = 1.0
     for t in range(1, u + 1):
         at_risk = (d >= t).sum()
         if at_risk == 0:
-            break
+            return float("nan")
         deaths = ((d == t) & (e == 1)).sum()
         s *= (1.0 - deaths / at_risk)
     return float(s)
@@ -51,5 +55,7 @@ def calibration_table(surv: np.ndarray, duration: np.ndarray, event: np.ndarray,
 
 
 def expected_calibration_error(tab: pd.DataFrame) -> float:
+    if tab["observed_km"].isna().any():
+        return float("nan")
     w = tab["n"] / tab["n"].sum()
     return float((w * (tab["predicted"] - tab["observed_km"]).abs()).sum())

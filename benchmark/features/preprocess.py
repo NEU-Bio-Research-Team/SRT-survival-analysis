@@ -43,8 +43,9 @@ FEATURE_SETS = {
 }
 
 
-def load_registry() -> dict:
-    with open(os.path.join(HERE, "feature_registry.yaml"), encoding="utf-8") as f:
+def load_registry(path: str | None = None) -> dict:
+    with open(path or os.path.join(HERE, "feature_registry.yaml"),
+             encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

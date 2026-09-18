@@ -59,18 +59,18 @@ CONTRASTS = [
 FS_ORDER = ["F0", "F0F1", "F0F1F2", "F0F1F2F3", "F0F1F2F3F4", "F0F1F2F3F4F5"]
 
 
-def leaderboard(df: pd.DataFrame) -> pd.DataFrame:
+def leaderboard(df: pd.DataFrame, primary: str = "ibs_1_3") -> pd.DataFrame:
     g = (df.groupby(["feature_set", "model", "family", "nonlinear", "ph"],
                     dropna=False)[METRICS + ["fit_seconds"]]
            .agg(["mean", "std"]))
     g.columns = [f"{a}_{b}" for a, b in g.columns]
     g = g.reset_index()
     g["feature_set"] = pd.Categorical(g["feature_set"], FS_ORDER, ordered=True)
-    return g.sort_values(["feature_set", "ibs_1_3_mean"])
+    return g.sort_values(["feature_set", f"{primary}_mean"])
 
 
-def ablation(df: pd.DataFrame) -> pd.DataFrame:
-    piv = df.pivot_table(index="model", columns="feature_set", values="ibs_1_3",
+def ablation(df: pd.DataFrame, primary: str = "ibs_1_3") -> pd.DataFrame:
+    piv = df.pivot_table(index="model", columns="feature_set", values=primary,
                          aggfunc="mean")
     piv = piv.reindex(columns=[c for c in FS_ORDER if c in piv.columns])
     out = piv.copy()
@@ -80,11 +80,14 @@ def ablation(df: pd.DataFrame) -> pd.DataFrame:
     return out.reset_index()
 
 
-def contrasts(df: pd.DataFrame) -> pd.DataFrame:
-    """Paired over (feature set, fold): both models saw identical rows."""
+def contrasts(df: pd.DataFrame, primary: str = "ibs_1_3") -> pd.DataFrame:
+    """Paired over (feature set, fold): both models saw identical rows.
+
+    The `*_delta_ibs` columns hold the difference in `primary` (named in the
+    `metric` column), so a one-year-only run can reuse the same table."""
     rows = []
     piv = df.pivot_table(index=["feature_set", "fold"], columns="model",
-                         values="ibs_1_3")
+                         values=primary)
     pivc = df.pivot_table(index=["feature_set", "fold"], columns="model",
                           values="antolini_c")
     for label, a, b in CONTRASTS:
@@ -94,19 +97,20 @@ def contrasts(df: pd.DataFrame) -> pd.DataFrame:
         dc = (pivc[b] - pivc[a]).dropna()
         if d.empty:
             continue
-        rows.append({"contrast": label, "from": a, "to": b, "n_cells": len(d),
+        rows.append({"contrast": label, "metric": primary,
+                     "from": a, "to": b, "n_cells": len(d),
                      "mean_delta_ibs": d.mean(), "sd_delta_ibs": d.std(ddof=1),
                      "cells_improved": int((d < 0).sum()),
                      "mean_delta_antolini": dc.mean() if not dc.empty else np.nan})
     return pd.DataFrame(rows)
 
 
-def ph_diagnostic(df: pd.DataFrame) -> pd.DataFrame:
+def ph_diagnostic(df: pd.DataFrame, primary: str = "ibs_1_3") -> pd.DataFrame:
     d = df[df["model"] != "KM"].copy()
     d["ph_family"] = np.where(d["ph"].astype(str) == "True", "PH", "non-PH")
     out = (d.groupby(["feature_set", "ph_family"])[
-              ["ibs_1_3", "antolini_c", "ece_3y"]].mean().reset_index())
-    piv = out.pivot(index="feature_set", columns="ph_family", values="ibs_1_3")
+              [primary, "antolini_c", "ece_3y"]].mean().reset_index())
+    piv = out.pivot(index="feature_set", columns="ph_family", values=primary)
     if {"PH", "non-PH"} <= set(piv.columns):
         piv["nonPH_minus_PH"] = piv["non-PH"] - piv["PH"]
     return piv.reset_index()
@@ -115,13 +119,14 @@ def ph_diagnostic(df: pd.DataFrame) -> pd.DataFrame:
 def subgroups(df: pd.DataFrame) -> pd.DataFrame:
     cols = [c for c in df.columns if c.startswith("ibs_age")
             or c in ("ibs_gfc", "ibs_pre_covid", "ibs_covid", "ibs_post_covid",
-                     "ibs_early")]
+                     "ibs_early", "ibs_pre_evfta", "ibs_post_evfta")]
     return (df.groupby(["feature_set", "model"])[cols].mean()
               .reset_index().sort_values(["feature_set", "model"]))
 
 
 def bootstrap_deltas(run_dir: str, hz: dict, cfg: dict,
-                     feature_set: str, reference: str = "CoxPH") -> pd.DataFrame:
+                     feature_set: str, reference: str = "CoxPH",
+                     integrate_over: list[int] | None = None) -> pd.DataFrame:
     """Spell-block paired CIs on IBS differences, on the stored predictions."""
     pdir = os.path.join(run_dir, "predictions")
     if not os.path.isdir(pdir):
@@ -132,7 +137,7 @@ def bootstrap_deltas(run_dir: str, hz: dict, cfg: dict,
         fs, fold, model = f[:-4].split("__")
         by_fold.setdefault(int(fold[4:]), {})[model] = os.path.join(pdir, f)
 
-    grid, ig = hz["grid"], hz["ibs_integrate_over"]
+    grid, ig = hz["grid"], integrate_over or hz["ibs_integrate_over"]
     nb, seed = cfg["evaluation"]["bootstrap"]["n_boot"], \
         cfg["evaluation"]["bootstrap"]["seed"]
     rows = []
@@ -198,29 +203,40 @@ def figures(lb: pd.DataFrame, abl: pd.DataFrame, out_dir: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-id", default="v1")
+    ap.add_argument("--benchmark-config", default="benchmark.yaml")
+    ap.add_argument("--horizons-config", default="horizons.yaml")
+    ap.add_argument("--out-dir", default=REPORTS,
+                    help="where CSVs and figures go (default: benchmark/reports)")
+    ap.add_argument("--primary", default="ibs_1_3", choices=["ibs_1_3", "brier_1y"],
+                    help="brier_1y for a run whose test block has one year of "
+                         "follow-up, where IBS 1-3 is unobservable")
     args = ap.parse_args()
+    out, primary = args.out_dir, args.primary
     run_dir = os.path.join(ROOT, "benchmark", "runs", args.run_id)
     df = pd.read_parquet(os.path.join(run_dir, "metrics.parquet"))
-    cfg, hz = load_yaml("benchmark.yaml"), load_yaml("horizons.yaml")
-    os.makedirs(REPORTS, exist_ok=True)
+    cfg = load_yaml(args.benchmark_config)
+    hz = load_yaml(args.horizons_config)
+    os.makedirs(out, exist_ok=True)
 
-    lb = leaderboard(df)
-    abl = ablation(df)
-    lb.to_csv(os.path.join(REPORTS, "leaderboard.csv"), index=False)
-    abl.to_csv(os.path.join(REPORTS, "feature_ablation.csv"), index=False)
-    contrasts(df).to_csv(os.path.join(REPORTS, "contrasts.csv"), index=False)
-    ph_diagnostic(df).to_csv(os.path.join(REPORTS, "ph_vs_nonph.csv"), index=False)
-    subgroups(df).to_csv(os.path.join(REPORTS, "subgroups.csv"), index=False)
-    boots = [bootstrap_deltas(run_dir, hz, cfg, fs)
+    lb = leaderboard(df, primary)
+    abl = ablation(df, primary)
+    lb.to_csv(os.path.join(out, "leaderboard.csv"), index=False)
+    abl.to_csv(os.path.join(out, "feature_ablation.csv"), index=False)
+    contrasts(df, primary).to_csv(os.path.join(out, "contrasts.csv"), index=False)
+    ph_diagnostic(df, primary).to_csv(os.path.join(out, "ph_vs_nonph.csv"), index=False)
+    subgroups(df).to_csv(os.path.join(out, "subgroups.csv"), index=False)
+    ig = [1] if primary == "brier_1y" else None
+    boots = [bootstrap_deltas(run_dir, hz, cfg, fs, integrate_over=ig)
              for fs in ("F0F1F2F3", "F0F1F2F3F4")]
     boots = [b for b in boots if not b.empty]
     if boots:
         pd.concat(boots).to_csv(
-            os.path.join(REPORTS, "delta_ibs_bootstrap.csv"), index=False)
-    figures(lb, abl, os.path.join(REPORTS, "figures"))
-    print(f"wrote reports to {REPORTS}")
+            os.path.join(out, "delta_ibs_bootstrap.csv"), index=False)
+    if primary == "ibs_1_3":
+        figures(lb, abl, os.path.join(out, "figures"))
+    print(f"wrote reports to {out}")
     print(lb[lb.feature_set == FS_ORDER[-1]][
-        ["model", "ibs_1_3_mean", "antolini_c_mean", "ece_3y_mean"]].to_string(index=False))
+        ["model", f"{primary}_mean", "antolini_c_mean", "ece_1y_mean"]].to_string(index=False))
     return 0
 
 

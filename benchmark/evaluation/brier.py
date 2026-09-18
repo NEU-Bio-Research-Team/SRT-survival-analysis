@@ -9,19 +9,24 @@ probability, and it penalises exactly the failure a ranking metric forgives.
 
 At horizon u, with G the censoring survivor function:
 
-    BS(u) = 1/n * sum_i [ 1{T_i <= u, d_i = 1} * (0 - S_i(u))^2 / G(T_i - 1)
-                        + 1{T_i >  u}          * (1 - S_i(u))^2 / G(u) ]
+    BS(u) = 1/n * sum_i [ 1{T_i <= u, d_i = 1} * (0 - S_i(u))^2 / P(C >= T_i)
+                        + 1{T_i >  u known}    * (1 - S_i(u))^2 / P(C >= u) ]
 
-Subjects censored before u contribute nothing: their outcome at u is genuinely
-unknown, and the weights above are what redistributes their mass onto the
-observations that survived to speak for them.
+with P(C >= t) = G(t - 1). "Known alive at u" includes rows censored at exactly
+u, which by the split convention survived u years (see ipcw.py). Subjects
+censored before u contribute nothing: their outcome at u is genuinely unknown,
+and the weights above are what redistributes their mass onto the observations
+that survived to speak for them.
+
+When no row is known alive at u, the horizon is unobservable in this block and
+the score is NaN - not a failures-only sum that a model predicting S = 0 wins.
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-from .ipcw import CensoringKM
+from .ipcw import CensoringKM, known_alive, observed_failure
 
 
 def brier_at(surv: np.ndarray, duration: np.ndarray, event: np.ndarray,
@@ -34,12 +39,12 @@ def brier_at(surv: np.ndarray, duration: np.ndarray, event: np.ndarray,
     e = np.asarray(event, dtype="int64")
     G = G or CensoringKM(d, e)
 
-    failed = (d <= u) & (e == 1)
-    alive = d > u
-    if not (failed.any() or alive.any()):
+    failed = observed_failure(d, e, u)
+    alive = known_alive(d, e, u)
+    if not alive.any():
         return float("nan")
     w_fail = np.where(failed, 1.0 / G(d - 1), 0.0)
-    w_alive = np.where(alive, 1.0 / G(u), 0.0)
+    w_alive = np.where(alive, 1.0 / G(u - 1), 0.0)
     loss = w_fail * (0.0 - S) ** 2 + w_alive * (1.0 - S) ** 2
     return float(loss.sum() / len(S))
 

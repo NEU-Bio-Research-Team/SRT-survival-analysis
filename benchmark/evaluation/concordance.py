@@ -39,7 +39,9 @@ def antolini_concordance(surv: np.ndarray, duration: np.ndarray,
 
     i = rng.choice(cases, size=n_pairs)
     j = rng.integers(0, n, size=n_pairs)
-    ok = d[i] < d[j]              # comparable: the case fails first
+    # comparable: the case fails first. A row censored at exactly T_i is known
+    # to outlive it (ipcw.py), so it is a valid comparator; a tied failure is not.
+    ok = (d[i] < d[j]) | ((d[i] == d[j]) & (e[j] == 0))
     if not ok.any():
         return float("nan")
     i, j = i[ok], j[ok]
