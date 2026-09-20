@@ -21,7 +21,7 @@ Files already on disk are skipped. The 119 files pulled under the old design are
 kept as-is: they were pulled with Viet Nam among the partners, so they already
 contain the rows this design needs.
 
-Output: data_raw/trade/, data_raw/trade_world/, data_raw/trade_mirror/
+Output: data/raw/trade/, data/raw/trade_world/, data/raw/trade_mirror/
 
 Usage:
     python3 fetch_trade.py                       # vn pass, all importers
@@ -42,9 +42,9 @@ from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án
 SEL = os.path.join(HERE, "selection")
-RAW = os.path.join(HERE, "data_raw", "trade")
-RAW_WORLD = os.path.join(HERE, "data_raw", "trade_world")
-RAW_MIRROR = os.path.join(HERE, "data_raw", "trade_mirror")
+RAW = os.path.join(HERE, "data", "raw", "trade")
+RAW_WORLD = os.path.join(HERE, "data", "raw", "trade_world")
+RAW_MIRROR = os.path.join(HERE, "data", "raw", "trade_mirror")
 API = "https://comtradeapi.un.org/data/v1/get/C/A/HS"
 REF = "https://comtradeapi.un.org/files/v1/app/reference/partnerAreas.json"
 RECORD_CAP = 100000

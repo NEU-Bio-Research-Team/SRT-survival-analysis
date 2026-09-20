@@ -1,0 +1,763 @@
+# Feature registry - the frozen contract between the panel and every model.
+#
+# This file is not documentation. benchmark/features/build_matrix.py reads it and
+# builds the design matrix from it, so a feature that is not written down here
+# does not reach any model, and a feature written down here reaches EVERY model
+# in the cell. That is the mechanism behind plan section 7.1: the leaderboard
+# compares algorithms under one information set, never one algorithm with a
+# richer information set.
+#
+# Field meanings
+#   set          F0..F5, the incremental ablation block (plan section 8)
+#   concept      the economic quantity, not the column name
+#   lit          which seed paper motivates it
+#   source       panel column, or `derived` when build_matrix.py constructs it
+#   timing       when the value is known relative to the prediction origin t
+#   transform    applied by build_matrix.py
+#   missing      imputation rule; `median+flag` adds a companion _isna column
+#   direction    expected sign on the HAZARD (up = raises failure risk)
+#   leakage      residual risk after the timing rule
+#
+# Timing vocabulary
+#   at_t         dated t, inside F_t. Legitimate: the panel's event dated t means
+#                death in t+1, so a value dated t precedes the failure.
+#   lag1         dated t-1
+#   spell_start  fixed at the first year of the spell
+#   static       time-invariant dyad/product attribute
+
+meta:
+  frozen: 2026-09-16
+  panel: data/final/stage1_panel.parquet
+  scope: >
+    EU27/B0-locked variant of feature_registry.yaml (VN x EU-27 x HS6 x
+    2012-2024, see benchmark/config/benchmark_eu27.yaml). F0-F5 are otherwise
+    identical to the global registry; the only addition is three EU27-only
+    EVFTA treatment-intensity columns appended to F4 below (tariff_applied_lag,
+    evfta_cut_cum_pp_lag, years_since_evfta_policy) - these are non-null only
+    for EU27 rows and were never registered in the global file because that
+    file's features had to be valid for all 147 importers.
+  note_on_current_year_value: >
+    log_value (the origin year's trade value) is admitted deliberately. Plan
+    section 9 excludes a current-year value only when the target makes it
+    simultaneous with failure. Here it is not: the panel dates the event in the
+    LAST year the relationship is alive, so the origin-year value is the last
+    observation before the failure, not a reading taken after it. Dropping it
+    would also blind every model on age-1 rows, where no lag exists and where
+    half of all events occur.
+
+features:
+
+# ---------------------------------------------------------------- F0 duration
+  spell_age:
+    set: F0
+    concept: relationship age / duration dependence
+    lit: [Lawless_Studnicka_2024]
+    source: t_stop
+    timing: at_t
+    transform: identity
+    missing: none
+    direction: down
+    leakage: none
+  log_spell_age:
+    set: F0
+    concept: duration dependence, log scale
+    lit: [Lawless_Studnicka_2024]
+    source: t_stop
+    timing: at_t
+    transform: log1p
+    missing: none
+    direction: down
+    leakage: none
+  left_trunc:
+    set: F0
+    concept: true age unobserved before the data window
+    lit: []
+    source: left_trunc
+    timing: spell_start
+    transform: identity
+    missing: none
+    direction: unknown
+    leakage: none
+
+# --------------------------------------------------- F1 relationship strength
+  log_initial_value:
+    set: F1
+    concept: relationship scale at launch
+    lit: [Nitsch_2007, Lawless_Studnicka_2024]
+    source: derived
+    construction: log1p of import_value_usd in the spell's first year
+    timing: spell_start
+    transform: precomputed
+    missing: median+flag
+    direction: down
+    leakage: low
+  log_value:
+    set: F1
+    concept: current relationship scale
+    lit: [Nitsch_2007]
+    source: log_value
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+  log_value_lag:
+    set: F1
+    concept: lagged relationship scale
+    lit: [Nitsch_2007]
+    source: log_value_lag
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+  value_growth_lag:
+    set: F1
+    concept: momentum of the flow
+    lit: [Nitsch_2007]
+    source: growth_lag_pct
+    timing: lag1
+    transform: clip_pct
+    missing: median+flag
+    direction: down
+    leakage: none
+  vn_market_share:
+    set: F1
+    concept: supplier share of the importer-product market
+    lit: [Nitsch_2007]
+    source: vn_market_share_pct
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+  vn_market_share_lag:
+    set: F1
+    concept: lagged supplier share
+    lit: [Nitsch_2007]
+    source: vn_market_share_pct_lag1
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+  log_market_size:
+    set: F1
+    concept: total importer demand for the product
+    lit: [Nitsch_2007]
+    source: log_total_import_cp
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+  log_market_size_lag:
+    set: F1
+    concept: lagged market size
+    lit: [Nitsch_2007]
+    source: log_total_import_cp_lag1
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+  rca_lag:
+    set: F1
+    concept: revealed comparative advantage
+    lit: [Nitsch_2007]
+    source: rca_lag
+    timing: lag1
+    transform: log1p_clip0
+    missing: median+flag
+    direction: down
+    leakage: none
+  world_growth_lag:
+    set: F1
+    concept: world demand growth for the product
+    lit: [Nitsch_2007]
+    source: world_growth_pct_lag1
+    timing: lag1
+    transform: clip_pct
+    missing: median+flag
+    direction: down
+    leakage: none
+  volatility_3y_lag:
+    set: F1
+    concept: instability of the flow
+    lit: [Nitsch_2007]
+    source: volatility_3y_lag1
+    timing: lag1
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: none
+  log_unit_value_lag:
+    set: F1
+    concept: bilateral unit value / quality proxy
+    lit: [Nitsch_2007]
+    source: unit_value_usd_per_kg_lag1
+    timing: lag1
+    transform: log1p_clip0
+    missing: median+flag
+    direction: down
+    leakage: none
+  partner_share_pct:
+    set: F1
+    concept: destination share of Vietnam's exports of this product
+    lit: [Nitsch_2007]
+    source: partner_share_pct
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+  product_share_pct:
+    set: F1
+    concept: product share of Vietnam's exports to this destination
+    lit: [Nitsch_2007]
+    source: product_share_pct
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+
+# ------------------------------------------------------- F2 gravity and macro
+  log_gdp_d_lag:
+    set: F2
+    concept: destination economic size
+    lit: [Nitsch_2007, Lawless_Studnicka_2024]
+    source: log_gdp_d_lag1
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+  log_gdpcap_d_lag:
+    set: F2
+    concept: destination income per head
+    lit: [Nitsch_2007, Lawless_Studnicka_2024]
+    source: log_gdpcap_d_lag1
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+  log_pop_d_lag:
+    set: F2
+    concept: destination market population
+    lit: [Nitsch_2007]
+    source: log_pop_d_lag1
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+  log_dist:
+    set: F2
+    concept: trade cost / geographic distance
+    lit: [Nitsch_2007, Lawless_Studnicka_2024]
+    source: dist
+    timing: static
+    transform: log_clip1
+    missing: median+flag
+    direction: up
+    leakage: none
+  contig:
+    set: F2
+    concept: common border
+    lit: [Nitsch_2007]
+    source: contig
+    timing: static
+    transform: identity
+    missing: zero
+    direction: down
+    leakage: none
+  comlang_off:
+    set: F2
+    concept: common official language
+    lit: [Nitsch_2007]
+    source: comlang_off
+    timing: static
+    transform: identity
+    missing: zero
+    direction: down
+    leakage: none
+  comcol:
+    set: F2
+    concept: shared coloniser
+    lit: [Nitsch_2007]
+    source: comcol
+    timing: static
+    transform: identity
+    missing: zero
+    direction: down
+    leakage: none
+  comrelig:
+    set: F2
+    concept: religious proximity
+    lit: [Nitsch_2007]
+    source: comrelig
+    timing: static
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+  wto_d:
+    set: F2
+    concept: destination WTO membership
+    lit: [Nitsch_2007]
+    source: wto_d
+    timing: static
+    transform: identity
+    missing: zero
+    direction: down
+    leakage: none
+  eu_d:
+    set: F2
+    concept: destination is an EU member
+    lit: [Lawless_Studnicka_2024]
+    source: eu_d
+    timing: static
+    transform: identity
+    missing: zero
+    direction: down
+    leakage: none
+  gdp_growth_d_lag:
+    set: F2
+    concept: destination cyclical position
+    lit: [Nitsch_2007]
+    source: importer_gdp_growth_pct_lag1
+    timing: lag1
+    transform: clip_pct
+    missing: median+flag
+    direction: down
+    leakage: none
+  inflation_d_lag:
+    set: F2
+    concept: destination macro instability
+    lit: [Nitsch_2007]
+    source: importer_inflation_pct_lag1
+    timing: lag1
+    transform: clip_pct
+    missing: median+flag
+    direction: up
+    leakage: none
+  fx_change_lag:
+    set: F2
+    concept: exchange-rate movement against the USD
+    lit: [Nitsch_2007]
+    source: derived
+    construction: log change of importer_exchange_rate_lcu_per_usd between t-2 and t-1
+    timing: lag1
+    transform: precomputed
+    missing: median+flag
+    direction: up
+    leakage: none
+  imports_pct_gdp_lag:
+    set: F2
+    concept: destination openness
+    lit: [Nitsch_2007]
+    source: importer_imports_pct_gdp_lag1
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+
+# ----------------------------------- F3 experience, diversification, portfolio
+  exp_dest:
+    set: F3
+    concept: years Vietnam had already exported anything to this destination
+    lit: [Lawless_Studnicka_2024]
+    source: derived
+    construction: count of prior years with any live Vietnam spell in importer j
+    timing: at_t
+    transform: precomputed
+    missing: zero
+    direction: down
+    leakage: low
+  exp_prod:
+    set: F3
+    concept: years Vietnam had already exported this product anywhere
+    lit: [Lawless_Studnicka_2024]
+    source: derived
+    construction: count of prior years with any live Vietnam spell in product p
+    timing: at_t
+    transform: precomputed
+    missing: zero
+    direction: down
+    leakage: low
+  n_products_to_c_lag:
+    set: F3
+    concept: destination diversification of the export basket
+    lit: [Lawless_Studnicka_2024]
+    source: n_products_to_c_lag1
+    timing: lag1
+    transform: log1p_clip0
+    missing: median+flag
+    direction: down
+    leakage: none
+  n_markets_for_p_lag:
+    set: F3
+    concept: market breadth of the product
+    lit: [Lawless_Studnicka_2024]
+    source: n_markets_for_p_lag1
+    timing: lag1
+    transform: log1p_clip0
+    missing: median+flag
+    direction: down
+    leakage: none
+  hhi_market:
+    set: F3
+    concept: concentration of Vietnam's markets for this product
+    lit: [Lawless_Studnicka_2024]
+    source: hhi_market
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: up
+    leakage: low
+  hhi_product:
+    set: F3
+    concept: concentration of Vietnam's product basket in this destination
+    lit: [Lawless_Studnicka_2024]
+    source: hhi_product
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: up
+    leakage: low
+  proximity_hs2_lag:
+    set: F3
+    concept: >
+      proximity of the product to Vietnam's core export basket. ADAPTED, coarse:
+      the HS2 chapter's share of Vietnam's total exports, not a product-space
+      co-export proximity. Labelled as adapted in the manuscript.
+    lit: [Lawless_Studnicka_2024]
+    source: hs2_share_lag1
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: none
+
+# ------------------------------------------------------ F4 policy and barriers
+  tariff_rate:
+    set: F4
+    concept: applied tariff facing Vietnam
+    lit: [Nitsch_2007]
+    source: tariff_rate
+    timing: at_t
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: low
+  tariff_rate_lag:
+    set: F4
+    concept: lagged applied tariff
+    lit: [Nitsch_2007]
+    source: tariff_rate_lag1
+    timing: lag1
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: none
+  tariff_change:
+    set: F4
+    concept: tariff shock
+    lit: [Nitsch_2007]
+    source: derived
+    construction: tariff_rate - tariff_rate_lag1
+    timing: at_t
+    transform: precomputed
+    missing: zero
+    direction: up
+    leakage: low
+  fta_in_force:
+    set: F4
+    concept: a trade agreement covers the dyad
+    lit: [Nitsch_2007]
+    source: fta_in_force
+    timing: at_t
+    transform: identity
+    missing: zero
+    direction: down
+    leakage: none
+  years_since_fta:
+    set: F4
+    concept: maturity of the agreement
+    lit: [Nitsch_2007]
+    source: years_since_fta
+    timing: at_t
+    transform: clip_pct
+    missing: zero
+    direction: down
+    leakage: none
+  pref_margin_lag:
+    set: F4
+    concept: preference margin where the preferential rate is genuinely observed
+    lit: [Nitsch_2007]
+    source: pref_margin_lag
+    timing: lag1
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: medium
+  # --- EU27-only additions: the real B0 treatment variable (EVFTA staging),
+  # not just a generic FTA flag. Non-null only for EU27 rows; on the global
+  # 147-country panel these would be ~74% null (docs/TU_DIEN_DU_LIEU_FINAL_DF.md),
+  # which is why they were never in the global registry - here every origin
+  # IS an EU27 row, so that's not a concern.
+  tariff_applied_lag:
+    set: F4
+    concept: applied tariff actually facing Vietnam under EVFTA (MFN, GSP, or
+      the staging-schedule preferential rate, whichever the panel resolved
+      for that year), superseding the coarser tariff_rate_lag for EU27 rows
+    lit: [Nitsch_2007]
+    source: tariff_applied_lag
+    timing: lag1
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: none
+  evfta_cut_cum_pp_lag:
+    set: F4
+    concept: cumulative EVFTA tariff cut in percentage points, i.e. the
+      continuous staging-schedule treatment intensity (B6's identification
+      variable) rather than a simple pre/post EVFTA dummy
+    lit: [Nitsch_2007]
+    source: evfta_cut_cum_pp_lag
+    timing: lag1
+    transform: identity
+    missing: zero
+    direction: down
+    leakage: none
+  years_since_evfta_policy:
+    set: F4
+    concept: years since EVFTA specifically (not any other prior FTA) entered
+      force for this relationship
+    lit: [Nitsch_2007]
+    source: years_since_evfta_policy
+    timing: at_t
+    transform: clip_pct
+    missing: zero
+    direction: down
+    leakage: none
+  ntm6_all_inforce:
+    set: F4
+    concept: count of NTMs in force at HS6
+    lit: []
+    source: ntm6_all_inforce
+    timing: at_t
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: medium
+  ntm6_sps_inforce:
+    set: F4
+    concept: sanitary and phytosanitary measures in force
+    lit: []
+    source: ntm6_sps_inforce
+    timing: at_t
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: medium
+  ntm6_tbt_inforce:
+    set: F4
+    concept: technical barriers in force
+    lit: []
+    source: ntm6_tbt_inforce
+    timing: at_t
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: medium
+  ntm6_observed:
+    set: F4
+    concept: >
+      measurement flag, NOT policy: 1 when the importer actually filed in this
+      year. Admitted only so the model can separate a measured zero from a
+      borrowed one; plan section 23.5 is the reason it is a flag and its
+      source-year twin is banned.
+    lit: []
+    source: ntm6_observed
+    timing: at_t
+    transform: identity
+    missing: zero
+    direction: unknown
+    leakage: measurement
+  ntm_ave_border_pct:
+    set: F4
+    concept: >
+      NTM ad-valorem equivalent. Effectively a time-invariant importer trait in
+      the present construction - read as a between-market level, never as a
+      within-importer policy shock.
+    lit: []
+    source: ntm_ave_border_pct
+    timing: static
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: low
+  ttb_any_in_force:
+    set: F4
+    concept: any trade remedy in force
+    lit: []
+    source: ttb_any_in_force
+    timing: at_t
+    transform: identity
+    missing: zero
+    direction: up
+    leakage: low
+  ad_in_force:
+    set: F4
+    concept: anti-dumping duty in force
+    lit: []
+    source: ad_in_force
+    timing: at_t
+    transform: identity
+    missing: zero
+    direction: up
+    leakage: low
+  cbam_in_scope:
+    set: F4
+    concept: >
+      product falls in the EU CBAM scope. Missing for non-EU importers, where the
+      concept is a structural zero, so missing is filled with 0 and the companion
+      flag marks which rows the EU tariff panel actually covers.
+    lit: []
+    source: cbam_in_scope
+    timing: at_t
+    transform: identity
+    missing: zero+flag
+    direction: up
+    leakage: low
+
+# ------------------------------------- F5 complexity, resilience, common shocks
+  pci:
+    set: F5
+    concept: product complexity
+    lit: []
+    source: pci
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+  importer_eci:
+    set: F5
+    concept: destination economic complexity
+    lit: []
+    source: importer_eci
+    timing: at_t
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+  importer_diversity:
+    set: F5
+    concept: destination export diversity
+    lit: []
+    source: importer_diversity
+    timing: at_t
+    transform: log1p_clip0
+    missing: median+flag
+    direction: down
+    leakage: low
+  importer_lpi_overall:
+    set: F5
+    concept: destination logistics performance
+    lit: []
+    source: importer_lpi_overall
+    timing: static
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+  importer_glpi:
+    set: F5
+    concept: green logistics composite (PCA construction)
+    lit: []
+    source: importer_glpi_pca_lpi_epi
+    timing: static
+    transform: identity
+    missing: median+flag
+    direction: down
+    leakage: low
+  gepu_current:
+    set: F5
+    concept: global economic policy uncertainty
+    lit: []
+    source: gepu_current
+    timing: at_t
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: low
+  cmo_all_commodities:
+    set: F5
+    concept: world commodity price level
+    lit: []
+    source: cmo_all_commodities
+    timing: at_t
+    transform: log1p_clip0
+    missing: median+flag
+    direction: unknown
+    leakage: low
+  price_energy:
+    set: F5
+    concept: energy price shock
+    lit: []
+    source: price_energy
+    timing: at_t
+    transform: log1p_clip0
+    missing: median+flag
+    direction: up
+    leakage: low
+
+# Theory-motivated interactions. NOT part of the shared matrix: they exist only
+# for the theory-enhanced cloglog of plan section 16.1, so that the classical
+# baseline is not a straw man. ML models are never handed them - the point of the
+# contrast is whether the algorithm finds them by itself.
+interactions_F3x:
+  - [exp_dest, n_products_to_c_lag]
+  - [exp_prod, n_markets_for_p_lag]
+  - [exp_prod, proximity_hs2_lag]
+
+# Columns that may never enter any predictor set (plan section 9).
+banned:
+  - spell_id
+  - year
+  - t_start
+  - t_stop_as_endpoint
+  - spell_start_year
+  - spell_end_year
+  - right_censored
+  - event
+  - gap_filled
+  - tariff_source_year
+  - ntm6_source_year
+  - pci_source_year
+  - gravity_source_year
+  - importer_lpi_source_year
+  - ntm_ave_source_year
+  - ntm_survey_year
+  - fta_names
+  - tariff_type
+  - tariff_reporter
+  - us_recip_effective_from
+  # the sector-level NTM family: never mixed with the HS6 family (data handoff)
+  - ntm_coverage_ratio
+  - ntm_frequency_ratio
+  - ntm_sector_freq_any
+  - ntm_sector_share_3plus
+  - ntm_sps_coverage
+  - ntm_tbt_coverage
+  # the 2025 US tariff block: a scenario input, never a training feature
+  - us_recip_rate_yearend
+  - us_recip_rate_peak
+  - us_recip_rate_days_wt
+  - us_recip_floor
+  - us_transship_rate

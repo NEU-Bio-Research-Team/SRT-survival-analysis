@@ -22,7 +22,7 @@ labels the limits instead of hiding them:
    intensity measure.
 
 3. Time. None of these files has a usable year dimension, so the values are a
-   single snapshot per country. `analysis/ntm_country.csv` does record which
+   single snapshot per country. `data/interim/ntm_country.csv` does record which
    year each country was surveyed (one year per country, 2012-2017), and that
    year is carried into the panel as `ntm_survey_year` so every regression can
    state exactly what it is conditioning on. This is the time-invariant
@@ -32,7 +32,7 @@ labels the limits instead of hiding them:
    external tariff, so EU members read the EUN record through the same
    `selection/eu_tariff_mapping.csv` the tariff merge uses.
 
-Outputs, in analysis/:
+Outputs, in data/interim/:
   ntm_by_type.csv  - importer x sector x MAST chapter, coverage and frequency
   ntm_sector.csv   - importer x sector, merge-ready row used by merge_panel.py
 
@@ -44,9 +44,9 @@ import os
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án (thư mục cha của scripts/)
-RAW = os.path.join(HERE, "data_raw", "ntm")
+RAW = os.path.join(HERE, "data", "raw", "ntm")
 SEL = os.path.join(HERE, "selection")
-OUT = os.path.join(HERE, "analysis")
+OUT = os.path.join(HERE, "data", "interim")
 
 # WITS product groups, as HS2 chapter ranges. Same grouping the NTM files and
 # the tradestats product list use, so the sector label matches on both sides.

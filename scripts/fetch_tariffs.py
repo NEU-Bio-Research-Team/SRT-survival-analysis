@@ -17,7 +17,7 @@ agreement filed under a *group* code (ASEAN, AANZFTA, RCEP) rather than under
 API - so such an episode falls back to MFN, which overstates the rate faced.
 `tariff_type` marks which of the two applied.
 
-Everything is cached as gzipped CSV under data_raw/tariffs/, so the run is
+Everything is cached as gzipped CSV under data/raw/tariffs/, so the run is
 resumable: re-running skips whatever is already on disk.
 
 Usage:
@@ -39,12 +39,23 @@ from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án (thư mục cha của scripts/)
 SEL = os.path.join(HERE, "selection")
-RAW = os.path.join(HERE, "data_raw", "tariffs")
+RAW = os.path.join(HERE, "data", "raw", "tariffs")
 WITS = "https://wits.worldbank.org/API/V1"
 UA = "Mozilla/5.0 (compatible; trade-survival-research/1.0)"
 SLEEP = 0.8                     # polite gap between calls
-YEARS = list(range(2002, 2022))
+# 2023, not 2021: TRAINS answers with real schedules for 2022 and 2023 (checked
+# 22/08/2026 against USA, EU and China - every one carries its own
+# TIME_PERIOD, not a fallback to an earlier year), and 2024 is still a 404.
+# Left at 2021 the last two panel years carried a 2021 rate forward, so the
+# tail of the window had no real tariff variation at all.
+YEARS = list(range(2002, 2024))
 VN_TRAINS_CODE = "704"          # Viet Nam, the only exporter in this design
+
+# A 404 from TRAINS is definitive - the reporter filed no schedule that year -
+# and 224 reporter-years answer that way. Without a record of it, every restart
+# pays for all of them again, which on a flaky connection is most of the run.
+# Delete data/raw/tariffs/_no_schedule.csv to ask again after TRAINS updates.
+NO_DATA = "_no_schedule.csv"
 
 COLS = ["reporter", "partner", "year", "product", "tariff_type", "rate_simple_avg",
         "min_rate", "max_rate", "total_lines", "nbr_mfn_lines", "nbr_pref_lines",
@@ -105,6 +116,31 @@ def save(path, rows):
         w.writerows(rows)
 
 
+def load_no_data():
+    """(pass, reporter iso, year, partner) that TRAINS has answered 404 for."""
+    path = os.path.join(RAW, NO_DATA)
+    seen = set()
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                seen.add((r["pass"], r["reporter"], int(r["year"]),
+                          r["partner"]))
+    return seen
+
+
+def record_no_data(which, iso, year, partner=""):
+    path = os.path.join(RAW, NO_DATA)
+    os.makedirs(RAW, exist_ok=True)
+    new = not os.path.exists(path)
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["pass", "reporter", "year",
+                                          "partner"])
+        if new:
+            w.writeheader()
+        w.writerow({"pass": which, "reporter": iso, "year": year,
+                    "partner": partner})
+
+
 def load_targets():
     """(iso3, tariff reporter numeric code) for every selected importer."""
     path = os.path.join(SEL, "importers_vn.csv")
@@ -137,49 +173,81 @@ def availability_partnerlists(codes):
     """reporter code -> {year: [partner codes with a schedule]}"""
     out = defaultdict(dict)
     cache = os.path.join(RAW, "_partnerlists.csv")
-    rows = []
+    # A cache written under a shorter YEARS is stale in a way "which reporters
+    # are in it" cannot see: every reporter is present, but none carries the
+    # years added afterwards, and each of those then looks like a reporter with
+    # no preferential filing rather than one never asked. The availability call
+    # is year/ALL, so one re-pull settles every year at once - and the marker
+    # records which YEARS the rebuild was for, so a run interrupted halfway
+    # resumes instead of truncating what it already fetched.
+    marker = os.path.join(RAW, "_partnerlists_builtfor.txt")
+    target = str(max(YEARS))
+    built_for = ""
+    if os.path.exists(marker):
+        with open(marker, encoding="utf-8") as f:
+            built_for = f.read().strip()
+    os.makedirs(RAW, exist_ok=True)
+    if os.path.exists(cache) and built_for != target:
+        print(f"  partner lists were built for a window ending "
+              f"{built_for or 'an earlier year'}; YEARS now runs to {target} - "
+              f"re-pulling availability for all reporters")
+        os.remove(cache)
+        with open(marker, "w", encoding="utf-8") as f:
+            f.write(target)
+
     seen = set()
     if os.path.exists(cache):
         for r in csv.DictReader(open(cache, encoding="utf-8")):
             out[r["reporter"]][int(r["year"])] = [p for p in r["partners"].split(";") if p]
-            rows.append(r)
             seen.add(r["reporter"])
     # the cache was built for an earlier, smaller reporter list: top it up
     # instead of either re-pulling everything or silently missing reporters
     todo = sorted(set(codes) - seen)
     if not todo:
+        with open(marker, "w", encoding="utf-8") as f:
+            f.write(target)
         return out
-    os.makedirs(RAW, exist_ok=True)
     ns = "{http://wits.worldbank.org}"
     for i, code in enumerate(todo, 1):
         status, payload = fetch(
             f"{WITS}/wits/datasource/trn/dataavailability/country/{code}/year/ALL")
+        got = []
         if status == 200 and payload:
             root = ET.fromstring(payload)
             for rep in root.iter(f"{ns}reporter"):
                 y = rep.findtext(f"{ns}year")
                 pl = rep.findtext(f"{ns}partnerlist") or ""
-                if y and int(y) in YEARS:
+                if y:
+                    # keep every year the API returns, not just the ones this
+                    # run needs - that is what made the cache go stale before
                     partners = [p for p in pl.split(";") if p]
                     out[code][int(y)] = partners
-                    rows.append({"reporter": code, "year": y,
-                                 "partners": ";".join(partners)})
+                    got.append({"reporter": code, "year": y,
+                                "partners": ";".join(partners)})
+        # Append per reporter rather than once at the end. This loop is 132 slow
+        # calls and any interruption used to throw all of them away; written as
+        # it goes, a restart picks up from the reporter it stopped on.
+        fresh = not os.path.exists(cache)
+        with open(cache, "a", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=["reporter", "year", "partners"])
+            if fresh:
+                w.writeheader()
+            w.writerows(got)
         print(f"  availability {i}/{len(todo)}: {code} "
               f"({len(out[code])} years)", flush=True)
         time.sleep(SLEEP)
-    with open(cache, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["reporter", "year", "partners"])
-        w.writeheader()
-        w.writerows(rows)
+    with open(marker, "w", encoding="utf-8") as f:
+        f.write(target)
     return out
 
 
 def pass_mfn(targets):
     done = skipped = failed = 0
+    known = load_no_data()
     total = len(targets)
     for i, (iso, code, year) in enumerate(targets, 1):
         path = os.path.join(RAW, "mfn", f"{iso}_{year}.csv.gz")
-        if os.path.exists(path):
+        if os.path.exists(path) or ("mfn", iso, year, "") in known:
             skipped += 1
             continue
         status, payload = fetch(f"{WITS}/SDMX/V21/datasource/TRN/reporter/{code}"
@@ -192,11 +260,15 @@ def pass_mfn(targets):
             print(f"[{i}/{total}] MFN {iso} {year}: {len(rows)} lines", flush=True)
         else:
             failed += 1
+            # only a 404 is definitive; a timeout or a 5xx must be retried on
+            # the next run, so it is deliberately not written down
+            if status == 404:
+                record_no_data("mfn", iso, year)
             print(f"[{i}/{total}] MFN {iso} {year}: no data (http {status})",
                   flush=True)
         time.sleep(SLEEP)
-    print(f"\nMFN pass: {done} downloaded, {skipped} already on disk, "
-          f"{failed} without data")
+    print(f"\nMFN pass: {done} downloaded, {skipped} already on disk or known "
+          f"absent, {failed} without data")
 
 
 def pass_pref(targets):
@@ -227,9 +299,10 @@ def pass_pref(targets):
           f"other partners only\n")
 
     done = skipped = failed = 0
+    known = load_no_data()
     for i, (iso, code, year, partner) in enumerate(jobs, 1):
         path = os.path.join(RAW, "pref", f"{iso}_{year}_{partner}.csv.gz")
-        if os.path.exists(path):
+        if os.path.exists(path) or ("pref", iso, year, partner) in known:
             skipped += 1
             continue
         status, payload = fetch(f"{WITS}/SDMX/V21/datasource/TRN/reporter/{code}"
@@ -244,9 +317,11 @@ def pass_pref(targets):
                       f"{len(rows)} lines", flush=True)
         else:
             failed += 1
+            if status == 404:
+                record_no_data("pref", iso, year, partner)
         time.sleep(SLEEP)
-    print(f"\nPREF pass: {done} downloaded, {skipped} already on disk, "
-          f"{failed} without data")
+    print(f"\nPREF pass: {done} downloaded, {skipped} already on disk or known "
+          f"absent, {failed} without data")
 
 
 def main():

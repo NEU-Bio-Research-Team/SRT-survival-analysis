@@ -1,0 +1,16 @@
+# Evaluation horizons, in years after the prediction origin.
+#
+# u = 1 is the one-year failure question the plan names as the first target:
+#     P(relationship fails before t+1 | F_t).
+# u = 3 and u = 5 are the medium-run horizons Stage 2 needs for Value x S.
+#
+# The IBS is integrated over u in {1..5} with the trapezoid rule on the IPCW
+# Brier curve. The full prediction grid runs to u = 8 so that the survival
+# curves are complete enough to score Antolini concordance.
+
+grid: [1, 2, 3, 4, 5, 6, 7, 8]
+ibs_integrate_over: [1, 2, 3]          # primary, comparable in all four folds
+ibs_integrate_over_extended: [1, 2, 3, 4, 5]   # folds 1-3 only
+calibration_at: [1, 3, 5]
+auc_at: [1, 3, 5]
+calibration_bins: 10

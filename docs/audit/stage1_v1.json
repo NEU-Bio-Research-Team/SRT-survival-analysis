@@ -1,0 +1,910 @@
+{
+ "tag": "v1",
+ "panel": "data/v1_backup/final/stage1_panel.parquet",
+ "family_source": "WITS many-to-one (v1)",
+ "checks": {
+  "A1_duplicate_keys": 0,
+  "A2_spells": {
+   "non_contiguous": 0,
+   "start_end_mismatch": 0,
+   "event_ne_1_minus_rc": 0,
+   "rc_not_constant": 0,
+   "event_not_last_row": 0,
+   "t_stop_wrong": 0,
+   "alive_below_threshold": 0,
+   "gap_at_or_above_threshold": 0,
+   "gap_row_at_spell_edge": 0
+  },
+  "A3_unmapped_value_share": 4.059180376145609e-10,
+  "A4_multi_hs4_h0_families": 0,
+  "A5_A6_orphans": {
+   "exposed_rows": 1983,
+   "exposed_events": 1982,
+   "birth_share_switch": 0.3999752330271625,
+   "birth_share_neighbours": 0.3763691083790256,
+   "birth_excess_pp": 2.3606124648136886
+  },
+  "A7_A8_A9_window": {
+   "mass_death_importer_years": [
+    [
+     "NGA",
+     2002,
+     51,
+     0.765
+    ],
+    [
+     "NGA",
+     2003,
+     53,
+     1.0
+    ],
+    [
+     "GTM",
+     2005,
+     38,
+     0.684
+    ],
+    [
+     "ARE",
+     2008,
+     455,
+     1.0
+    ],
+    [
+     "CMR",
+     2008,
+     51,
+     0.667
+    ],
+    [
+     "MDG",
+     2008,
+     42,
+     0.643
+    ],
+    [
+     "NGA",
+     2008,
+     92,
+     0.761
+    ],
+    [
+     "BGR",
+     2009,
+     164,
+     0.646
+    ],
+    [
+     "GTM",
+     2009,
+     93,
+     0.645
+    ],
+    [
+     "NGA",
+     2009,
+     56,
+     0.607
+    ],
+    [
+     "KEN",
+     2010,
+     53,
+     1.0
+    ],
+    [
+     "ALB",
+     2013,
+     39,
+     0.641
+    ],
+    [
+     "BDI",
+     2015,
+     33,
+     0.667
+    ],
+    [
+     "COG",
+     2015,
+     36,
+     0.639
+    ],
+    [
+     "TZA",
+     2015,
+     125,
+     0.624
+    ],
+    [
+     "UGA",
+     2015,
+     51,
+     0.667
+    ],
+    [
+     "MLI",
+     2016,
+     37,
+     0.622
+    ],
+    [
+     "DZA",
+     2017,
+     235,
+     1.0
+    ],
+    [
+     "SLB",
+     2017,
+     41,
+     0.61
+    ],
+    [
+     "BRB",
+     2019,
+     57,
+     0.842
+    ],
+    [
+     "DMA",
+     2019,
+     58,
+     0.948
+    ],
+    [
+     "ALB",
+     2020,
+     55,
+     0.636
+    ],
+    [
+     "PYF",
+     2022,
+     126,
+     0.698
+    ],
+    [
+     "RWA",
+     2022,
+     57,
+     1.0
+    ],
+    [
+     "SYC",
+     2022,
+     40,
+     0.7
+    ],
+    [
+     "ARE",
+     2023,
+     1064,
+     1.0
+    ],
+    [
+     "CMR",
+     2023,
+     76,
+     1.0
+    ],
+    [
+     "ETH",
+     2023,
+     186,
+     1.0
+    ],
+    [
+     "GAB",
+     2023,
+     64,
+     1.0
+    ],
+    [
+     "MLI",
+     2023,
+     35,
+     1.0
+    ],
+    [
+     "MNG",
+     2023,
+     224,
+     1.0
+    ]
+   ],
+   "mass_death_not_allowlisted": 15,
+   "events_not_confirmed": 14465,
+   "hazard_by_years_before_T": {
+    "1": 0.159,
+    "2": 0.122,
+    "3": 0.1323,
+    "4": 0.1324,
+    "5": 0.1272,
+    "6": 0.1496,
+    "7": 0.1489
+   },
+   "events_in_last_gap_years": 9594,
+   "hazard_edge_minus_base_pp": -1.3352114615686776
+  },
+  "A10_lags": {
+   "log_value_lag": {
+    "grain": "rel",
+    "rows": 755076,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "vn_market_share_pct_lag1": {
+    "grain": "rel",
+    "rows": 736056,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "unit_value_usd_per_kg_lag1": {
+    "grain": "rel",
+    "rows": 710346,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "tariff_rate_lag1": {
+    "grain": "rel",
+    "rows": 742167,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "log_total_import_cp_lag1": {
+    "grain": "rel",
+    "rows": 918937,
+    "mismatch": 869721,
+    "mismatch_share": 0.9464
+   },
+   "log_gdp_d_lag1": {
+    "grain": "imp",
+    "rows": 934697,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "log_gdpcap_d_lag1": {
+    "grain": "imp",
+    "rows": 934697,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "log_pop_d_lag1": {
+    "grain": "imp",
+    "rows": 934697,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "importer_gdp_growth_pct_lag1": {
+    "grain": "imp",
+    "rows": 934697,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "importer_inflation_pct_lag1": {
+    "grain": "imp",
+    "rows": 927422,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "importer_exchange_rate_lcu_per_usd_lag1": {
+    "grain": "imp",
+    "rows": 934254,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "importer_imports_pct_gdp_lag1": {
+    "grain": "imp",
+    "rows": 921596,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "importer_exports_pct_gdp_lag1": {
+    "grain": "imp",
+    "rows": 921596,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "n_products_to_c_lag1": {
+    "grain": "imp",
+    "rows": 931162,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "world_growth_pct_lag1": {
+    "grain": "fam",
+    "rows": 911634,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "growth_lag_pct": {
+    "grain": "fam",
+    "rows": 903891,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "rca_lag": {
+    "grain": "fam",
+    "rows": 926576,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "n_markets_for_p_lag1": {
+    "grain": "fam",
+    "rows": 925286,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   },
+   "tariff_applied_lag": {
+    "grain": "eu_family",
+    "rows": 233762,
+    "mismatch": 7011,
+    "mismatch_share": 0.03
+   },
+   "tariff_mfn_pct_lag1": {
+    "grain": "eu_family",
+    "rows": 233762,
+    "mismatch": 7011,
+    "mismatch_share": 0.03
+   },
+   "pref_margin_lag": {
+    "grain": "eu_family",
+    "rows": 233762,
+    "mismatch": 7011,
+    "mismatch_share": 0.03
+   },
+   "evfta_cut_cum_pp_lag": {
+    "grain": "eu_family",
+    "rows": 233762,
+    "mismatch": 7011,
+    "mismatch_share": 0.03
+   },
+   "evfta_cut_cum_share_lag": {
+    "grain": "eu_family",
+    "rows": 233762,
+    "mismatch": 7011,
+    "mismatch_share": 0.03
+   },
+   "hs2_share_lag1": {
+    "grain": "hs2",
+    "rows": 911213,
+    "mismatch": 0,
+    "mismatch_share": 0.0
+   }
+  },
+  "A11_constancy": {
+   "world_growth_pct": 0.0,
+   "country_growth_pct": 0.0,
+   "rca": 0.0,
+   "n_markets_for_p": 0.0,
+   "tariff_applied_pct": 0.0,
+   "tariff_mfn_pct": 0.0,
+   "pref_margin_pp": 0.0,
+   "evfta_cut_cum_pp": 0.0,
+   "evfta_cut_cum_share": 0.0,
+   "log_total_import_cp (importer-specific, info)": 0.7976609071546499
+  },
+  "A12_source_years": {
+   "full:tariff_source_year": {
+    "future_rows": 0,
+    "future_share": 0.0,
+    "static_allowlisted": false
+   },
+   "full:importer_lpi_source_year": {
+    "future_rows": 91609,
+    "future_share": 0.0971,
+    "static_allowlisted": false
+   },
+   "full:gravity_source_year": {
+    "future_rows": 0,
+    "future_share": 0.0,
+    "static_allowlisted": false
+   },
+   "full:ntm_ave_source_year": {
+    "future_rows": 423389,
+    "future_share": 0.4755,
+    "static_allowlisted": true
+   },
+   "full:pci_source_year": {
+    "future_rows": 0,
+    "future_share": 0.0,
+    "static_allowlisted": false
+   },
+   "full:ntm_survey_year": {
+    "future_rows": 311232,
+    "future_share": 0.4056,
+    "static_allowlisted": true
+   },
+   "full:ntm6_source_year": {
+    "future_rows": 316997,
+    "future_share": 0.3507,
+    "static_allowlisted": false
+   },
+   "b0:tariff_source_year": {
+    "future_rows": 0,
+    "future_share": 0.0,
+    "static_allowlisted": false
+   },
+   "b0:importer_lpi_source_year": {
+    "future_rows": 0,
+    "future_share": 0.0,
+    "static_allowlisted": false
+   },
+   "b0:gravity_source_year": {
+    "future_rows": 0,
+    "future_share": 0.0,
+    "static_allowlisted": false
+   },
+   "b0:ntm_ave_source_year": {
+    "future_rows": 46309,
+    "future_share": 0.3119,
+    "static_allowlisted": true
+   },
+   "b0:pci_source_year": {
+    "future_rows": 0,
+    "future_share": 0.0,
+    "static_allowlisted": false
+   },
+   "b0:ntm_survey_year": {
+    "future_rows": 36251,
+    "future_share": 0.2442,
+    "static_allowlisted": true
+   },
+   "b0:ntm6_source_year": {
+    "future_rows": 0,
+    "future_share": 0.0,
+    "static_allowlisted": false
+   }
+  },
+  "A13_A15_A19_tariffs": {
+   "eu27_tariff_null_share_2024_2025": 0.7021,
+   "eu27_mean_tariff_change_by_year": {
+    "2003": -0.051,
+    "2004": -0.351,
+    "2005": -0.004,
+    "2006": -0.012,
+    "2007": -0.142,
+    "2008": -0.02,
+    "2009": 0.002,
+    "2010": 0.022,
+    "2011": 0.003,
+    "2012": 0.06,
+    "2013": -0.011,
+    "2014": -0.001,
+    "2015": 0.002,
+    "2016": -0.042,
+    "2017": -0.043,
+    "2018": -0.018,
+    "2019": -0.025,
+    "2020": -3.905,
+    "2021": -0.243,
+    "2022": 4.143,
+    "2023": -0.002,
+    "2024": 0.0,
+    "2025": 0.0
+   },
+   "eu27_max_abs_mean_change_excl_2020": 4.143,
+   "mfn_rows_checked": 88047,
+   "mfn_rows_mismatch": 1486,
+   "non_mfn_share_on_fta_rows_top20": [
+    [
+     "KOR",
+     29060,
+     0.215
+    ],
+    [
+     "MYS",
+     28473,
+     0.0
+    ],
+    [
+     "JPN",
+     28381,
+     0.348
+    ],
+    [
+     "SGP",
+     26386,
+     0.0
+    ],
+    [
+     "THA",
+     25872,
+     0.0
+    ],
+    [
+     "CHN",
+     25702,
+     0.119
+    ],
+    [
+     "IDN",
+     22070,
+     0.001
+    ],
+    [
+     "PHL",
+     19177,
+     0.0
+    ],
+    [
+     "AUS",
+     18510,
+     0.381
+    ],
+    [
+     "KHM",
+     17599,
+     0.0
+    ],
+    [
+     "IND",
+     16060,
+     0.0
+    ],
+    [
+     "CAN",
+     11002,
+     0.0
+    ],
+    [
+     "NZL",
+     10358,
+     0.0
+    ],
+    [
+     "DEU",
+     8367,
+     0.372
+    ],
+    [
+     "GBR",
+     7441,
+     0.193
+    ],
+    [
+     "FRA",
+     7421,
+     0.378
+    ],
+    [
+     "HKG",
+     6674,
+     0.0
+    ],
+    [
+     "NLD",
+     5934,
+     0.371
+    ],
+    [
+     "ITA",
+     5548,
+     0.388
+    ],
+    [
+     "MEX",
+     5537,
+     0.0
+    ]
+   ]
+  },
+  "A16_values": {
+   "rows": 97765,
+   "mismatch": 0
+  },
+  "A17_ttbd": {
+   "last_ttbd_year": 2015,
+   "non_null_after": {
+    "ad_initiated": 540439,
+    "ad_in_force": 540439,
+    "cvd_initiated": 540439,
+    "cvd_in_force": 540439,
+    "sg_initiated": 540439,
+    "sg_in_force": 540439,
+    "ttb_any_in_force": 540439
+   }
+  },
+  "A18_determinism": null
+ },
+ "summary": {
+  "rows": 949537,
+  "spells": 194461,
+  "importers": 147,
+  "families": 4637,
+  "events": 131675,
+  "b0_rows": 148475,
+  "b0_events": 18516,
+  "events_by_year": [
+   [
+    2002,
+    false,
+    8729,
+    1776
+   ],
+   [
+    2002,
+    true,
+    4449,
+    690
+   ],
+   [
+    2003,
+    false,
+    9962,
+    1976
+   ],
+   [
+    2003,
+    true,
+    4925,
+    841
+   ],
+   [
+    2004,
+    false,
+    11463,
+    2341
+   ],
+   [
+    2004,
+    true,
+    5438,
+    940
+   ],
+   [
+    2005,
+    false,
+    13000,
+    2425
+   ],
+   [
+    2005,
+    true,
+    5760,
+    867
+   ],
+   [
+    2006,
+    false,
+    14934,
+    2867
+   ],
+   [
+    2006,
+    true,
+    6490,
+    1083
+   ],
+   [
+    2007,
+    false,
+    17424,
+    3388
+   ],
+   [
+    2007,
+    true,
+    7234,
+    1195
+   ],
+   [
+    2008,
+    false,
+    20072,
+    4641
+   ],
+   [
+    2008,
+    true,
+    8020,
+    1544
+   ],
+   [
+    2009,
+    false,
+    19593,
+    3319
+   ],
+   [
+    2009,
+    true,
+    7808,
+    1363
+   ],
+   [
+    2010,
+    false,
+    22170,
+    3677
+   ],
+   [
+    2010,
+    true,
+    7921,
+    1207
+   ],
+   [
+    2011,
+    false,
+    25044,
+    4590
+   ],
+   [
+    2011,
+    true,
+    8353,
+    1477
+   ],
+   [
+    2012,
+    false,
+    27557,
+    4916
+   ],
+   [
+    2012,
+    true,
+    8615,
+    1360
+   ],
+   [
+    2013,
+    false,
+    29473,
+    4796
+   ],
+   [
+    2013,
+    true,
+    8733,
+    1132
+   ],
+   [
+    2014,
+    false,
+    31067,
+    5069
+   ],
+   [
+    2014,
+    true,
+    9342,
+    1272
+   ],
+   [
+    2015,
+    false,
+    33048,
+    5235
+   ],
+   [
+    2015,
+    true,
+    9561,
+    1184
+   ],
+   [
+    2016,
+    false,
+    34334,
+    5630
+   ],
+   [
+    2016,
+    true,
+    10058,
+    1345
+   ],
+   [
+    2017,
+    false,
+    35919,
+    5400
+   ],
+   [
+    2017,
+    true,
+    10695,
+    1284
+   ],
+   [
+    2018,
+    false,
+    37360,
+    5408
+   ],
+   [
+    2018,
+    true,
+    11302,
+    1476
+   ],
+   [
+    2019,
+    false,
+    38751,
+    6140
+   ],
+   [
+    2019,
+    true,
+    11627,
+    1384
+   ],
+   [
+    2020,
+    false,
+    37943,
+    4855
+   ],
+   [
+    2020,
+    true,
+    11900,
+    1188
+   ],
+   [
+    2021,
+    false,
+    40499,
+    5391
+   ],
+   [
+    2021,
+    true,
+    13161,
+    1602
+   ],
+   [
+    2022,
+    false,
+    41178,
+    5768
+   ],
+   [
+    2022,
+    true,
+    13927,
+    1678
+   ],
+   [
+    2023,
+    false,
+    42864,
+    7183
+   ],
+   [
+    2023,
+    true,
+    14446,
+    1595
+   ],
+   [
+    2024,
+    false,
+    42707,
+    5161
+   ],
+   [
+    2024,
+    true,
+    15108,
+    2016
+   ],
+   [
+    2025,
+    false,
+    36390,
+    0
+   ],
+   [
+    2025,
+    true,
+    16291,
+    0
+   ]
+  ]
+ }
+}

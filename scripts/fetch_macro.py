@@ -5,7 +5,7 @@ Development, which republishes WDI. One call per country covers all years.
 NTM indicators are downloaded from the WITS public NTM files and reshaped;
 see the caveat printed at the end - they are a cross-section, not a panel.
 
-Output: analysis/macro_panel.csv, analysis/ntm_country.csv
+Output: data/interim/macro_panel.csv, data/interim/ntm_country.csv
 """
 
 import csv
@@ -19,8 +19,8 @@ import zipfile
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # gốc dự án (thư mục cha của scripts/)
 SEL = os.path.join(HERE, "selection")
-OUT = os.path.join(HERE, "analysis")
-RAW = os.path.join(HERE, "data_raw", "ntm")
+OUT = os.path.join(HERE, "data", "interim")
+RAW = os.path.join(HERE, "data", "raw", "ntm")
 WITS = "https://wits.worldbank.org/API/V1"
 UA = "Mozilla/5.0 (compatible; trade-survival-research/1.0)"
 
