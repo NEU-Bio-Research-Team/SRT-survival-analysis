@@ -1,5 +1,13 @@
 # Từ điển dữ liệu — `data/final/stage1_panel.parquet`
 
+> **Bản v2 (20/09/2026).** Panel đã được dựng lại theo
+> [STAGE1_PANEL_FIX_PLAN.md](STAGE1_PANEL_FIX_PLAN.md): khóa sản phẩm gộp mã
+> mồ côi, sự kiện chỉ tính khi được xác nhận bởi năm có dữ liệu HS6 thật, thuế
+> EU lấy từ biểu EU, sửa lag `log_total_import_cp_lag1`. Kết quả kiểm định:
+> [audit/stage1_v2.md](audit/stage1_v2.md) (so với v1:
+> [audit/stage1_v1.md](audit/stage1_v1.md)). Các mục dưới đã cập nhật theo v2;
+> tỷ lệ null của những cột không đổi định nghĩa vẫn là số đo trên v1.
+
 *Viết 03/09/2026. Đây là dataframe cuối cùng cho Stage 1 (B4→B9 trong
 [Stage1_Research_Framework.md](../Stage1_Research_Framework.md)) — mỗi dòng là
 một **episode**: một quan hệ (nước nhập khẩu × nhóm sản phẩm) tại một năm cụ
@@ -13,13 +21,13 @@ thể. Mọi con số % null trong tài liệu này đếm trực tiếp trên f
 | | |
 |---|---|
 | Đường dẫn | `data/final/stage1_panel.parquet` (mặc định) hoặc `data/final/stage1_panel.csv` (khi công cụ không đọc được parquet) |
-| Định dạng | Parquet nén zstd, **178 MB** — hoặc CSV, **1,2 GB**, cùng nội dung, cùng 205 cột theo đúng thứ tự |
-| Số dòng | **949.537** episode-năm |
-| Số cột | **205** |
+| Định dạng | Parquet nén zstd, **183 MB** (v2) |
+| Số dòng | **932.204** episode-năm (v1: 949.537) |
+| Số cột | **209** (v1: 205; thêm `censor_reason`, `start_reason`, `tariff_n_lines`, `ntm6_mappable`) |
 | Đơn vị quan sát | `(importer, product_family, year)` — một dòng = một quan hệ tại một năm |
 | Khung thời gian | 2002–2025 (mọi năm có dữ liệu thật; B0 chốt cửa sổ chính 2012–2024) |
 | Số nước nhập khẩu | 147 (EU-27 là mẫu chính theo B0; 147 nước dùng cho robustness B8 #6) |
-| Số nhóm sản phẩm | ~4.900 `product_family` (khoá theo revision HS gốc H0, gộp qua bảng concordance) |
+| Số nhóm sản phẩm | **4.365** `product_family` có trong panel (4.522 family trong khóa; xem `scripts/families.py`) |
 | Dựng bằng | `scripts/build_stage1_df.py`, đọc `data/interim/panel_final.csv` |
 | Tái tạo | `python3 scripts/build_stage1_df.py features && python3 scripts/build_stage1_df.py join` (xem §7 — máy yếu RAM thì **bắt buộc** chạy 2 lệnh tách rời, không chạy `all`) |
 
@@ -100,7 +108,7 @@ hoặc kiểm chứng một con số ngược lên tận nguồn.
 |---|---|---:|---|
 | `importer` | str | 0.0 | Mã ISO3 nước nhập khẩu (147 nước; lọc `importer` ∈ EU27 cho mẫu chính B0) |
 | `exporter` | str | 0.0 | Luôn `VNM` — thiết kế chỉ có một nước xuất khẩu |
-| `product_family` | str | 0.0 | Nhóm sản phẩm, khoá theo revision HS gốc **H0** (không phải HS2012 thuần — xem `docs/DOI_CHIEU_B0_VOI_DU_LIEU.md` §5.1 về khác biệt với B0). Dạng `H0_610910` |
+| `product_family` | str | 0.0 | Nhóm sản phẩm, khoá theo revision HS gốc **H0** (không phải HS2012 thuần — xem `docs/DOI_CHIEU_B0_VOI_DU_LIEU.md` §5.1 về khác biệt với B0). Dạng `H0_610910`. Từ v2 một family có thể gồm **nhiều mã H0 cùng HS4** (mã mồ côi được gộp vào family đã hấp thụ hàng của nó khi đổi revision, ví dụ `H0_620213` = 620213 + 620293); tên family là mã H0 nhỏ nhất. Danh sách thành viên: `data/interim/family_members.csv` |
 | `hs2` | str | 0.0 | 2 số đầu của mã HS6 trong `product_family` — dùng để cluster SE theo B5 ("cluster two-way theo c và HS2") và để tính `hs2_share` |
 | `year` | int | 0.0 | Năm quan sát |
 | `spell_id` | str | 0.0 | Định danh spell — `{importer}_{exporter}_{product_family}_{spell_start_year}` |
@@ -114,13 +122,16 @@ hoặc kiểm chứng một con số ngược lên tận nguồn.
 | Cột | Kiểu | %null | Ý nghĩa |
 |---|---|---:|---|
 | `event` | int (0/1) | 0.0 | **Biến outcome chính.** 1 nếu quan hệ chết đúng ở năm này (năm sau tụt dưới ngưỡng, không hồi phục trong `GAP_TOLERANCE`), 0 nếu còn sống hoặc bị censor |
-| `right_censored` | int (0/1) | 0.0 | 1 nếu spell còn sống tại năm cuối quan sát được của nước đó (2025, hoặc năm nước ngừng báo cáo) — **không được coi `event=0` do censor giống `event=0` do sống bình thường** |
-| `left_trunc` | int (0/1) | 0.0 | 1 nếu spell đã đang chạy từ năm đầu cửa sổ dữ liệu (2002) — tuổi thật không quan sát được trước 2002. Với cửa sổ B0 (2012–2024), phần lớn các spell này **có** tuổi quan sát được (2002–2011 là dữ liệu thật, không phải suy diễn) — xem `docs/DOI_CHIEU_B0_VOI_DU_LIEU.md` §5.3 |
+| `right_censored` | int (0/1) | 0.0 | 1 nếu điểm kết thúc của spell **không phải một cái chết đã được xác nhận** — lý do nằm ở `censor_reason`. Với gap rule 1 năm, chết ở năm E cần E+1 và E+2 đều có dữ liệu HS6 thật, và family phải biểu diễn được trong revision HS của các năm đó — **không được coi `event=0` do censor giống `event=0` do sống bình thường** |
+| `censor_reason` | str | — | Rỗng = chết đã xác nhận (`event=1`). `window_end`: spell chạy tới năm cuối có dữ liệu của nước đó. `window_edge`: kết thúc trong `GAP_TOLERANCE` năm trước năm cuối, nên không thể xác nhận (vì vậy năm 2024 của EU không có event nào). `unobserved_year`: năm cần để xác nhận không có dữ liệu HS6 (không có file, chỉ có dòng tổng, batch rỗng, hoặc HS6 phủ < 50% TOTAL — `selection/hs6_unobserved_years.csv`). `hs_revision`: nước nhập khẩu đổi sang revision HS mà family không biểu diễn được |
+| `left_trunc` | int (0/1) | 0.0 | 1 nếu **năm bắt đầu thật của spell không biết được** — lý do ở `start_reason`. v1 chỉ đánh dấu spell đang chạy năm 2002; v2 đánh dấu thêm các trường hợp dưới đây. Với cửa sổ B0 (2012–2024), phần lớn spell có tuổi quan sát được — xem `docs/DOI_CHIEU_B0_VOI_DU_LIEU.md` §5.3 |
+| `start_reason` | str | — | Rỗng = năm bắt đầu đã xác nhận. `window_start`: năm trước đó (trong `GAP_TOLERANCE`) nằm trước 2002. `unobserved_year`: năm trước đó không có dữ liệu HS6. `hs_revision`: family không biểu diễn được trong revision của năm trước. `hs_revision_receiver`: spell mở ra đúng năm đổi revision ở family nhận hàng của một mã mồ côi chưa gộp được |
 | `gap_filled` | int (0/1) | 0.0 | 1 nếu dòng này là **năm đệm dưới ngưỡng 10k USD** được giữ lại để nối hai năm sống liền kề theo gap rule (B0 chốt gap = 1 năm). **Lọc `gap_filled == 0` trước khi đếm "episode-năm đang sống"** — coi năm đệm là "đang sống" sẽ làm sai mẫu số của mọi tỷ lệ hazard |
 
 **Kiểm tra đã xác nhận trên đúng scope B0** (EU27, 2012–2024, `gap_filled==0`):
-148.475 episode-năm, 18.516 event → **tỷ lệ chết 12,5%/năm** — nằm trong
-khoảng 5–15% mà B5 coi là dấu hiệu spell dựng đúng.
+v2 có 146.042 episode-năm, 15.958 event → **tỷ lệ chết 10,9%/năm** (v1:
+148.475 / 18.516 / 12,5%). Chênh lệch chủ yếu đến từ năm 2024 (không còn event
+nào, xem `window_edge`) và từ các cái chết giả năm 2016 và 2021 do mã mồ côi.
 
 ---
 
@@ -138,6 +149,7 @@ chiều, khác các nhóm broadcast ở §6/§7.
 | `log_value` | float | 0.0 | `ln(import_value_usd + 1)` | tính toán (`build_stage1_df.py`) |
 | **— bản lag (t−1), dùng cho mô hình hazard —** | | | | |
 | `log_value_lag` | float | 20.5 | `ln(value)` **năm t−1**. Null ở dòng đầu spell = "chưa có lịch sử" | lag join theo (importer, product_family) |
+| `log_total_import_cp_lag1` | float | — | `ln(1 + tổng nhập khẩu của importer cho family từ thế giới)` năm t−1. **v2 lag theo (importer, product_family)**; v1 lag nhầm theo family và lấy giá trị của một nước khác ở 94,6% dòng | lag join theo (importer, product_family) |
 | `vn_market_share_pct_lag1` | float | 22.5 | thị phần năm t−1 | như trên |
 | `unit_value_usd_per_kg_lag1` | float | 25.2 | đơn giá năm t−1 | như trên |
 | `volatility_3y_lag1` | float | 31.9 | SD(ln value) trong 3 năm gần nhất **kết thúc ở t−1** (dùng t−3, t−2, t−1; cần ≥2/3 năm có dữ liệu, còn lại null) | tính toán, xem `build_stage1_df.py` |
@@ -194,16 +206,17 @@ rồi mới chọn khoá join** — đừng mặc định khoá của bảng ch�
 
 | Cột | Kiểu | %null | Ý nghĩa | Ghi chú |
 |---|---|---:|---|---|
-| `tariff_rate` | float | 2.9 | Thuế áp dụng thấp nhất VN được hưởng khi xuất `product_family` sang `importer` năm đó (ưu tiên PREF nếu có, không thì MFN) | TRAINS, theo lịch biểu của từng `tariff_reporter` |
-| `tariff_type` | str | 2.9 | `"PREF"` hoặc `"MFN"` — biểu nào cho ra `tariff_rate` |
+| `tariff_rate` | float | 0.5 | Thuế VN thực chịu khi xuất `product_family` sang `importer` năm đó. **Dòng EU** (tư cách thành viên theo năm): lấy từ biểu EU `eu_tariff_panel.csv` — GSP tới 2019, EVFTA từ 2020, MFN khi không có ưu đãi; bằng `tariff_applied_pct`. **Các nước khác**: TRAINS — với mỗi dòng HS6 lấy min(ưu đãi, MFN), rồi lấy trung bình cộng thật trên các dòng của family (v1 dùng trung bình trượt sai). ⚠️ Ưu đãi TRAINS khai theo **mã nhóm** (ASEAN, AANZFTA…) chưa được lấy, nên ở ASEAN, IND, NZL, CAN, MEX, PER, HKG giá trị này vẫn là MFN — cận trên | EU: biểu EU; khác: TRAINS theo `tariff_reporter` |
+| `tariff_type` | str | 0.5 | TRAINS: `"PREF"` / `"MFN"`. Dòng EU: `"GSP"` / `"EVFTA"` / `"MFN"` |
+| `tariff_n_lines` | int | — | Số dòng HS6 TRAINS được lấy trung bình (trống ở dòng EU) |
 | `tariff_source_year` | int | 2.9 | Năm biểu thuế thật sự đo được (có thể carry-forward tối đa vài năm nếu thiếu) |
 | `tariff_reporter` | str | 0.0 | Nước/khối có biểu thuế được đọc — với EU27 luôn là `"EUN"` (biểu chung) |
 | `tariff_rate_lag1` | float | 21.8 | `tariff_rate` năm t−1, lag theo `(importer, product_family)` |
 
-**Với mẫu chính EU27, dùng khối 7b bên dưới, không dùng `tariff_rate`** —
-`tariff_rate` mang sai số hệ thống ~2,3pp trước 2020 (không thấy biểu GSP) và
-0% độ phủ đúng năm 2024–2025 (TRAINS trả 404). `tariff_rate`/`tariff_rate_lag1`
-vẫn hữu ích cho **B8 #6** (mẫu 147 thị trường ngoài EU).
+**v2:** trên dòng EU, `tariff_rate` giờ chính là `tariff_applied_pct` (biểu EU),
+nên không còn sai số ~2,3pp trước 2020, cú sốc thuế giả +4,1pp năm 2022, hay
+ô trống 2024–2025 của v1. Lag từ biểu EU (`tariff_applied_lag`) vẫn nên được
+ưu tiên hơn `tariff_rate_lag1`, vì nó không trống ở năm đầu spell.
 
 ### 7b. Khối chính sách EU27 — biến treatment của B6
 
@@ -273,8 +286,9 @@ TRAINS: `docs/DU_LIEU_EVFTA_VA_THUE_EU.md` §3.
 ### 8b. Logistics Performance Index (LPI) — World Bank, theo đợt khảo sát
 
 Chỉ có ở các năm khảo sát thật (2007, 2010, 2012, 2014, 2016, 2018, 2022);
-các năm khác mang giá trị đợt khảo sát gần nhất — `importer_lpi_source_year`
-ghi rõ năm nào.
+các năm khác mang giá trị đợt khảo sát **gần nhất trước đó** — `importer_lpi_source_year`
+ghi rõ năm nào. Từ v2, các năm **trước đợt đầu tiên** để trống (v1 lấy đợt
+đầu, tức là giá trị của tương lai), nên %null dưới đây của v1 thấp hơn thực tế v2.
 
 | Cột | %null | Ý nghĩa |
 |---|---:|---|
@@ -315,7 +329,7 @@ không có gì để lag, giá trị năm nào cũng như nhau.*
 | `cvd_initiated`, `cvd_in_force` | int (0/1) | 0.0 | Thuế chống trợ cấp |
 | `sg_initiated`, `sg_in_force` | int (0/1) | 0.0 | Biện pháp tự vệ |
 | `ttb_any_in_force` | int (0/1) | 0.0 | Bất kỳ biện pháp phòng vệ nào đang hiệu lực |
-| `ttbd_observed` | int (0/1) | 0.0 | Nước này có nằm trong phạm vi thu thập của TTBD không |
+| `ttbd_observed` | int (0/1) | 0.0 | 1 nếu năm nằm trong phạm vi TTBD (≤ 2015). **Từ v2, mọi cột `ad_*`, `cvd_*`, `sg_*`, `ttb_any_in_force` để trống khi `ttbd_observed = 0`** — v1 mang các biện pháp cũ sang và ghi 0 cho mọi vụ mới |
 
 **Giới hạn quan trọng:** TTBD (Bown 2016) chỉ ghi nhận **initiation đến
 2015** — dùng các cột này cho giai đoạn sau 2015 nghĩa là giả định "không có
@@ -331,7 +345,7 @@ B8.
 | Nguồn | Cột | Đơn vị thời gian | Ghi chú |
 |---|---|---|---|
 | **WITS 3 file công khai** (`ntm_*`) | `ntm_coverage_ratio`, `ntm_frequency_ratio`, `ntm_sps_coverage`, `ntm_tbt_coverage`, `ntm_quantity_coverage`, `ntm_technical_coverage`, `ntm_nontechnical_coverage`, `ntm_n_types`, `ntm_sector_freq_any`, `ntm_sector_share_3plus` | **1 snapshot/nước**, không theo năm (%null 19.2 — 20% episode không có, TQ/Hàn Quốc nằm trong số này) | `ntm_survey_year` ghi năm khảo sát; `ntm_reporter`/`ntm_sector` là khoá join |
-| **TRAINS researcher file, ở HS6×năm** (`ntm6_*`) | `ntm6_all_survey`, `ntm6_sps_survey`, `ntm6_tbt_survey`, `ntm6_bilateral_survey`, `ntm6_all_inforce`, `ntm6_sps_inforce`, `ntm6_tbt_inforce`, ... | Đúng theo năm khảo sát gần nhất (`ntm6_source_year`) | **Ưu tiên dùng khối này cho B5/B7** — độ phủ 95,2% (`ntm6_observed`), đúng đơn vị HS6×năm mà thiết kế B0 cần, thay vì snapshot cấp-nước của khối `ntm_*` |
+| **TRAINS researcher file, ở HS6×năm** (`ntm6_*`) | `ntm6_all_survey`, `ntm6_sps_survey`, `ntm6_tbt_survey`, `ntm6_bilateral_survey`, `ntm6_all_inforce`, `ntm6_sps_inforce`, `ntm6_tbt_inforce`, ... | Đúng theo năm khảo sát gần nhất (`ntm6_source_year`) | **Ưu tiên dùng khối này cho B5/B7** — đúng đơn vị HS6×năm mà thiết kế B0 cần, thay vì snapshot cấp-nước của khối `ntm_*`. Từ v2: để trống (không phải 0) trước đợt khảo sát đầu tiên của reporter và ở family không có mã HS2012 nào (`ntm6_mappable = 0`); reporter EU theo năm (HRV đọc biểu riêng tới 2012) |
 | | `ntm_ave_border_pct`, `ntm_ave_border_simple_pct` | theo năm (`ntm_ave_source_year`) | Ad-valorem equivalent của NTM, ước lượng GTAP — %null 6.2 |
 
 ### 9b. Độ phức tạp sản phẩm/kinh tế — Harvard Growth Lab Atlas v18

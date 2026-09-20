@@ -1,5 +1,15 @@
 # `stage1_panel` được ghép từ nhiều nguồn như thế nào: khóa, cách tạo khóa, và độ tin cậy
 
+> **Cập nhật 20/09/2026 — panel v2.** Các lỗi ở §7 đã được sửa theo
+> [STAGE1_PANEL_FIX_PLAN.md](STAGE1_PANEL_FIX_PLAN.md) (kết quả:
+> [audit/stage1_v2.md](audit/stage1_v2.md)). Hai điều ở dưới đã không còn đúng
+> với v2: (1) §3.2 "mỗi family đúng 1 mã H0" — v2 gộp mã mồ côi vào family
+> nhận hàng trong cùng HS4, family lớn nhất 10 mã (`scripts/families.py`);
+> (2) §3.2 "cùng một hàm `family_of` cho mọi nguồn" — thực tế ở v1 CBAM, miễn
+> trừ thuế Mỹ và NTM6 tự đọc concordance; v2 đưa cả ba về `families.py`.
+> Con số 58% năm 2016 ở §7.2 là xấp xỉ bằng tập mồ côi H6; đo bằng đúng tập
+> mồ côi H5 thì là 145/145 (100%).
+
 *Viết 18/09/2026. Tài liệu này gom lại nội dung đang nằm rải rác ở 7 tài liệu cũ
 (danh sách ở §9), đối chiếu lại với code hiện hành, và bổ sung các phép đo mới
 trên mẫu chính B0 (Việt Nam × EU-27 không gồm UK, origin 2012–2024, 148.260 dòng

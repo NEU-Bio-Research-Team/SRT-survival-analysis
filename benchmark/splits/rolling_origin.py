@@ -27,6 +27,18 @@ no information at all; it is dropped. That is why a train block written
 Test blocks read outcomes forward to `window.outcome_observed_through` (2025),
 which is what a retrospective evaluator genuinely has.
 
+With the panel's gap rule (`target.gap_tolerance = g` in the benchmark config,
+panel v2 onwards) a death is only a death once g+1 empty years have been seen:
+a relationship absent for g years and then back is one spell. The rule above
+then becomes censor_block_gap():
+    event     only if the spell died with D <= observed_through - 1 - g;
+    otherwise censored at A - t, where A is the last year <= observed_through
+              in which the relationship was actually alive.
+The plain rule reads a death confirmed by filings after the block's horizon
+(D = observed_through - 1 needs observed_through + g), and credits a spell
+whose importer stopped filing before the horizon with survival up to it.
+Configs without `gap_tolerance` keep the plain rule, so earlier runs reproduce.
+
 Sampling, when the caps in benchmark.yaml bite, is drawn over SPELLS rather than
 rows, so a spell is wholly in or wholly out and the within-spell dependence is
 not broken. The drawn rows are identical for every model in the cell.
@@ -82,6 +94,27 @@ def censor_block(df: pd.DataFrame, lo: int, hi: int,
     return b.reset_index(drop=True)
 
 
+def last_alive_by(df: pd.DataFrame, horizon: int) -> pd.Series:
+    """spell_id -> the last origin year <= `horizon`. Origins are exactly the
+    years a spell is alive (gap-filled padding rows are not origins), so this
+    is the last year the relationship was seen alive by the horizon."""
+    return df.loc[df["year"] <= horizon].groupby("spell_id")["year"].max()
+
+
+def censor_block_gap(df: pd.DataFrame, lo: int, hi: int, observed_through: int,
+                     gap: int, full: pd.DataFrame) -> pd.DataFrame:
+    """censor_block() under the panel's gap rule (see the module docstring).
+    `full` is the whole matrix, so A can reach years outside the scored window."""
+    b = df[(df["year"] >= lo) & (df["year"] <= hi)].copy()
+    A = b["spell_id"].map(last_alive_by(full, observed_through)).to_numpy()
+    confirmed = (b["event_u"] == 1) & \
+        (b["last_alive_year"] <= observed_through - 1 - gap)
+    b["duration"] = np.where(confirmed, b["duration_u"], A - b["year"])
+    b["event"] = np.where(confirmed, 1, 0).astype("int8")
+    b = b[b["duration"] >= 1]          # zero follow-up carries no information
+    return b.reset_index(drop=True)
+
+
 def subsample(df: pd.DataFrame, max_rows: int, seed: int) -> pd.DataFrame:
     """Draw whole spells until the row cap is reached. Deterministic."""
     if max_rows is None or len(df) <= max_rows:
@@ -114,9 +147,16 @@ def make_folds(df: pd.DataFrame | None = None, benchmark_config: str = "benchmar
     spl = load_yaml(splits_config)
     if df is None:
         df = load_matrix(matrix_path)
+    full = df
     df = df[df["in_leaderboard_window"] == 1]
     smp, seed = cfg["sampling"], cfg["sampling"]["seed"]
     final_obs = cfg["window"]["outcome_observed_through"]
+    gap = cfg.get("target", {}).get("gap_tolerance")
+    if gap is None:
+        censor = censor_block
+    else:
+        def censor(d, lo, hi, obs):
+            return censor_block_gap(d, lo, hi, obs, gap, full)
 
     for fold in spl["folds"]:
         tr_lo, tr_hi = fold["train"]
@@ -124,9 +164,9 @@ def make_folds(df: pd.DataFrame | None = None, benchmark_config: str = "benchmar
         te_lo, te_hi = fold["test"]
         # A block may only see filings up to the end of its own window; the test
         # block is scored retrospectively and may read to the end of the data.
-        train = censor_block(df, tr_lo, tr_hi, tr_hi)
-        valid = censor_block(df, va_lo, va_hi, va_hi)
-        test = censor_block(df, te_lo, te_hi, final_obs)
+        train = censor(df, tr_lo, tr_hi, tr_hi)
+        valid = censor(df, va_lo, va_hi, va_hi)
+        test = censor(df, te_lo, te_hi, final_obs)
 
         train = subsample(train, smp["train_max_rows"], seed + fold["id"])
         valid = subsample(valid, smp["valid_max_rows"], seed + 100 + fold["id"])

@@ -243,7 +243,8 @@ def main() -> int:
     print(f"\n  matrix: {len(out):,} origins x {len(feats)} features")
     print(f"  leaderboard window {w['first_origin_year']}-{w['last_origin_year']}: "
           f"{len(lead):,} origins, {int(lead['event_u'].sum()):,} eventually fail, "
-          f"{int((lead['duration_u']==1).sum()):,} fail within one year")
+          f"{int(((lead['duration_u'] == 1) & (lead['event_u'] == 1)).sum()):,} "
+          f"fail within one year")
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     out.to_parquet(args.out, index=False, compression="zstd")
     print(f"  wrote {args.out}  ({os.path.getsize(args.out)/1e6:.0f} MB)")

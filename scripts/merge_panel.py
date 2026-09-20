@@ -109,7 +109,7 @@ def tariff_files(kind, reporters):
 
 
 def load_tariffs(families, reporters=None):
-    """(reporter iso, year, family) -> mfn rate, and pref keyed by partner.
+    """(reporter, year, family) -> (mfn rate, lines); pref keyed by partner too.
 
     `reporters` limits the load to the schedules one importer can read. Loading
     every schedule at once builds an 11.6-million-entry dictionary which,
@@ -117,8 +117,20 @@ def load_tariffs(families, reporters=None):
     enough to bring down a 5.6 GB machine. One importer reads about 120,000
     cells, so the same work done a country at a time fits in a few hundred
     megabytes and the result is identical.
+
+    Several HS6 lines fold into one family, so both rates are built line by
+    line and then averaged with equal weight per line:
+
+      * MFN: the plain mean of the lines' MFN rates. (v1 kept a running
+        (previous + new) / 2 in file order, which is not a mean once a family
+        has three lines or more.)
+      * PREF: per line, what the exporter actually faces - min(preferential,
+        MFN) where both exist, whichever exists otherwise - averaged over the
+        union of the family's lines. v1 took the *minimum* preferential line
+        and then compared it with the MFN *mean*; the two now describe the same
+        lines in the same way, so PREF <= MFN whenever MFN covers the family.
     """
-    mfn, pref = {}, {}
+    mfn_lines = defaultdict(dict)      # (iso, year, fam) -> {product: rate}
     for path in tariff_files("mfn", reporters):
         iso, year = os.path.basename(path)[:-7].rsplit("_", 1)
         with gzip.open(path, "rt", encoding="utf-8") as f:
@@ -127,11 +139,8 @@ def load_tariffs(families, reporters=None):
                 if rate in (None, ""):
                     continue
                 fam = bs.family_of(families, r["nomen"] or "H0", r["product"])
-                key = (iso, int(year), fam)
-                # several HS6 lines can fold into one family: keep the mean
-                prev = mfn.get(key)
-                mfn[key] = float(rate) if prev is None else \
-                    (prev + float(rate)) / 2
+                mfn_lines[(iso, int(year), fam)][r["product"]] = float(rate)
+    pref_lines = defaultdict(dict)     # (iso, year, partner, fam) -> {product: rate}
     for path in tariff_files("pref", reporters):
         base = os.path.basename(path)[:-7]
         iso, year, partner = base.rsplit("_", 2)
@@ -144,10 +153,19 @@ def load_tariffs(families, reporters=None):
                 if rate in (None, ""):
                     continue
                 fam = bs.family_of(families, r["nomen"] or "H0", r["product"])
-                key = (iso, int(year), partner_iso, fam)
-                prev = pref.get(key)
-                pref[key] = float(rate) if prev is None else \
+                lines = pref_lines[(iso, int(year), partner_iso, fam)]
+                prev = lines.get(r["product"])
+                lines[r["product"]] = float(rate) if prev is None else \
                     min(prev, float(rate))
+    mfn = {k: (sum(v.values()) / len(v), len(v)) for k, v in mfn_lines.items()}
+    pref = {}
+    for (iso, year, partner, fam), p_lines in pref_lines.items():
+        m_lines = mfn_lines.get((iso, year, fam), {})
+        applied = []
+        for prod in set(m_lines) | set(p_lines):
+            rates = [x for x in (m_lines.get(prod), p_lines.get(prod)) if x is not None]
+            applied.append(min(rates))
+        pref[(iso, year, partner, fam)] = (sum(applied) / len(applied), len(applied))
     return mfn, pref
 
 
@@ -211,9 +229,9 @@ def lpi_waves(macro):
     no value of their own and never will. The reading applied here is the
     nearest *earlier* wave, which keeps the covariate backward-looking: a
     relationship's 2015 hazard is not allowed to depend on a survey run in 2016.
-    Years before the first wave take the earliest wave, since the alternative is
-    dropping 2003-2006 outright; `importer_lpi_source_year` says which wave a
-    row is on, and equals `year` only for the waves themselves.
+    Years before the first wave stay blank: v1 gave them the first wave, which
+    is a value from the future (9.7% of rows). `importer_lpi_source_year` says
+    which wave a row is on, and equals `year` only for the waves themselves.
     """
     waves = defaultdict(list)
     for (iso, year), row in macro.items():
@@ -225,10 +243,9 @@ def lpi_waves(macro):
 
 
 def lpi_source_year(years, year):
+    """The nearest wave at or before `year`; None before the first wave."""
     earlier = [y for y in years if y <= year]
-    if earlier:
-        return earlier[-1]
-    return years[0] if years else None
+    return earlier[-1] if earlier else None
 
 
 def side_panel_index(table, keys):
@@ -316,20 +333,44 @@ def shard_episodes(ep_path, tmp):
     return sorted(counts), sum(counts.values())
 
 
-def attach_tariff(e, mfn, pref, eu, stats):
+def attach_tariff(e, mfn, pref, eu, stats, evfta=None):
+    """The rate the importer levies on Vietnamese goods in this family.
+
+    EU importers read the resolved EU schedule (eu_tariff_panel.csv: GSP until
+    2019, the EVFTA staging rate from 2020, MFN where neither applies) - the
+    source B0 is built on and the one checked against TRAINS. TRAINS cannot
+    give it: Viet Nam's GSP preferences are filed under group codes, which were
+    never fetched, and the EVFTA only for 2020-2021. So in v1 the generic rate
+    of an EU row was MFN until 2019, EVFTA in 2020-2021 and MFN again from
+    2022 - a +4.1 pp fake tariff shock in 2022. Everyone else reads TRAINS.
+    `tariff_type` is then PREF / MFN (TRAINS) or GSP / EVFTA / MFN (EU)."""
     imp, exp, fam, year = (e["importer"], e["exporter"],
                            e["product_family"], int(e["year"]))
     reporter = eu.get((imp, year), imp)
-    rate = source_year = kind = None
+    e["tariff_n_lines"] = ""
+    if reporter == "EUN" and evfta:
+        hit = evfta.get((fam, year))
+        if hit and hit["tariff_applied_pct"] not in (None, ""):
+            src = hit["tariff_applied_source"]
+            e["tariff_rate"] = round(float(hit["tariff_applied_pct"]), 4)
+            e["tariff_type"] = src.upper()
+            # GSP and EVFTA rates are the legal schedule in force that year;
+            # an MFN rate may be carried, and says so.
+            e["tariff_source_year"] = hit["_mfn_source_year"] \
+                if src == "mfn" and hit["_mfn_source_year"] else year
+            e["tariff_reporter"] = "EUN"
+            stats["eu_schedule"] += 1
+            return
+    rate = source_year = kind = lines = None
     for back in range(0, MAX_CARRY_FORWARD + 1):
         y = year - back
         p = pref.get((reporter, y, exp, fam))
         m = mfn.get((reporter, y, fam))
         if p is not None or m is not None:
-            if p is not None and (m is None or p <= m):
-                rate, kind = p, "PREF"
+            if p is not None and (m is None or p[0] <= m[0]):
+                (rate, lines), kind = p, "PREF"
             else:
-                rate, kind = m, "MFN"
+                (rate, lines), kind = m, "MFN"
             source_year = y
             break
     if rate is None:
@@ -342,6 +383,7 @@ def attach_tariff(e, mfn, pref, eu, stats):
     e["tariff_type"] = kind or ""
     e["tariff_source_year"] = source_year or ""
     e["tariff_reporter"] = reporter
+    e["tariff_n_lines"] = lines or ""
 
 
 def attach_macro(e, macro, lpi_years, stats, glpi=None, glpi_cols=()):
@@ -456,12 +498,12 @@ def attach_cbam(e, table, cols, eu, stats):
     """CBAM binds on imports into the EU, so the columns are written on EU
     importers and left blank elsewhere - the same convention the US reciprocal
     columns use. Membership is read year by year from the tariff mapping, which
-    is why the United Kingdom stops counting after 2020; that mapping ends in
-    2023, so 2024-2025 are held at the 2023 membership."""
+    is why the United Kingdom stops counting after 2020; the mapping runs to
+    2025 (scripts/extend_eu_tariff_mapping.py)."""
     if not cols:
         return
     year = int(e["year"])
-    is_eu = eu.get((e.get("importer"), min(year, 2023))) == "EUN"
+    is_eu = eu.get((e.get("importer"), year)) == "EUN"
     if not is_eu:
         for c in cols:
             e[c] = ""
@@ -522,6 +564,8 @@ def load_evfta():
                 "evfta_cut_cum_pp": round(cut_pp, 4),
                 "evfta_cut_cum_share": cut_share,
                 "years_since_evfta_policy": r["years_since_evfta"],
+                # private: read by attach_tariff(), never written as a column
+                "_mfn_source_year": r["mfn_source_year"],
             }
     print(f"  eu_tariff_panel.csv: {len(table):,} (family, year) rows, "
           f"{len(cols)} columns")
@@ -536,7 +580,7 @@ def attach_evfta(e, table, cols, eu, stats):
     if not cols:
         return
     year = int(e["year"])
-    is_eu = eu.get((e.get("importer"), min(year, 2023))) == "EUN"
+    is_eu = eu.get((e.get("importer"), year)) == "EUN"
     if not is_eu:
         for c in cols:
             e[c] = ""
@@ -639,6 +683,7 @@ def main():
     # shared EU tariff schedule is.
     ntm6_years = bn6.load_observed()
     ntm6_rep_of = bn6.reporter_of()
+    ntm6_mappable = bn6.h4_families()
     ntm6_cache = {}
     print(f"  ntm6 shards: {len(ntm6_years)} reporters with collection years")
 
@@ -675,18 +720,23 @@ def main():
             for rep in reporters_of[imp] & keep:
                 mfn.update(cached[rep][0])
                 pref.update(cached[rep][1])
-            ntm6_rep = ntm6_rep_of.get(imp, imp)
-            if ntm6_rep in ntm6_cache:
-                ntm6_survey, ntm6_inforce = ntm6_cache[ntm6_rep]
-            else:
-                ntm6_survey, ntm6_inforce = bn6.load_reporter(ntm6_rep)
+            # An importer can read more than one NTM reporter over time
+            # (Croatia before and after 2013), so every one it reads is loaded.
+            ntm6_reps = {bn6.reporter_for(ntm6_rep_of, imp, y)
+                         for y in range(bs.YEAR_MIN, bs.YEAR_MAX + 1)}
+            ntm6_shards = {}
+            for rep in ntm6_reps:
+                if rep in ntm6_cache:
+                    ntm6_shards[rep] = ntm6_cache[rep]
+                    continue
+                ntm6_shards[rep] = bn6.load_reporter(rep)
                 # Only the shared EU shard is worth keeping between importers.
-                if ntm6_rep == "EUN":
-                    ntm6_cache[ntm6_rep] = (ntm6_survey, ntm6_inforce)
+                if rep == "EUN":
+                    ntm6_cache[rep] = ntm6_shards[rep]
             with open(os.path.join(tmp, f"{imp}.csv"), encoding="utf-8") as f:
                 rows = list(csv.DictReader(f))
             for e in rows:
-                attach_tariff(e, mfn, pref, eu, stats)
+                attach_tariff(e, mfn, pref, eu, stats, evfta)
                 attach_macro(e, macro, lpi_years, stats, glpi, glpi_cols)
                 attach_sides(e, sides, stats)
                 attach_complexity(e, pci, eci, stats, pci_last, eci_last)
@@ -694,9 +744,8 @@ def main():
                 attach_cbam(e, cbam, cbam_cols, eu, stats)
                 attach_evfta(e, evfta, evfta_cols, eu, stats)
             stats["ntm"] += bn.attach(rows, ntm_lookup, ntm_eu)
-            if bn6.attach(rows, ntm6_survey, ntm6_inforce,
-                          ntm6_years.get(ntm6_rep, [])):
-                stats["ntm6"] += len(rows) if ntm6_years.get(ntm6_rep) else 0
+            stats["ntm6"] += bn6.attach(rows, ntm6_shards, ntm6_years,
+                                        ntm6_rep_of, ntm6_mappable)
             if writer is None:
                 header = list(rows[0].keys())
                 writer = csv.DictWriter(out, fieldnames=header)
@@ -710,7 +759,9 @@ def main():
         os.remove(f)
     os.rmdir(tmp)
 
-    print(f"\n  tariff matched in-year: {stats['matched']:,} "
+    print(f"\n  tariff from the EU schedule: {stats['eu_schedule']:,} "
+          f"({100*stats['eu_schedule']/total:.1f}%)")
+    print(f"  tariff matched in-year: {stats['matched']:,} "
           f"({100*stats['matched']/total:.1f}%)")
     print(f"  carried forward <= {MAX_CARRY_FORWARD}y: {stats['carried']:,} "
           f"({100*stats['carried']/total:.1f}%)")

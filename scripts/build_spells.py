@@ -9,28 +9,32 @@ contribute their VNM rows only.
 Three problems have to be solved before a spell means anything:
 
 1. HS revisions. Countries report under whichever HS revision they have
-   adopted (H1..H5 all appear inside our window, sometimes in the same year).
-   A code that is renumbered between revisions looks like a relationship that
-   died and a new one that was born. Every code is therefore mapped into a
-   *product family*: the connected component of the graph linking codes across
-   revisions through the WITS concordance tables. Families are stable over the
-   whole 20 years, which is what a duration needs.
+   adopted (H1..H6 all appear inside our window). A code that is renumbered
+   between revisions looks like a relationship that died and a new one that was
+   born. Every code is therefore mapped into a *product family* - see
+   families.py, which owns that definition for every script in the pipeline.
 
 2. Existence threshold. A relationship counts as alive in a year when the
    recorded import value clears USD 10,000 - the same cut-off WITS uses in its
    Trade Outcomes indicators. Below that, values are dominated by noise and
    one-off shipments.
 
-3. Censoring. A spell that is already running in the first year of the window
-   is left-censored: its true start is unknown, so it is dropped (per the
-   research design). A spell still alive in the last year is right-censored and
-   kept with the event flag set to 0.
+3. Censoring. A death is only an event when it was *seen*: with the gap rule a
+   spell ending in year E is dead only if E+1 .. E+1+GAP_TOLERANCE were all
+   published at HS6 by that importer and the family could be reported in each
+   of them (confirm_end). Anything else - the end of the record, an unpublished
+   or aggregate-only year, a revision the family cannot be expressed in - is
+   right-censoring, and `censor_reason` says which. Starts are read the same way
+   (confirm_start): a spell whose preceding years were not all observed, or
+   that begins where an HS revision switch dumps another family's goods, has an
+   unknown true start and is flagged `left_trunc` with `start_reason`.
 
 Outputs, in data/interim/:
   spells.csv    - one row per (importer, exporter, family) spell
   episodes.csv  - one row per spell-year, for Cox models with time-varying
                   covariates (tariff, RCA, HHI, shares, growth, GDP)
-  products.csv  - the family -> HS6 code mapping actually used
+  family_map.csv, family_members.csv, family_merges.csv - the product key
+  importer_year_revision.csv - the HS revision each importer filed each year
 
 Usage: python3 build_spells.py
 """
@@ -68,60 +72,10 @@ EXPORTER = "VNM"
 
 
 # --- product families -------------------------------------------------------
-class Union:
-    def __init__(self):
-        self.parent = {}
-
-    def find(self, x):
-        self.parent.setdefault(x, x)
-        while self.parent[x] != x:
-            self.parent[x] = self.parent[self.parent[x]]
-            x = self.parent[x]
-        return x
-
-    def union(self, a, b):
-        ra, rb = self.find(a), self.find(b)
-        if ra != rb:
-            self.parent[rb] = ra
-
-
-def build_families():
-    """Map (revision, hs6) -> stable family id via the WITS concordances."""
-    u = Union()
-    pairs = 0
-    # H6 (HS2022) matters as much as the rest: from 2022 onward it carries
-    # almost the entire panel - 96k of 109k rows in 2022, 111k of 115k in 2023.
-    # Without its table every H6 code becomes its own singleton family, so a
-    # relationship running since 2002 dies in 2021 and an identical one is born
-    # in 2022. That is the exact failure the families exist to prevent.
-    # Tables come from wits.worldbank.org/data/public/concordance/
-    # Concordance_<REV>_to_H0.zip
-    for rev in ("H1", "H2", "H3", "H4", "H5", "H6"):
-        folder = os.path.join(CONC, f"{rev}_to_H0")
-        files = glob.glob(os.path.join(folder, "*.CSV")) + \
-            glob.glob(os.path.join(folder, "*.csv"))
-        if not files:
-            print(f"  WARNING: no concordance file for {rev}")
-            continue
-        with open(files[0], encoding="utf-8-sig", errors="replace") as f:
-            for row in csv.reader(f):
-                if len(row) < 3:
-                    continue
-                src, dst = row[0].strip(), row[2].strip()
-                if len(src) == 6 and len(dst) == 6 and src.isdigit() and dst.isdigit():
-                    u.union(("H0", dst), (rev, src))
-                    pairs += 1
-    print(f"  concordance links: {pairs:,}")
-    return u
-
-
-def family_of(u, rev, code):
-    """Family key for a reported code; unmapped codes stand alone."""
-    root = u.find((rev, code)) if (rev, code) in u.parent else None
-    if root is None:
-        # code absent from the concordance (new line, or already H0)
-        root = u.find(("H0", code)) if ("H0", code) in u.parent else (rev, code)
-    return f"{root[0]}_{root[1]}"
+# Defined once, in families.py. Re-exported here because merge_panel.py and the
+# EU/EVFTA builders reach them as build_spells.build_families / family_of.
+from families import (Union, build_families, family_of,  # noqa: E402,F401
+                      families_in_revision, write_family_map)
 
 
 # --- panel ------------------------------------------------------------------
@@ -194,7 +148,7 @@ def complete_importers(folder):
     return usable, holes
 
 
-def read_folder(u, folder, keep_exporter, importers, label):
+def read_folder(u, folder, keep_exporter, importers, label, revisions=None):
     """(importer, family, year) -> value in USD, summed over HS6 lines.
 
     Net weight is summed the same way and returned beside it. The data brief
@@ -202,6 +156,10 @@ def read_folder(u, folder, keep_exporter, importers, label):
     98.7% of Vietnamese lines - enough to divide into a unit value, which is
     how the trade-duration literature separates a relationship dying because
     the buyer left from one dying because the price collapsed.
+
+    `revisions`, when given, is filled with (importer, year) -> {revision:
+    value}: the HS revision each filing used, which build_spells() needs to
+    tell a death from a family the new revision cannot express.
     """
     panel = defaultdict(float)
     weights = defaultdict(float)
@@ -224,6 +182,9 @@ def read_folder(u, folder, keep_exporter, importers, label):
                 if importers and r["importer"] not in importers:
                     continue
                 rev, code = r["hs_revision"] or "H0", r["hs6"]
+                if revisions is not None:
+                    revisions.setdefault((r["importer"], year),
+                                         defaultdict(float))[rev] += value
                 codes_seen.add((rev, code))
                 fam = family_of(u, rev, code)
                 if (rev, code) in u.parent:
@@ -244,7 +205,7 @@ def read_folder(u, folder, keep_exporter, importers, label):
     return panel, weights, codes_seen, codes_mapped
 
 
-def load_panel(u):
+def load_panel(u, revisions=None):
     """Viet Nam's side of the panel: (importer, family, year) -> USD."""
     importers, holes = complete_importers(RAW_TRADE)
     if holes:
@@ -257,30 +218,35 @@ def load_panel(u):
         if len(holes) > len(worst):
             print(f"    ... and {len(holes) - len(worst)} more")
     panel, weights, _, _ = read_folder(u, RAW_TRADE, EXPORTER, importers,
-                                       "VNM imports")
+                                       "VNM imports", revisions)
     if not panel:
         sys.exit(f"No Vietnamese rows in {RAW_TRADE}. Run fetch_trade.py first.")
     return panel, weights, importers, holes
 
 
 def observed_years(folder):
-    """Every importer-year the fetcher actually settled.
+    """Every importer-year observed *at HS6*: a file on disk, nothing else.
 
-    Two things count as observed: a file on disk, and an entry in the
-    empty-years registry, which means the reporter did file but carried no HS6
-    line above zero. Anything else was never seen at all - and the difference
-    matters enormously at the trailing edge, where "reported nothing" and "was
-    never asked" look identical in the panel but mean opposite things.
+    The empty-years registry is deliberately not counted. Its three reasons -
+    "reporter filed no HS6 detail", "only the unclassified 999999 aggregate",
+    and "no HS6 rows in a batch that returned data for other years" - all say
+    the product detail is missing, not that Viet Nam sold nothing. v1 counted
+    them as observed and read every relationship alive before them as dead:
+    ARE's 1,064 relationships in 2023 (2024 not yet published), all 455 in 2008
+    (2009 aggregate-only), and so on for 31 importer-years. A year that was
+    never seen at HS6 can confirm neither a death nor a birth.
     """
     seen = defaultdict(set)
     for path in glob.glob(os.path.join(folder, "*.csv.gz")):
         iso, year = os.path.basename(path)[:-7].rsplit("_", 1)
         seen[iso].add(int(year))
-    empty = os.path.join(folder, "_empty_years.csv")
-    if os.path.exists(empty):
-        with open(empty, encoding="utf-8") as f:
+    # Files whose HS6 lines cover under half the reporter's own TOTAL are
+    # missing their product detail just as surely (screen_hs6_coverage.py).
+    partial = os.path.join(SEL, "hs6_unobserved_years.csv")
+    if os.path.exists(partial):
+        with open(partial, encoding="utf-8") as f:
             for r in csv.DictReader(f):
-                seen[r["importer"]].add(int(r["year"]))
+                seen[r["importer"]].discard(int(r["year"]))
     return seen
 
 
@@ -395,13 +361,70 @@ def load_world(u, importers, vn_panel):
 
 
 # --- spells -----------------------------------------------------------------
-def build_spells(panel, last_year=None, weights=None):
+def build_spells(panel, last_year=None, weights=None, observed=None,
+                 revision_of=None, fam_in_rev=None, receivers=None):
     """last_year maps importer -> the final year that importer was observed.
-    A spell running to that year is right-censored: the record ends, the
-    relationship need not have. Absent the map every importer ends at YEAR_MAX,
-    which is the old behaviour."""
+
+    The optional maps turn on the v2 reading of both ends of a spell:
+      observed     importer -> years published at HS6 (observed_years)
+      revision_of  (importer, year) -> HS revision of that filing
+      fam_in_rev   revision -> families expressible in it (families.py)
+      receivers    revision -> families that absorbed an unmerged orphan
+    Without them the old rule applies: only the last year censors."""
     last_year = last_year or {}
     weights = weights or {}
+    revision_of = revision_of or {}
+    fam_in_rev = fam_in_rev or {}
+    receivers = receivers or {}
+
+    def end_reason(imp, fam, end):
+        """Why a spell's end is not a confirmed death ("" when it is one).
+
+        With GAP_TOLERANCE = g a relationship absent for g years and then back
+        is one spell, so a death at `end` needs end+1 .. end+1+g to be seen
+        empty. Each of those years must lie inside the record, be published at
+        HS6, and be a revision the family can be reported in at all."""
+        T = last_year.get(imp, YEAR_MAX)
+        if end >= T:
+            return "window_end"
+        need = range(end + 1, end + 2 + GAP_TOLERANCE)
+        seen = observed.get(imp, set()) if observed is not None else None
+        for y in need:
+            if y > T:
+                return "window_edge"
+            if seen is not None and y not in seen:
+                return "unobserved_year"
+        for y in need:
+            r = revision_of.get((imp, y))
+            if r and fam_in_rev and fam not in fam_in_rev.get(r, ()):
+                return "hs_revision"
+        return ""
+
+    def start_reason(imp, fam, start):
+        """Why a spell's start is not a confirmed birth ("" when it is one).
+        The mirror image of end_reason(), plus the receiving side of an
+        orphan: goods an unmerged orphan hands over at a revision switch look
+        like a new relationship in the family that absorbs them."""
+        if start <= YEAR_MIN:
+            return "window_start"
+        if observed is None:
+            return ""
+        need = range(start - 1 - GAP_TOLERANCE, start)
+        seen = observed.get(imp, set())
+        for y in need:
+            if y < YEAR_MIN:
+                return "window_start"
+            if y not in seen:
+                return "unobserved_year"
+        for y in need:
+            r = revision_of.get((imp, y))
+            if r and fam_in_rev and fam not in fam_in_rev.get(r, ()):
+                return "hs_revision"
+        r0, r1 = revision_of.get((imp, start - 1)), revision_of.get((imp, start))
+        if r0 and r1 and r0 != r1 and fam in receivers.get(r1, ()):
+            return "hs_revision_receiver"
+        return ""
+
     by_rel = defaultdict(dict)
     for (imp, fam, year), value in panel.items():
         by_rel[(imp, EXPORTER, fam)][year] = value
@@ -423,14 +446,14 @@ def build_spells(panel, last_year=None, weights=None):
 
         for run in runs:
             start, end = run[0], run[-1]
-            # A spell already running in the first year of the raw data has an
-            # unknown true start. B0 asks for it to be kept and flagged rather
-            # than dropped: the window of analysis is 2012-2024 while the data
-            # reach back to 2002, so for the Stage 1 sample the age of a spell
-            # alive in 2012 is *observed*, not imputed. Only spells alive in
-            # YEAR_MIN itself are genuinely truncated.
-            left_trunc = start == YEAR_MIN
-            right_censored = end >= last_year.get(imp, YEAR_MAX)
+            # A spell whose true start is unknown is kept and flagged rather
+            # than dropped (B0): the window of analysis is 2012-2024 while the
+            # data reach back to 2002, so most ages are *observed*. What makes
+            # a start unknown is spelled out in start_reason().
+            s_reason = start_reason(imp, fam, start)
+            c_reason = end_reason(imp, fam, end)
+            left_trunc = bool(s_reason)
+            right_censored = bool(c_reason)
             spell_id = f"{imp}_{exp}_{fam}_{start}"
             # With GAP_TOLERANCE > 0 a run spans calendar years that sit below
             # the threshold. They belong to the spell - that is the whole point
@@ -446,6 +469,7 @@ def build_spells(panel, last_year=None, weights=None):
                 "event": 0 if right_censored else 1,
                 "right_censored": int(right_censored),
                 "left_trunc": int(left_trunc),
+                "censor_reason": c_reason, "start_reason": s_reason,
                 "n_gap_years": len(span) - len(run),
                 "first_year_value_usd": round(series[start], 2),
                 "mean_value_usd": round(
@@ -468,6 +492,7 @@ def build_spells(panel, last_year=None, weights=None):
                     # was observed at all.
                     "spell_start_year": start, "spell_end_year": end,
                     "right_censored": int(right_censored),
+                    "censor_reason": c_reason, "start_reason": s_reason,
                     "t_start": k - 1, "t_stop": k,
                     "event": 1 if (y == end and not right_censored) else 0,
                     "import_value_usd": round(val, 2),
@@ -624,12 +649,59 @@ def write(name, rows, cols):
     print(f"  wrote {path} ({len(rows):,} rows)")
 
 
+MASS_DEATH_SHARE, MASS_DEATH_MIN_N = 0.6, 30
+MASS_DEATH_ALLOWLIST = os.path.join(SEL, "mass_death_allowlist.csv")
+
+
+def mass_deaths(episodes):
+    """Importer-years where more than MASS_DEATH_SHARE of the live relationships
+    end in a confirmed death. That is never a market signal: every case found in
+    v1 was a filing artefact (an unpublished year, an aggregate-only filing, a
+    record that simply stops). A genuine one - a war, an embargo - has to be
+    written into selection/mass_death_allowlist.csv with its reason."""
+    allow = set()
+    if os.path.exists(MASS_DEATH_ALLOWLIST):
+        with open(MASS_DEATH_ALLOWLIST, encoding="utf-8") as f:
+            allow = {(r["importer"], int(r["year"])) for r in csv.DictReader(f)}
+    alive, dead = defaultdict(int), defaultdict(int)
+    for e in episodes:
+        if e["gap_filled"]:
+            continue
+        k = (e["importer"], e["year"])
+        alive[k] += 1
+        dead[k] += e["event"]
+    return sorted((k, alive[k], dead[k] / alive[k]) for k in alive
+                  if alive[k] >= MASS_DEATH_MIN_N
+                  and dead[k] / alive[k] > MASS_DEATH_SHARE and k not in allow)
+
+
+def write_revisions(revisions):
+    """(importer, year) -> the revision carrying most of that filing's value.
+    Every importer-year in the raw folder uses a single revision (measured), so
+    the choice of rule only matters as a guard."""
+    out = {k: max(c, key=c.get) for k, c in revisions.items()}
+    path = os.path.join(OUT, "importer_year_revision.csv")
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["importer", "year", "hs_revision", "n_revisions"])
+        for (imp, y) in sorted(out):
+            w.writerow([imp, y, out[(imp, y)],
+                        sum(1 for v in revisions[(imp, y)].values() if v > 0)])
+    print(f"  wrote {path} ({len(out):,} importer-years)")
+    return out
+
+
 def main():
-    print("Building product families from WITS concordances")
+    print("Building product families (families.py)")
     u = build_families()
+    write_family_map(u, OUT)
+    fam_in_rev = families_in_revision(u)
     print("Reading trade panel")
-    panel, weights, importers, holes = load_panel(u)
+    revisions = {}
+    panel, weights, importers, holes = load_panel(u, revisions)
     print(f"  panel cells: {len(panel):,} from {len(importers)} importers")
+    revision_of = write_revisions(revisions)
+    observed = observed_years(RAW_TRADE)
 
     last_year, interior = observation_windows(importers)
     stopped = sorted((iso, y) for iso, y in last_year.items() if y < YEAR_MAX)
@@ -646,8 +718,15 @@ def main():
 
     world = load_world(u, importers, panel)
     print("Building spells")
-    spells, episodes = build_spells(panel, last_year, weights)
+    spells, episodes = build_spells(panel, last_year, weights, observed,
+                                    revision_of, fam_in_rev, u.receivers)
     print(f"  spells: {len(spells):,}  episodes: {len(episodes):,}")
+    for label, key in (("censor_reason", "censor_reason"),
+                       ("start_reason", "start_reason")):
+        counts = defaultdict(int)
+        for s in spells:
+            counts[s[key] or "(confirmed)"] += 1
+        print(f"  {label}: " + ", ".join(f"{k} {v:,}" for k, v in sorted(counts.items())))
     print("Computing HS6-level covariates")
     d = derived(panel, world)
     episodes = attach(episodes, d)
@@ -657,11 +736,12 @@ def main():
     write("spells.csv", spells,
           ["spell_id", "importer", "exporter", "product_family", "start_year",
            "end_year", "duration", "event", "right_censored", "left_trunc",
+           "censor_reason", "start_reason",
            "n_gap_years", "first_year_value_usd", "mean_value_usd"])
     write("episodes.csv", episodes,
           ["spell_id", "importer", "exporter", "product_family", "year",
            "spell_start_year", "spell_end_year", "right_censored",
-           "left_trunc", "gap_filled",
+           "left_trunc", "censor_reason", "start_reason", "gap_filled",
            "t_start", "t_stop", "event", "import_value_usd", "net_weight_kg",
            "unit_value_usd_per_kg", "rca",
            "product_share_pct", "partner_share_pct", "vn_market_share_pct",
@@ -684,6 +764,16 @@ def main():
         one_year = sum(1 for d in durations if d == 1)
         print(f"One-year spells: {one_year:,} "
               f"({100 * one_year / len(durations):.1f}%)")
+
+    bad = mass_deaths(episodes)
+    if bad:
+        print(f"\nMASS-DEATH GUARD: {len(bad)} importer-year(s) lose more than "
+              f"{MASS_DEATH_SHARE:.0%} of their live relationships at once "
+              f"(n >= {MASS_DEATH_MIN_N}):")
+        for (imp, y), n, share in bad:
+            print(f"    {imp} {y}: {share:.0%} of {n}")
+        sys.exit("Fix the observation record or allowlist each case, with its "
+                 f"reason, in {MASS_DEATH_ALLOWLIST}.")
 
 
 if __name__ == "__main__":

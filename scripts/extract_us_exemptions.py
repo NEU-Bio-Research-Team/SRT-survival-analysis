@@ -38,7 +38,6 @@ from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PDF = os.path.join(HERE, "data", "raw", "us_tariffs_2025", "hts_chapter99_notes.pdf")
-CONC = os.path.join(HERE, "data", "raw", "concordance", "H6_to_H0")
 OUT = os.path.join(HERE, "data", "interim")
 
 HS8 = re.compile(r"\b(\d{4}\.\d{2}\.\d{2})\b")
@@ -87,7 +86,7 @@ def codes_in(block):
 
 
 def h6_to_h0():
-    """(h6 -> set of h0, h0 -> set of h6). Both directions are needed.
+    """(h6 -> set of families, family -> set of h6). Both directions are needed.
 
     The forward map places an exempt subheading in the panel's vocabulary. The
     reverse map is what stops that from overstating: HS 1992 is coarser than HS
@@ -96,30 +95,14 @@ def h6_to_h0():
     a family can hold both exempt and non-exempt subheadings, and only the
     reverse map can say in what proportion.
     """
-    path = None
-    for f in os.listdir(CONC):
-        if f.upper().endswith(".CSV"):
-            path = os.path.join(CONC, f)
-    if path is None:
-        return {}, {}
+    import families
+    u = families.build_families(verbose=False)
     fwd, rev = defaultdict(set), defaultdict(set)
-    # The WITS concordance exports are not all UTF-8: H4_to_H0 carries Latin-1
-    # accents in its product descriptions and dies on strict decoding.
-    with open(path, encoding="utf-8-sig", errors="replace") as f:
-        for row in csv.DictReader(f):
-            keys = {k.lower().strip(): v for k, v in row.items()}
-            # Headers read "HS 2022 Product Code" and "HS 1988/92 Product Code";
-            # both editions also carry a Description column, so "code" has to be
-            # part of the test or the description wins.
-            src = next((v for k, v in keys.items()
-                        if "2022" in k and "code" in k), None)
-            dst = next((v for k, v in keys.items()
-                        if ("1988" in k or "1992" in k) and "code" in k), None)
-            if src and dst:
-                a = src.strip().replace(".", "").zfill(6)
-                b = dst.strip().replace(".", "").zfill(6)
-                fwd[a].add(b)
-                rev[b].add(a)
+    # Families come from the shared product key (families.py), so a family here
+    # is the same set of H0 codes the panel uses - including the orphan merges.
+    for h6, fam in families.table_map(u, "H6").items():
+        fwd[h6].add(fam)
+        rev[fam].add(h6)
     return fwd, rev
 
 
@@ -164,7 +147,7 @@ def main():
                 matched += 1
             src = "+".join(sorted(per6[h6]["src"]))
             for h0 in h0s or [""]:
-                w.writerow([h6, f"H0_{h0}" if h0 else "", per6[h6]["n"], src])
+                w.writerow([h6, h0, per6[h6]["n"], src])
     print(f"  -> {hs6_path}  ({len(per6):,} HS6, {matched:,} mapped to H0)")
 
     # The family-level file, which is what the panel merges. `exempt_share_h6`
@@ -185,7 +168,7 @@ def main():
             share = len(hit) / len(members) if members else 0.0
             is_full = int(bool(members) and len(hit) == len(members))
             full += is_full
-            w.writerow([f"H0_{h0}", f"{share:.4f}", is_full,
+            w.writerow([h0, f"{share:.4f}", is_full,
                         len(members), len(hit)])
     print(f"  -> {fam_path}  ({len(fams):,} H0 families, "
           f"{full:,} wholly exempt, {len(fams)-full:,} straddling)")

@@ -8,7 +8,10 @@ không track git (quá lớn — xem `.gitignore`):
 | `stage1_panel.parquet` | 178 MB (nén zstd) | **Mặc định — dùng cái này.** Nạp nhanh, ít RAM, giữ đúng kiểu số |
 | `stage1_panel.csv` | 1,2 GB | Chỉ khi công cụ không đọc được parquet (Excel, một số bản R/Stata cũ) |
 
-Cả hai cùng nội dung: **949.537 dòng × 205 cột**, dựng từ
+Bản v2 (20/09/2026): **932.204 dòng × 209 cột**. `stage1_panel.csv` trên đĩa
+vẫn là bản v1 cho tới khi xuất lại từ parquet (lệnh bên dưới). Bản v1
+đầy đủ nằm ở `data/v1_backup/`. Kết quả kiểm định: `docs/audit/stage1_v2.md`.
+Parquet dựng từ
 `data/interim/panel_final.csv` bằng:
 
 ```

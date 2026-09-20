@@ -191,8 +191,25 @@ def write_csv(path, rows, cols):
     print(f"  wrote {path}  ({len(rows):,} rows)")
 
 
+def read_hs6():
+    """eu_mfn_hs6.csv back as rows, for --families-only."""
+    with open(os.path.join(OUT, "eu_mfn_hs6.csv"), encoding="utf-8") as f:
+        return [{"year": int(r["year"]), "hs6": r["hs6"],
+                 "n_cn8_lines": int(r["n_cn8_lines"]),
+                 "mfn_simple_avg_pct": float(r["mfn_simple_avg_pct"]),
+                 "mfn_max_pct": float(r["mfn_max_pct"]),
+                 "any_specific_duty": int(r["any_specific_duty"])}
+                for r in csv.DictReader(f)]
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
+    # The HS6 table does not depend on the product key, only the family table
+    # does - and re-parsing 20 years of CN PDFs costs ~10 minutes and ~6 GB.
+    # After a change to families.py, --families-only re-keys from the HS6 file.
+    if "--families-only" in sys.argv:
+        write_families(read_hs6())
+        return
     lines = []
     for year in YEARS:
         print(f"Parsing the CN {year} duty table")
@@ -226,7 +243,12 @@ def main():
               ["year", "hs6", "n_cn8_lines", "mfn_simple_avg_pct",
                "mfn_max_pct", "any_specific_duty"])
 
-    # ---- and keyed by the panel's product family --------------------------
+    write_families(hs6_rows)
+    report(lines)
+
+
+def write_families(hs6_rows):
+    """The HS6 table keyed by the panel's product family."""
     sys.path.insert(0, os.path.join(HERE, "scripts"))
     import build_spells                                     # noqa: PLC0415
     u = build_spells.build_families()
@@ -250,6 +272,8 @@ def main():
               ["year", "product_family", "n_hs6", "mfn_simple_avg_pct",
                "mfn_max_pct", "any_specific_duty"])
 
+
+def report(lines):
     print("\nSanity:")
     for year in YEARS:
         rs = [r for r in lines if r["year"] == year]

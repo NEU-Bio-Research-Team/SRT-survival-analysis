@@ -31,8 +31,9 @@ reporter and deduplicated on (family, NTM code, start, end). This one moves
 between collection years - but it moves for a reason that belongs in any table
 built on it: **the researcher file starts in 2010, and a measure is only ever
 seen if some collection year caught it**, so counts before a reporter's first
-collection year are structurally zero rather than genuinely low. `ntm6_observed`
-marks the years a reporter filed at all.
+collection year would be structurally zero rather than genuinely low. They are
+left blank instead (attach()), as are families no HS 2012 code maps to
+(`ntm6_mappable = 0`). `ntm6_observed` marks the years a reporter filed at all.
 
 **Why this shards to disk.** The full filtered file is ~22m rows and the
 aggregate does not fit in the ~1 GB this machine has spare - holding it cost
@@ -70,42 +71,36 @@ GROUPS = {"sps": "A", "tbt": "B", "quantity": "E", "price": "F"}
 COUNTS = ["all", "nonh", "bilateral"] + list(GROUPS)
 COLS = ([f"ntm6_{c}_survey" for c in COUNTS]
         + ["ntm6_all_inforce", "ntm6_sps_inforce", "ntm6_tbt_inforce",
-           "ntm6_source_year", "ntm6_observed"])
+           "ntm6_source_year", "ntm6_observed", "ntm6_mappable"])
 
 I_YEAR, I_REP, I_PARTNER, I_HS, I_ALL, I_NONH, I_CODE, I_MIN, I_MAX = (
     0, 2, 4, 7, 8, 9, 18, 19, 20)
 
 
 def h4_to_h0():
-    path = next((os.path.join(CONC, f) for f in os.listdir(CONC)
-                 if f.upper().endswith(".CSV")), None)
-    if path is None:
-        return {}
-    m = {}
-    # The WITS concordance exports are not all UTF-8: H4_to_H0 carries Latin-1
-    # accents in its descriptions and dies on strict decoding.
-    with open(path, encoding="utf-8-sig", errors="replace") as f:
-        for row in csv.DictReader(f):
-            keys = {k.lower().strip(): v for k, v in row.items()}
-            src = next((v for k, v in keys.items()
-                        if "2012" in k and "code" in k), None)
-            dst = next((v for k, v in keys.items()
-                        if ("1988" in k or "1992" in k) and "code" in k), None)
-            if src and dst:
-                # The panel writes families as `H0_090122`, so the prefix goes
-                # on here rather than at every call site.
-                m.setdefault(src.strip().zfill(6), set()).add(
-                    "H0_" + dst.strip().zfill(6))
-    return m
+    """HS 2012 code -> {product family}, through the shared product key
+    (families.py). Codes outside the WITS H4 table are ignored, as before."""
+    import families
+    u = families.build_families(verbose=False)
+    return {h4: {fam} for h4, fam in families.table_map(u, "H4").items()}
+
+
+def h4_families():
+    """The families at least one HS 2012 code maps to. The researcher file is
+    HS 2012, so a family outside this set can never carry a measure: its
+    counts are unknown, not zero."""
+    return {f for fams in h4_to_h0().values() for f in fams}
 
 
 def reporter_of():
-    """panel importer -> the TRAINS reporter that files its measures.
+    """(panel importer, year) -> the TRAINS reporter that files its measures.
 
     Everyone files for themselves except EU members, whose measures are filed
     once under EUN - the same arrangement the tariff pull already handles, so
-    the mapping is read from that file rather than restated here.
-    """
+    the mapping is read from that file rather than restated here. It is keyed by
+    year: Croatia files for itself until it joins in 2013, and the United
+    Kingdom reads EUN only through 2020. Years outside the file fall back to
+    the importer itself (see reporter_for)."""
     path = os.path.join(SEL, "eu_tariff_mapping.csv")
     out = {}
     if not os.path.exists(path):
@@ -114,8 +109,12 @@ def reporter_of():
         for r in csv.DictReader(f):
             iso, rep = r["iso3"].strip(), r["tariff_reporter"].strip()
             if iso and rep:
-                out[iso] = rep
+                out[(iso, int(r["year"]))] = rep
     return out
+
+
+def reporter_for(rep_of, imp, year):
+    return rep_of.get((imp, year), imp)
 
 
 def panel_families():
@@ -266,17 +265,35 @@ def load_reporter(rep):
     return dict(survey), {k: sorted(v) for k, v in inforce.items()}
 
 
-def attach(rows, survey, inforce, years):
-    """Write the NTM6 columns onto one importer's episodes. Returns hits."""
+def attach(rows, shards, years_of, rep_of, mappable):
+    """Write the NTM6 columns onto one importer's episodes. Returns hits.
+
+    shards    reporter -> (survey, inforce), from load_reporter()
+    years_of  reporter -> sorted collection years, from load_observed()
+    rep_of    (importer, year) -> reporter, from reporter_of()
+    mappable  families an HS 2012 code maps to, from h4_families()
+
+    A value is written only where something was measured. Three cases stay
+    blank rather than 0: a reporter with no collection at all; a year before
+    the reporter's first collection (v1 borrowed the first survey from the
+    future there, and in-force counts were structurally zero); and a family no
+    HS 2012 code maps to, which the researcher file cannot describe."""
     hits = 0
     for e in rows:
-        if not years:
-            for c in COLS:
-                e[c] = ""
-            continue
         fam, year = e.get("product_family"), int(e["year"])
+        rep = reporter_for(rep_of, e["importer"], year)
+        years = years_of.get(rep, [])
         earlier = [y for y in years if y <= year]
-        src = earlier[-1] if earlier else years[0]
+        for c in COLS:
+            e[c] = ""
+        if not years:
+            continue
+        e["ntm6_observed"] = int(year in years)
+        e["ntm6_mappable"] = int(fam in mappable)
+        if not earlier or fam not in mappable:
+            continue
+        survey, inforce = shards.get(rep, ({}, {}))
+        src = earlier[-1]
         acc = survey.get((fam, src))
         for i, c in enumerate(COUNTS):
             e[f"ntm6_{c}_survey"] = acc[i] if acc else 0
@@ -285,7 +302,6 @@ def attach(rows, survey, inforce, years):
         e["ntm6_sps_inforce"] = sum(1 for t in live if t[2][:1] == "A")
         e["ntm6_tbt_inforce"] = sum(1 for t in live if t[2][:1] == "B")
         e["ntm6_source_year"] = src
-        e["ntm6_observed"] = int(year in years)
         hits += 1
     return hits
 

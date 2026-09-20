@@ -20,7 +20,8 @@ therefore a join on the true calendar year (t-1), at the grain the variable
 actually lives at:
 
   * relationship-level (value, market share, unit value, the importer's own
-    tariff schedule, volatility): joined on (importer, product_family,
+    tariff schedule, the importer's total imports of the product
+    log_total_import_cp, volatility): joined on (importer, product_family,
     year-1). A brand-new spell's first row has no year-1 row for that pair
     and correctly gets a null lag - that is what "we have no history for this
     relationship" means, and duration dummies in B5 absorb it.
@@ -30,13 +31,21 @@ actually lives at:
     macro history - only the relationship-level variables should go null on
     a spell's first row, not the country's GDP.
   * product_family-year level (rca, VN's own growth in the product, world
-    demand, EVFTA/tariff policy, n_markets_for_p): joined on (product_family,
-    year-1). rca and country_growth_pct look relationship-level because they
-    sit on every episode row, but build_spells.py computes both as Balassa-
-    style indices keyed by (product_family, year) alone - Viet Nam's global
-    position in a product, broadcast onto every importer that buys it. Lagged
-    at the importer x product_family grain instead, they would wrongly go
-    null on a spell's first row for any importer new to the product.
+    demand, n_markets_for_p): joined on (product_family, year-1). rca and
+    country_growth_pct look relationship-level because they sit on every
+    episode row, but build_spells.py computes both as Balassa-style indices
+    keyed by (product_family, year) alone - Viet Nam's global position in a
+    product, broadcast onto every importer that buys it. Lagged at the importer
+    x product_family grain instead, they would wrongly go null on a spell's
+    first row for any importer new to the product. Each is asserted constant
+    within (product_family, year) before it is lagged - v1 lagged
+    log_total_import_cp here, although it is the *importer's* total, and
+    .unique() then handed every row some other importer's value (94.6% wrong).
+  * the EU policy columns (tariff_applied_pct, tariff_mfn_pct, pref_margin_pp,
+    evfta_cut_cum_*): lagged from the EU schedule itself
+    (data/interim/eu_tariff_panel.csv), not from the panel's rows. A tariff
+    exists whether or not any EU member imported the family last year; read off
+    the rows, 7,123 EU episode-years lost a lag the schedule has.
   * importer x HS2-year level (hs2_share, the portfolio-clustering variable):
     joined on (importer, hs2, year-1).
 
@@ -80,6 +89,8 @@ import polars as pl
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IN_PATH = os.path.join(HERE, "data", "interim", "panel_final.csv")
+EU_PANEL = os.path.join(HERE, "data", "interim", "eu_tariff_panel.csv")
+EU_MAPPING = os.path.join(HERE, "selection", "eu_tariff_mapping.csv")
 OUT_DIR = os.path.join(HERE, "data", "final")
 OUT_PATH = os.path.join(OUT_DIR, "stage1_panel.parquet")
 
@@ -89,9 +100,8 @@ KEYS = ["importer", "product_family", "year"]
 SOURCE_COLS = [
     "gap_filled", "import_value_usd", "vn_market_share_pct",
     "unit_value_usd_per_kg", "tariff_rate", "world_growth_pct",
-    "country_growth_pct", "rca", "total_import_cp_usd", "tariff_applied_pct",
-    "tariff_mfn_pct", "pref_margin_pp", "evfta_cut_cum_pp",
-    "evfta_cut_cum_share", "importer_gdp_usd", "importer_gdp_per_capita_usd",
+    "country_growth_pct", "rca", "total_import_cp_usd",
+    "importer_gdp_usd", "importer_gdp_per_capita_usd",
     "importer_population", "importer_gdp_growth_pct",
     "importer_inflation_pct", "importer_exchange_rate_lcu_per_usd",
     "importer_imports_pct_gdp", "importer_exports_pct_gdp",
@@ -131,10 +141,37 @@ def lag_lookup(df, source_cols, on):
     keys = list(on)
     return (
         df.select(keys + ["year"] + source_cols)
-        .unique(subset=keys + ["year"])
+        .unique(subset=keys + ["year"], keep="first", maintain_order=True)
         .with_columns((pl.col("year") + 1).alias("year"))
         .rename({c: f"{c}_lag1" for c in source_cols})
     )
+
+
+def assert_constant(df, cols, keys):
+    """Fail loudly if a column about to be lagged at `keys` varies within it -
+    a lag at the wrong grain silently borrows another row's value."""
+    nu = df.group_by(keys).agg([pl.col(c).drop_nulls().n_unique().alias(c) for c in cols])
+    bad = {c: int((nu[c] > 1).sum()) for c in cols if (nu[c] > 1).any()}
+    if bad:
+        raise SystemExit(f"not constant within {keys}: {bad}")
+
+
+def eu_policy_lags():
+    """(product_family, year) -> the five EU policy columns at year-1, from the
+    EU schedule, computed exactly as merge_panel.load_evfta() does."""
+    t = pl.read_csv(EU_PANEL, infer_schema_length=0)
+    f = lambda c: pl.col(c).cast(pl.Float64, strict=False)
+    cut = pl.when((f("evfta_base_pct") > 0) & f("evfta_pct").is_not_null()) \
+        .then(f("evfta_base_pct") - f("evfta_pct")).otherwise(0.0)
+    return t.select(
+        pl.col("product_family"), (pl.col("year").cast(pl.Int64) + 1).alias("year"),
+        f("applied_pct").alias("tariff_applied_lag"),
+        f("mfn_pct").alias("tariff_mfn_pct_lag1"),
+        f("pref_margin_pp").alias("pref_margin_lag"),
+        cut.round(4).alias("evfta_cut_cum_pp_lag"),
+        pl.when(f("evfta_base_pct") > 0).then((cut / f("evfta_base_pct")).round(4))
+        .otherwise(0.0).alias("evfta_cut_cum_share_lag"),
+    ).unique(subset=["product_family", "year"], keep="first", maintain_order=True)
 
 
 def build_features():
@@ -159,10 +196,13 @@ def build_features():
         pl.col("product_family").n_unique().alias("n_products_to_c"))
     n_markets = active.group_by(["product_family", "year"]).agg(
         pl.col("importer").n_unique().alias("n_markets_for_p"))
+    # Values are sorted inside each group before summing: a parallel group_by
+    # otherwise adds them in whatever order the threads meet them, and two
+    # builds then differ in the 16th digit (3,601 rows of hs2_share did).
     hs2_value = active.group_by(["importer", "hs2", "year"]).agg(
-        pl.col("import_value_usd").sum().alias("hs2_value_usd"))
+        pl.col("import_value_usd").sort().sum().alias("hs2_value_usd"))
     importer_total = active.group_by(["importer", "year"]).agg(
-        pl.col("import_value_usd").sum().alias("importer_total_value_usd"))
+        pl.col("import_value_usd").sort().sum().alias("importer_total_value_usd"))
     hs2_share = (
         hs2_value.join(importer_total, on=["importer", "year"], how="left")
         .with_columns(
@@ -219,7 +259,7 @@ def build_features():
     df = df.join(
         lag_lookup(df, [
             "log_value", "vn_market_share_pct", "unit_value_usd_per_kg",
-            "tariff_rate",
+            "tariff_rate", "log_total_import_cp",
         ], on=["importer", "product_family"]),
         on=["importer", "product_family", "year"], how="left",
     ).rename({"log_value_lag1": "log_value_lag"})
@@ -230,7 +270,7 @@ def build_features():
         "importer_gdp_growth_pct", "importer_inflation_pct",
         "importer_exchange_rate_lcu_per_usd", "importer_imports_pct_gdp",
         "importer_exports_pct_gdp", "n_products_to_c",
-    ]).unique(subset=["importer", "year"])
+    ]).unique(subset=["importer", "year"], keep="first", maintain_order=True)
     df = df.join(
         lag_lookup(importer_year, [
             "log_gdp_d", "log_gdpcap_d", "log_pop_d",
@@ -243,49 +283,37 @@ def build_features():
     del importer_year
 
     print("Lagging product_family-year covariates (product_family x year-1)")
-    # These five are constant across every importer for a given
-    # (product_family, year) - VN's own global position in the product, not
-    # anything about who is buying it - so .unique() may keep whichever
-    # importer's row it happens to land on; the value is the same either way.
+    # VN's own global position in the product, not anything about who buys it:
+    # constant across importers for a (product_family, year), and asserted so.
     broadcast_cols = ["world_growth_pct", "country_growth_pct", "rca",
-                       "log_total_import_cp", "n_markets_for_p"]
+                      "n_markets_for_p"]
+    assert_constant(df, broadcast_cols, ["product_family", "year"])
     family_year = df.select(["product_family", "year"] + broadcast_cols) \
-        .unique(subset=["product_family", "year"])
-
-    # These five are the opposite: attach_evfta() in merge_panel.py writes
-    # them ONLY on EU27 importer rows and leaves every non-EU row blank -
-    # 120 of 147 importers, so an arbitrary .unique() over all importers
-    # picks a non-EU (null) row roughly 120/147 of the time and the lag comes
-    # out null even when a real EU value exists for that (family, year).
-    # drop_nulls() first so only an EU row (which carries the one value all
-    # 27 EU27 members share, per attach_evfta()) can be the survivor.
-    eu_policy_cols = ["tariff_applied_pct", "tariff_mfn_pct", "pref_margin_pp",
-                       "evfta_cut_cum_pp", "evfta_cut_cum_share"]
-    eu_policy_year = (
-        df.select(["product_family", "year"] + eu_policy_cols)
-        .drop_nulls(subset=["tariff_applied_pct"])
-        .unique(subset=["product_family", "year"])
-    )
-
+        .unique(subset=["product_family", "year"], keep="first", maintain_order=True)
     df = df.join(
         lag_lookup(family_year, broadcast_cols, on=["product_family"]),
-        on=["product_family", "year"], how="left",
-    ).join(
-        lag_lookup(eu_policy_year, eu_policy_cols, on=["product_family"]),
         on=["product_family", "year"], how="left",
     ).rename({
         "country_growth_pct_lag1": "growth_lag_pct",
         "rca_lag1": "rca_lag",
-        "tariff_applied_pct_lag1": "tariff_applied_lag",
-        "pref_margin_pp_lag1": "pref_margin_lag",
-        "evfta_cut_cum_pp_lag1": "evfta_cut_cum_pp_lag",
-        "evfta_cut_cum_share_lag1": "evfta_cut_cum_share_lag",
     })
-    del family_year, eu_policy_year
+    del family_year
+
+    print("Lagging EU policy covariates from the EU schedule (family x year-1)")
+    eu_rows = pl.read_csv(EU_MAPPING).filter(pl.col("tariff_reporter") == "EUN") \
+        .select(pl.col("iso3").alias("importer"), pl.col("year").cast(pl.Int64),
+                pl.lit(True).alias("_eu"))
+    df = df.join(eu_policy_lags(), on=["product_family", "year"], how="left") \
+        .join(eu_rows, on=["importer", "year"], how="left")
+    eu_lag_cols = ["tariff_applied_lag", "tariff_mfn_pct_lag1", "pref_margin_lag",
+                   "evfta_cut_cum_pp_lag", "evfta_cut_cum_share_lag"]
+    # written on EU rows only, as attach_evfta() writes the level columns
+    df = df.with_columns([pl.when(pl.col("_eu")).then(pl.col(c)).otherwise(None).alias(c)
+                          for c in eu_lag_cols]).drop("_eu")
 
     print("Lagging importer x HS2-year covariates (hs2_share)")
     hs2_year = df.select(["importer", "hs2", "year", "hs2_share"]) \
-        .unique(subset=["importer", "hs2", "year"])
+        .unique(subset=["importer", "hs2", "year"], keep="first", maintain_order=True)
     df = df.join(
         lag_lookup(hs2_year, ["hs2_share"], on=["importer", "hs2"]),
         on=["importer", "hs2", "year"], how="left",

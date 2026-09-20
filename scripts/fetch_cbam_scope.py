@@ -43,7 +43,6 @@ from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(HERE, "data", "raw", "cbam")
-CONC = os.path.join(HERE, "data", "raw", "concordance", "H6_to_H0")
 OUT = os.path.join(HERE, "data", "interim")
 CELLAR = "http://publications.europa.eu/resource/celex/32023R0956"
 SECTORS = {"Cement", "Electricity", "Fertilisers", "Iron and steel",
@@ -116,19 +115,11 @@ def parse(lines):
 
 
 def h6_universe():
-    path = next((os.path.join(CONC, f) for f in os.listdir(CONC)
-                 if f.upper().endswith(".CSV")), None)
-    fwd = defaultdict(set)
-    with open(path, encoding="utf-8-sig", errors="replace") as f:
-        for row in csv.DictReader(f):
-            keys = {k.lower().strip(): v for k, v in row.items()}
-            src = next((v for k, v in keys.items()
-                        if "2022" in k and "code" in k), None)
-            dst = next((v for k, v in keys.items()
-                        if ("1988" in k or "1992" in k) and "code" in k), None)
-            if src and dst:
-                fwd[src.strip().zfill(6)].add("H0_" + dst.strip().zfill(6))
-    return fwd
+    """HS 2022 code -> {product family}, through the shared product key
+    (families.py) so CBAM rows land on exactly the families the panel uses."""
+    import families
+    u = families.build_families(verbose=False)
+    return {h6: {fam} for h6, fam in families.table_map(u, "H6").items()}
 
 
 def main():

@@ -445,12 +445,13 @@ def build_ttbd(imps):
             row.update({k: d.get(k, 0) for k in fields})
             row["ttb_any_in_force"] = int(any(
                 d.get(k, 0) for k in ("ad_in_force", "cvd_in_force", "sg_in_force")))
-            # TTBD was last updated in June 2016. Past 2015 the counts are not
-            # measurements: they are whatever was still in force at the cut-off,
-            # carried forward, with no new case ever arriving. Left unflagged
-            # that reads as a genuine collapse in trade remedies exactly where
-            # the panel is busiest, so the flag travels with the data rather
-            # than living only in the documentation.
+            if y > TTBD_LAST_YEAR:
+                # Not measured: blank, so no reader can take it for a zero.
+                row.update({k: "" for k in fields + ["ttb_any_in_force"]})
+            # TTBD was last updated in June 2016. Past 2015 the counts would not
+            # be measurements - only what was still in force at the cut-off,
+            # with no new case ever arriving - so they are left blank above and
+            # the flag travels with the data as well.
             row["ttbd_observed"] = int(y <= TTBD_LAST_YEAR)
             rows.append(row)
     write("ttbd_vn.csv", rows,
