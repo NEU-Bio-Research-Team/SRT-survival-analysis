@@ -369,13 +369,13 @@ Censoring in v2: `window_end` 63,920 spells, `window_edge` 9,500,
   train/valid label read one year past its block. It also credited a spell
   whose importer stopped filing with survival up to the horizon.
   `censor_block_gap` (switched on by `target.gap_tolerance` in the config;
-  pinned by `legacy/benchmark/splits/test_censor_gap.py`) counts an event only for
+  pinned by `benchmark/splits/test_censor_gap.py`) counts an event only for
   D <= horizon - 1 - g and censors at the last year actually alive. New
   config files: `benchmark_eu27_v3.yaml`, `splits_eu27_v3.yaml`,
   `horizons_eu27_v3.yaml`. The folds are: train to 2015/2016/2017, three-year
   validation blocks, single-year tests 2019/2020/2021 (IBS 1-3 observable in
   all three). The v2 EVFTA-1y supplementary fold cannot be built under the
-  rule and is dropped. Run: `legacy/benchmark/runs/eu27_v4`.
+  rule and is dropped. Run: `benchmark/runs/eu27_v4`.
 
 ### Rebuild from raw, in order
 
@@ -400,7 +400,13 @@ the default `python3` does not.
 
 ### Benchmark eu27_v4 (panel v2, splits eu27_v3), 20/09/2026
 
-198/198 cells, no failures. Reports are in `legacy/benchmark/reports/eu27_v4/`.
+> **The benchmark was removed from the tree later the same day**, when the
+> repository was reset to Stage 1 alone. The paths below are as they stood in
+> commit `dbae191`, prefixed there with `legacy/`. The numbers are kept because
+> they are the evidence that the v2 fixes changed the modelling result, not
+> only the data.
+
+198/198 cells, no failures. Reports are in `benchmark/reports/eu27_v4/`.
 Scores are **not** directly comparable with eu27_v3: the panel, the folds and
 the censoring rule all changed. Only rankings and directions can be compared.
 

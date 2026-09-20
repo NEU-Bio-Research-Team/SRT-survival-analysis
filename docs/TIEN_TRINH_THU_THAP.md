@@ -4,7 +4,7 @@
 
 > **Đây là nhật ký, không phải bản trạng thái.** Muốn biết hiện đang ở đâu, đọc
 > [MAPPING_IDEA_DATA.md](MAPPING_IDEA_DATA.md) hoặc mục 2–3 của
-> [README](../legacy/docs/README_v1_2026-08-25.md). Các mục dưới đây giữ nguyên nội dung tại thời điểm
+> [README](../README.md). Các mục dưới đây giữ nguyên nội dung tại thời điểm
 > viết, kể cả những chỗ sau này đã thay đổi — cột "Trạng thái" ngay dưới mới là
 > phần được cập nhật.
 
@@ -213,6 +213,6 @@ Bốn luồng là ngưỡng hợp lý; nhiều hơn thì `429` xuất hiện dà
 
 ## Cấu trúc thư mục
 
-Xem [../README.md](../legacy/docs/README_v1_2026-08-25.md) — mục "Bản đồ thư mục". Tóm tắt: mã nguồn ở
+Xem [../README.md](../README.md) — mục "Layout". Tóm tắt: mã nguồn ở
 `scripts/`, tài liệu ở `docs/`, dữ liệu thô ở `data_raw/`, kết quả ở `analysis/`,
 metadata chọn nước ở `selection/`, khóa API ở `.env` (quyền 600, đã gitignore).

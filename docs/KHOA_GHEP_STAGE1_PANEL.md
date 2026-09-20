@@ -104,7 +104,9 @@ có đóng dấu (§3.3).
 | DESTA, TTBD: tên nước tiếng Anh | Tên → ISO3 qua `selection/country_meta.csv` cộng bảng `ALIASES`; DESTA còn thử thêm mã số; tên không khớp được gom vào tập `unmapped` và bỏ qua; khối EU được bung ra từng thành viên | `build_covariates.py::name_to_iso3` |
 | WDI, LPI, CEPII, Atlas | Đã là ISO3, join thẳng | — |
 
-**Lỗi đã gặp và đã sửa** (ghi trong [README.md](../legacy/docs/README_v1_2026-08-25.md) §6):
+**Lỗi đã gặp và đã sửa** (ghi trong README bản 25/08/2026 §6 — file đã gỡ khỏi
+cây thư mục ngày 20/09/2026, đọc bằng
+`git show dbae191:legacy/docs/README_v1_2026-08-25.md`):
 - Tra mã theo kiểu "ghi đè" trả về mã lịch sử (USA 841, Đức 280), khiến API trả
   0 dòng mà không báo lỗi.
 - Thuế ưu đãi được lưu theo mã số `704` nhưng tra bằng `VNM`, nên không bao giờ
@@ -225,11 +227,12 @@ Không nguồn nào trên mẫu chính dùng giá trị của **năm sau** năm 
 
 ## 5. Từ panel sang benchmark
 
-Benchmark không ghép thêm gì. `legacy/benchmark/features/build_matrix.py` đọc panel,
+Benchmark không ghép thêm gì. `benchmark/features/build_matrix.py` đọc panel,
 chọn cột theo feature registry, tính target và vài biến dẫn xuất, rồi mới lọc
 EU-27 sau khi đã tính feature trên đủ 147 nước. Kết quả là một ma trận đóng băng;
 mỗi cell benchmark chỉ lọc dòng theo fold và chọn cột theo tập feature. Chi tiết
-ở [SRT_Benchmark_EU27_B0_Structured_Review.md](../legacy/docs/SRT_Benchmark_EU27_B0_Structured_Review.md) §3.
+ở `SRT_Benchmark_EU27_B0_Structured_Review.md` §3 (đã gỡ khỏi cây thư mục —
+`git show dbae191:legacy/docs/SRT_Benchmark_EU27_B0_Structured_Review.md`).
 
 Hệ quả: **mọi lỗi của khóa ở tầng panel đều đi thẳng vào benchmark**, gồm cả
 cái chết giả ở §7.2.
@@ -361,13 +364,12 @@ Y+1. Theo dữ liệu, EU đổi sang H5 năm 2017 và H6 năm 2022.
 
 | Tài liệu | Phần liên quan |
 |---|---|
-| [KE_HOACH_THUYET_TRINH_DATA.md](../legacy/docs/KE_HOACH_THUYET_TRINH_DATA.md) | Chặng 3: sáu khóa ghép và module nào gắn ở khóa nào |
 | [TRINH_BAY_NHOM_FEATURE_STAGE1_PANEL.md](TRINH_BAY_NHOM_FEATURE_STAGE1_PANEL.md) | §3–4: sơ đồ nguồn → khung xương, grain và broadcast; §5.3: ghép thuế EU |
 | [TU_DIEN_DU_LIEU_FINAL_DF.md](TU_DIEN_DU_LIEU_FINAL_DF.md) | §3: cột khóa; §6: lag theo đúng grain |
 | [FEATURE_TINH_TU_DU_LIEU_RAW.md](FEATURE_TINH_TU_DU_LIEU_RAW.md) | §1.1: `product_family`; §3: thuế generic và thuế EU/EVFTA |
 | [COVARIATES_ADDED.md](COVARIATES_ADDED.md) | "How these join", §11–12: tỷ lệ khớp, carry-forward, merge theo importer |
 | [DU_LIEU_EVFTA_VA_THUE_EU.md](DU_LIEU_EVFTA_VA_THUE_EU.md) | §3.4–3.6: kiểm chứng EVFTA với TRAINS và tỷ lệ khớp |
-| [README.md](../legacy/docs/README_v1_2026-08-25.md) | §6: các bẫy về mã nước, `EUN` và revision HS |
+| [../README.md](../README.md) | Bố cục repo, cách dựng lại panel, những gì đổi ở v2 |
 | [DOI_CHIEU_B0_VOI_DU_LIEU.md](DOI_CHIEU_B0_VOI_DU_LIEU.md) | §5.1: Comtrade so với BACI |
 
 **Code:** `scripts/build_spells.py` (family, spell), `scripts/merge_panel.py`
@@ -382,6 +384,6 @@ Y+1. Theo dữ liệu, EU đổi sang H5 năm 2017 và H6 năm 2022.
   về nhiều hơn một mã H0, và số mã H0 được nhiều hơn một mã mới trỏ về.
 - Độ phủ và cái chết giả: đọc các cột khóa, `*_source_year`, `event`,
   `import_value_usd` từ `stage1_panel.parquet`; lọc bằng
-  `legacy/benchmark/features/eu27_scope.filter_eu27`, `gap_filled = 0`, năm 2012–2024;
+  `benchmark/features/eu27_scope.filter_eu27`, `gap_filled = 0`, năm 2012–2024;
   đánh dấu mã H0 không nằm trong tập đích của `H6_to_H0`; tính tỷ lệ `event`
   theo năm và theo nhóm.

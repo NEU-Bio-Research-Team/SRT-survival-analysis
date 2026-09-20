@@ -87,8 +87,30 @@ fails 11 checks on the v1 panel, which is how we know the checks bite.
 | `selection/` | Hand-maintained inputs the build reads: importer screens, the EU tariff-reporter mapping, the unobserved-year list, the mass-death allowlist. Tracked in git. |
 | `docs/` | Why each decision was made. Data dictionary, join keys, fix plan, audit reports, collection log. |
 | `data/` | Not in git. `raw/` from the APIs, `interim/` the build's intermediate tables, `final/` the panel, `v1_backup/` the frozen v1 files with their sha256. |
-| `Stage1_Research_Framework.md` | The advisor's research framework, blocks B0–B9. B0 is the EU27 sample the benchmark targets. |
-| `legacy/` | The modelling stage, the slide deck and the v1-era review documents, frozen. See [`legacy/README.md`](legacy/README.md). |
+| `Stage1_Research_Framework.md` | The advisor's research framework, blocks B0–B9. B0 is the EU27 sample Stage 2 should target. |
+
+## Everything after the panel was removed
+
+On 20/09/2026 the repository was reset to Stage 1 alone. The survival
+benchmark, the slide deck, the baseline KM/hazard tables and the v1-era review
+documents are gone from the tree. They were built on the v1 panel, and the
+team is re-running the modelling stage from the v2 panel rather than
+inheriting that work.
+
+Nothing was destroyed. Commit `dbae191` is the last one that contains them:
+
+```
+git show dbae191 --stat                      # what was there
+git show dbae191:legacy/README.md            # what each piece was
+git checkout dbae191 -- legacy/benchmark     # bring a piece back
+```
+
+Two things to know before reviving any of it. The benchmark code resolved the
+repository root by walking up from `__file__`, and the `legacy/` level was
+compensated for in that commit — restore it to the root and each `ROOT` needs
+one `dirname` removed again. And of its runs, only `eu27_v4` was scored on the
+v2 panel: `v1` and `eu27_v1` used a censoring convention since found to be
+wrong, and `eu27_v2`/`eu27_v3` ran on the v1 panel.
 
 ## What changed in v2
 

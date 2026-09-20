@@ -1,9 +1,0 @@
-contrast,metric,from,to,n_cells,mean_delta_ibs,sd_delta_ibs,cells_improved,mean_delta_antolini
-"A: nonlinearity, PH held fixed",ibs_1_3,CoxPH,BoostedCox,18,-0.006255694542578431,0.016779153122442773,5,-0.0040185154286519476
-"A: nonlinearity, PH held fixed (neural)",ibs_1_3,CoxPH,DeepSurv,18,0.0647805735336699,0.14704342871011072,5,-0.013074979049458904
-"B: dropping PH, network held fixed",ibs_1_3,DeepSurv,CoxTime,18,-0.04064821951733718,0.14678959442536735,6,-0.008569687059817995
-"C: dropping PH, trees held fixed",ibs_1_3,BoostedCox,RSF,18,-0.002097831147187876,0.0017442830324548276,15,0.0026739266550491994
-D: time as an explicit input,ibs_1_3,DeepHit,CBNN,18,-0.06306110591895388,0.10206285475681048,15,0.025606673575438627
-D: time as an explicit input (vs CoxTime),ibs_1_3,CoxTime,CBNN,18,-0.023239433902422283,0.09472347026352802,9,0.010601313570509523
-E: regularisation alone,ibs_1_3,CoxPH,CoxNet,18,-0.00611480651225752,0.017771656153461296,5,-0.004514984799637319
-"F: the classical baseline, strengthened",ibs_1_3,Cloglog,Cloglog-theory,18,0.0008446572497988083,0.0013533173901090854,2,-2.6714157945497944e-05
