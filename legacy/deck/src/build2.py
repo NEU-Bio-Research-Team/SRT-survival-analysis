@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import sys; sys.path.insert(0, "deck/src")
+import sys; sys.path.insert(0, "legacy/deck/src")
 from deck2 import *
 from deck2 import C as _hex
 from content2 import C
@@ -18,7 +18,7 @@ def reorder_prune(prs, order):
 
 def build(lang):
     T = C[lang]
-    F = lambda n: f"deck/fig2/{n}_{lang}.png"
+    F = lambda n: f"legacy/deck/fig2/{n}_{lang}.png"
     prs = Presentation(TPL)
     AU = prs.slides[2].shapes[1].text_frame.text
     N = 0
@@ -200,7 +200,7 @@ def build(lang):
          align=PP_ALIGN.CENTER, first=True, after=0)
 
     reorder_prune(prs, [0, 1] + list(range(4, 4 + N)) + [3])
-    out = f"deck/out/Sinking_Relationships_{'VI' if lang == 'vi' else 'EN'}.pptx"
+    out = f"legacy/deck/out/Sinking_Relationships_{'VI' if lang == 'vi' else 'EN'}.pptx"
     prs.save(out); print(f"saved {out}")
     return out
 

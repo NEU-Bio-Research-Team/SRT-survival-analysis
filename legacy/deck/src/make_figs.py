@@ -9,8 +9,8 @@ from matplotlib.ticker import FuncFormatter, PercentFormatter
 from matplotlib.patches import Rectangle, Patch
 
 A = "analysis/"
-CORE = json.load(open("deck/src/data_core.json"))
-QUAL = json.load(open("deck/src/data_quality.json"))
+CORE = json.load(open("legacy/deck/src/data_core.json"))
+QUAL = json.load(open("legacy/deck/src/data_quality.json"))
 
 # ---- template palette (from Slides_template.pptx theme) -------------------
 NAVY, TEAL, ORANGE, LBLUE = "#0E2841", "#156082", "#E97132", "#0F9ED5"
@@ -34,7 +34,7 @@ LANG = "vi"
 SHOW_TITLE = False   # slide carries the message instead
 
 def save(fig, name):
-    p = f"deck/fig/{name}_{LANG}.png"
+    p = f"legacy/deck/fig/{name}_{LANG}.png"
     fig.savefig(p, dpi=200, facecolor=PAPER)
     plt.close(fig)
     print("  ", p)

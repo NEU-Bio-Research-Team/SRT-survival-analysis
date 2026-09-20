@@ -53,12 +53,12 @@ import pandas as pd
 import yaml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 MATRIX = os.path.join(ROOT, "data", "interim", "benchmark_matrix.parquet")
 
 
 def load_yaml(name: str) -> dict:
-    with open(os.path.join(ROOT, "benchmark", "config", name),
+    with open(os.path.join(ROOT, "legacy", "benchmark", "config", name),
               encoding="utf-8") as f:
         return yaml.safe_load(f)
 

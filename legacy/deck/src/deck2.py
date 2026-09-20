@@ -8,7 +8,7 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from PIL import Image
 
-TPL = "deck/assets/Slides_template.pptx"
+TPL = "legacy/deck/assets/Slides_template.pptx"
 def C(h): return RGBColor(int(h[0:2],16), int(h[2:4],16), int(h[4:6],16))
 BG      = C("F0F4F8")
 INK     = C("16324F")

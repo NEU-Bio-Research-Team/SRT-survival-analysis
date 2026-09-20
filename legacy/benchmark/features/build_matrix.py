@@ -46,9 +46,9 @@ import yaml
 import eu27_scope
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 REGISTRY = os.path.join(HERE, "feature_registry.yaml")
-CONFIG = os.path.join(ROOT, "benchmark", "config", "benchmark.yaml")
+CONFIG = os.path.join(ROOT, "legacy", "benchmark", "config", "benchmark.yaml")
 OUT = os.path.join(ROOT, "data", "interim", "benchmark_matrix.parquet")
 EU_MAPPING = os.path.join(ROOT, "selection", "eu_tariff_mapping.csv")
 

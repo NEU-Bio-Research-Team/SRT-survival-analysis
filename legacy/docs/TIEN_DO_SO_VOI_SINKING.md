@@ -5,15 +5,15 @@ sự có trên đĩa. Số liệu đếm trực tiếp trên file, cập nhật 
 bổ sung NTM / thuế Mỹ / CBAM / EPI.*
 
 > 📄 **Bản kiểm kê đầy đủ cho cộng sự, kèm cách đọc từng cột mới:**
-> [DATA_HANDOFF.md](DATA_HANDOFF.md). Tài liệu này giữ lại phần bối cảnh và các
+> [DATA_HANDOFF.md](../../docs/DATA_HANDOFF.md). Tài liệu này giữ lại phần bối cảnh và các
 > quyết định đã chốt.
 
 **Panel hiện tại:** `analysis/panel_final.csv` — **747.719 episode × 154 cột**,
 cửa sổ **2003–2025**, 147 nước nhập khẩu, 4.599 nhóm sản phẩm, **228.175 spell**
 (170.486 chết, 57.689 right-censored = 25,3%).
 
-Bản tiếng Anh chi tiết hơn: [BRIEF_SINKING_COVERAGE.md](BRIEF_SINKING_COVERAGE.md).
-Kiểm kê dữ liệu: [DATA_INVENTORY_VN.md](DATA_INVENTORY_VN.md).
+Bản tiếng Anh chi tiết hơn: [BRIEF_SINKING_COVERAGE.md](../../docs/BRIEF_SINKING_COVERAGE.md).
+Kiểm kê dữ liệu: [DATA_INVENTORY_VN.md](../../docs/DATA_INVENTORY_VN.md).
 
 ---
 
@@ -295,7 +295,7 @@ mẫu, **mà không giải quyết được vấn đề**.
 Đây **không phải** ước lượng của bài báo. Đây là phép kiểm tra đáng lẽ phải làm
 trước khi ai đó xây tiếp: panel có thật sự chạy được mô hình duration không, hay
 mới chỉ được mô tả đẹp trên giấy. Script:
-[scripts/survival_baseline.py](../scripts/survival_baseline.py), chạy 12 giây,
+[scripts/survival_baseline.py](../../scripts/survival_baseline.py), chạy 12 giây,
 đỉnh RAM 1,1 GB.
 
 ### Kaplan–Meier — xác suất sống sót S(t)
@@ -427,7 +427,7 @@ soát cố định và một biến trung tâm.
 | 4 | Bóc danh sách miễn trừ HS8 từ PDF chương 99 | ✅ **xong 25/08** — 1.087 dòng HTS8, 547 nhóm H0. Chiếm **39,0% giá trị xuất sang Mỹ** |
 | 5 | Kiểm duyệt biến trade-remedy ở 2015 | ✅ **đã có sẵn** — `ttbd_observed` = 1 tới 2015, 0 từ 2016. Kiểm lại 25/08 |
 | 6 | Lấy EPI các năm cũ để GLPI biến thiên theo thời gian | ✅ **xong 25/08** — điểm EPI quá khứ không ai công bố, nhưng **chỉ báo thành phần theo năm thì có**: 184.827 giá trị, 1996–2025 |
-| 7 | ~~Kéo NTM bằng script qua `denormalisedMeasures`~~ | ✅ **xong 25/08 bằng đường khác** — file researcher 10,5 GB tải qua một GET duy nhất, không bị rate-limit. Xem [DATA_HANDOFF.md](DATA_HANDOFF.md) §2.1 |
+| 7 | ~~Kéo NTM bằng script qua `denormalisedMeasures`~~ | ✅ **xong 25/08 bằng đường khác** — file researcher 10,5 GB tải qua một GET duy nhất, không bị rate-limit. Xem [DATA_HANDOFF.md](../../docs/DATA_HANDOFF.md) §2.1 |
 | 8 | Phạm vi CBAM của EU | ✅ **xong 25/08** — 269 nhóm H0. Nhưng giai đoạn 2023–2025 **chỉ là nghĩa vụ báo cáo**, chế độ chính thức từ 1/1/2026, tức ngoài panel |
 
 ### Cần cả nhóm quyết

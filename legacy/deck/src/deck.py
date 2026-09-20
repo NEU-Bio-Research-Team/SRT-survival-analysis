@@ -8,7 +8,7 @@ from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from PIL import Image
 
-TPL = "deck/assets/Slides_template.pptx"
+TPL = "legacy/deck/assets/Slides_template.pptx"
 NAVY   = RGBColor(0x0E, 0x28, 0x41)
 TEXT   = RGBColor(0x00, 0x20, 0x60)
 TEAL   = RGBColor(0x15, 0x60, 0x82)

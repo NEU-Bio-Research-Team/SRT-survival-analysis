@@ -1,12 +1,12 @@
 # Structured Review — Từ literature review đến benchmark sống sót quan hệ xuất khẩu Việt Nam × EU-27 (khung B0)
 
-> **Phạm vi.** Tài liệu nối liền hai tầng: **(i) literature review của bốn seed papers → (ii) các quyết định thực tế trong benchmark `eu27_v3`**, rồi báo cáo theo mạch **Research framing → Literature review → Data → Models → Metrics → Results**. Mẫu chính theo khối B0 của [`Stage1_Research_Framework.md`](Stage1_Research_Framework.md): **Việt Nam × EU-27 (không gồm UK) × HS6/product family × prediction origin 2012–2024**, với lộ trình cắt thuế EVFTA là biến chính sách trung tâm.
+> **Phạm vi.** Tài liệu nối liền hai tầng: **(i) literature review của bốn seed papers → (ii) các quyết định thực tế trong benchmark `eu27_v3`**, rồi báo cáo theo mạch **Research framing → Literature review → Data → Models → Metrics → Results**. Mẫu chính theo khối B0 của [`Stage1_Research_Framework.md`](../../Stage1_Research_Framework.md): **Việt Nam × EU-27 (không gồm UK) × HS6/product family × prediction origin 2012–2024**, với lộ trình cắt thuế EVFTA là biến chính sách trung tâm.
 >
 > **Trạng thái.** Hai run:
 > - `eu27_v3`: 11 mô hình × 6 tập feature × 3 fold = **198 cells**, dùng cho leaderboard.
 > - `eu27_v3_evfta1y`: 11 × 6 × 1 fold = **66 cells**. Đây là fold phụ, chỉ chấm ở chân trời 1 năm, để kiểm tra biến EVFTA.
 >
-> Cả hai run đã chạy xong ngày 16/09/2026; bảng tổng hợp nằm ở [`benchmark/reports/eu27_v3/`](benchmark/reports/eu27_v3/) (fold phụ: `evfta1y/`). Bốn mô hình Phase 4 (DeepPAMM, ORSF, DSM, SurvTRACE) chưa chạy. Những điểm còn lệch so với B0 và cần thầy quyết định được tóm tắt ở §3.1bis.
+> Cả hai run đã chạy xong ngày 16/09/2026; bảng tổng hợp nằm ở [`benchmark/reports/eu27_v3/`](../benchmark/reports/eu27_v3/) (fold phụ: `evfta1y/`). Bốn mô hình Phase 4 (DeepPAMM, ORSF, DSM, SurvTRACE) chưa chạy. Những điểm còn lệch so với B0 và cần thầy quyết định được tóm tắt ở §3.1bis.
 
 ---
 
@@ -114,7 +114,7 @@ Birolo et al. thiết kế benchmark theo ba data-generating regimes: tuyến t�
 
 ### 2.4. Provenance ở cấp feature
 
-Bảng dưới bám theo trường `lit` trong [`feature_registry_eu27_v3.yaml`](benchmark/features/feature_registry_eu27_v3.yaml). Nhãn “Nitsch-motivated” hoặc “Lawless–Studnicka-motivated” có nghĩa là paper cung cấp **cơ chế/khái niệm kinh tế** cho biến; chỉ các biến được nêu là “trực tiếp” mới nên được mô tả như phép chuyển giao gần nguyên bản.
+Bảng dưới bám theo trường `lit` trong [`feature_registry_eu27_v3.yaml`](../benchmark/features/feature_registry_eu27_v3.yaml). Nhãn “Nitsch-motivated” hoặc “Lawless–Studnicka-motivated” có nghĩa là paper cung cấp **cơ chế/khái niệm kinh tế** cho biến; chỉ các biến được nêu là “trực tiếp” mới nên được mô tả như phép chuyển giao gần nguyên bản.
 
 | Provenance trong registry | Feature thực tế | Cách đọc học thuật |
 |---|---|---|
@@ -170,7 +170,7 @@ Panel nguồn là `data/final/stage1_panel.parquet`: **949.537 episode-year × 2
 | Panel nguồn | 949.537 | 147 nước, 2002–2025 |
 | Bỏ các năm đệm dưới ngưỡng (`gap_filled`) | 902.645 | không phải năm quan hệ còn sống |
 | Giữ các năm origin trong cửa sổ, kèm 2025 làm biên | 673.856 | |
-| **Lọc EU-27 theo năm, không gồm UK** | **164.551** | [`eu27_scope.py`](benchmark/features/eu27_scope.py) |
+| **Lọc EU-27 theo năm, không gồm UK** | **164.551** | [`eu27_scope.py`](../benchmark/features/eu27_scope.py) |
 | Origin trong cửa sổ chấm điểm 2012–2024 | **148.260** | |
 | — trong đó quan sát thấy spell chết | 40.635 | trên toàn bộ follow-up |
 | — trong đó chết trong vòng 1 năm | 18.401 | khớp với cờ `event` của dòng gốc (có assert) |
@@ -260,7 +260,7 @@ Không có giới hạn số dòng train nào bị chạm tới: train mở rộ
 
 ### 3.7. Tập feature
 
-Registry: [`feature_registry_eu27_v3.yaml`](benchmark/features/feature_registry_eu27_v3.yaml). Các tập feature là cộng dồn và dùng cho ablation:
+Registry: [`feature_registry_eu27_v3.yaml`](../benchmark/features/feature_registry_eu27_v3.yaml). Các tập feature là cộng dồn và dùng cho ablation:
 
 | Cấu hình | Số feature đăng ký | Số cột mô hình nhận: fold 1 / 2 / 3 / phụ* |
 |---|---:|---|
@@ -345,7 +345,7 @@ Cloglog-theory nhận thêm hai tương tác `exp_prod × n_markets_for_p_lag` v
 | `ttb_any_in_force`, `ad_in_force` | Có trade remedy / chống bán phá giá | `at_t` | ↑ |
 | `cbam_in_scope` | Thuộc phạm vi CBAM | `at_t` | ↑ |
 
-⭐ Biến EVFTA riêng cho EU-27, parse từ Annex 2-A và kiểm chứng chéo với TRAINS (sai lệch trung bình 0,17–0,34 điểm %). Chi tiết: [`docs/DU_LIEU_EVFTA_VA_THUE_EU.md`](docs/DU_LIEU_EVFTA_VA_THUE_EU.md).
+⭐ Biến EVFTA riêng cho EU-27, parse từ Annex 2-A và kiểm chứng chéo với TRAINS (sai lệch trung bình 0,17–0,34 điểm %). Chi tiết: [`docs/DU_LIEU_EVFTA_VA_THUE_EU.md`](../../docs/DU_LIEU_EVFTA_VA_THUE_EU.md).
 
 #### F5 — Độ phức tạp và logistics (5)
 
@@ -465,7 +465,7 @@ Trọng số IPCW dùng $P(C\ge t)=G(t-1)$, với $G$ là Kaplan–Meier của p
 | Mô hình đúng | 0,1357 | 0,1048 | 0,1357 |
 | Mô hình bi quan ($\hat S = 0{,}5\,S$) | 0,3062 | **0,0262** (thắng sai) | 0,3062 |
 
-Với follow-up hỗn hợp 1–5 năm, Brier 3 năm cũ cho 0,1851 so với giá trị thật 0,2039; metric mới cho 0,2037. Kiểm thử tự động: [`test_censoring_convention.py`](benchmark/evaluation/test_censoring_convention.py). **Vì vậy các con số của `v1` và `eu27_v1` không nên được trích dẫn.**
+Với follow-up hỗn hợp 1–5 năm, Brier 3 năm cũ cho 0,1851 so với giá trị thật 0,2039; metric mới cho 0,2037. Kiểm thử tự động: [`test_censoring_convention.py`](../benchmark/evaluation/test_censoring_convention.py). **Vì vậy các con số của `v1` và `eu27_v1` không nên được trích dẫn.**
 
 ### 5.2. Brier Score và Integrated Brier Score (metric chính)
 
@@ -502,7 +502,7 @@ Trung bình IBS 1–3 năm qua **3 fold leaderboard**, thấp hơn là tốt hơ
 
 ### 6.2. Xếp hạng theo từng tập feature
 
-Nguồn: [`leaderboard.csv`](benchmark/reports/eu27_v3/leaderboard.csv). Số trong ngoặc là IBS 1–3y trung bình 3 fold.
+Nguồn: [`leaderboard.csv`](../benchmark/reports/eu27_v3/leaderboard.csv). Số trong ngoặc là IBS 1–3y trung bình 3 fold.
 
 | Tập feature | Xếp hạng IBS 1–3y, tốt → kém |
 |---|---|
@@ -539,7 +539,7 @@ Tập F0F1F2F3F4F5, trung bình 3 fold. "±" là độ lệch chuẩn qua fold.
 
 ### 6.4. Feature ablation
 
-Nguồn: [`feature_ablation.csv`](benchmark/reports/eu27_v3/feature_ablation.csv). IBS 1–3y trung bình 3 fold; cột là tập cộng dồn.
+Nguồn: [`feature_ablation.csv`](../benchmark/reports/eu27_v3/feature_ablation.csv). IBS 1–3y trung bình 3 fold; cột là tập cộng dồn.
 
 | Model | F0 | +F1 | +F2 | +F3 | +F4 | +F5 | Tập tốt nhất |
 |---|---:|---:|---:|---:|---:|---:|---|
@@ -585,7 +585,7 @@ Mỗi giai đoạn trùng đúng một fold, nên so sánh giữa các giai đo�
 
 ### 6.6. Paired bootstrap so với CoxPH
 
-Nguồn: [`delta_ibs_bootstrap.csv`](benchmark/reports/eu27_v3/delta_ibs_bootstrap.csv). Δ = IBS(mô hình) − IBS(CoxPH), nên Δ < 0 nghĩa là tốt hơn CoxPH. Bootstrap chỉ chạy trên F0F1F2F3 và F0F1F2F3F4 (§5.6), không chạy trên tập đầy đủ.
+Nguồn: [`delta_ibs_bootstrap.csv`](../benchmark/reports/eu27_v3/delta_ibs_bootstrap.csv). Δ = IBS(mô hình) − IBS(CoxPH), nên Δ < 0 nghĩa là tốt hơn CoxPH. Bootstrap chỉ chạy trên F0F1F2F3 và F0F1F2F3F4 (§5.6), không chạy trên tập đầy đủ.
 
 | Tập feature | Fold | RSF − CoxPH | CI 95% | Kết luận |
 |---|---:|---:|---|---|
@@ -601,7 +601,7 @@ Nguồn: [`delta_ibs_bootstrap.csv`](benchmark/reports/eu27_v3/delta_ibs_bootstr
 
 ### 6.7. Contrast kiến trúc
 
-Nguồn: [`contrasts.csv`](benchmark/reports/eu27_v3/contrasts.csv). Ghép cặp theo (tập feature, fold), tổng 18 cells. ΔIBS = mô hình đích − mô hình gốc, âm là cải thiện.
+Nguồn: [`contrasts.csv`](../benchmark/reports/eu27_v3/contrasts.csv). Ghép cặp theo (tập feature, fold), tổng 18 cells. ΔIBS = mô hình đích − mô hình gốc, âm là cải thiện.
 
 | So sánh | ΔIBS trung bình (sd) | Cells cải thiện (/18) | ΔAntolini C | Kết luận |
 |---|---:|---:|---:|---|
@@ -614,11 +614,11 @@ Nguồn: [`contrasts.csv`](benchmark/reports/eu27_v3/contrasts.csv). Ghép cặp
 | E: CoxPH → CoxNet | +0,0017 (0,0021) | 2 | −0,0041 | Regularization không giúp (n ≫ p) |
 | F: Cloglog → Cloglog-theory | +0,0007 (0,0006) | 0 | −0,0001 | Spline và tương tác lý thuyết không giúp; baseline cổ điển không bị làm yếu giả tạo |
 
-**Contrast rõ nhất là C**: RSF tốt hơn BoostedCox ở 16/18 cells. Contrast này không cô lập hoàn toàn giả định PH vì hai mô hình còn khác thuật toán (bagging so với boosting); cả hai cùng giới hạn 8.000 dòng train. Ở phía ngược lại, việc CoxPH đứng top cho thấy trên mẫu này **phi tuyến chưa mang lại lợi ích** khi PH được giữ nguyên (A, E, F). Theo [`ph_vs_nonph.csv`](benchmark/reports/eu27_v3/ph_vs_nonph.csv), trung bình nhóm non-PH kém nhóm PH ở mọi tập feature (0,008–0,051 IBS); nhưng con số này bị kéo bởi DeepHit, CBNN và CoxTime, nên không đọc thành "vi phạm PH không đáng kể".
+**Contrast rõ nhất là C**: RSF tốt hơn BoostedCox ở 16/18 cells. Contrast này không cô lập hoàn toàn giả định PH vì hai mô hình còn khác thuật toán (bagging so với boosting); cả hai cùng giới hạn 8.000 dòng train. Ở phía ngược lại, việc CoxPH đứng top cho thấy trên mẫu này **phi tuyến chưa mang lại lợi ích** khi PH được giữ nguyên (A, E, F). Theo [`ph_vs_nonph.csv`](../benchmark/reports/eu27_v3/ph_vs_nonph.csv), trung bình nhóm non-PH kém nhóm PH ở mọi tập feature (0,008–0,051 IBS); nhưng con số này bị kéo bởi DeepHit, CBNN và CoxTime, nên không đọc thành "vi phạm PH không đáng kể".
 
 ### 6.8. Theo tuổi quan hệ (F0F1F2F3F4)
 
-Nguồn: [`subgroups.csv`](benchmark/reports/eu27_v3/subgroups.csv). IBS 1–3y trung bình 3 fold.
+Nguồn: [`subgroups.csv`](../benchmark/reports/eu27_v3/subgroups.csv). IBS 1–3y trung bình 3 fold.
 
 | Nhóm tuổi | Tốt nhất | IBS | Nhì | Kém nhất |
 |---|---|---:|---|---|
@@ -633,7 +633,7 @@ Nguồn: [`subgroups.csv`](benchmark/reports/eu27_v3/subgroups.csv). IBS 1–3y 
 
 Train gồm origin 2012–2021, trong đó 2021 là năm đầu `evfta_cut_cum_pp_lag` khác 0; test là origin 2024. Chỉ chấm các chỉ số 1 năm. So sánh chính là **F0F1F2F3F4 − F0F1F2F3 trên cùng mô hình, cùng dòng test**. F4 gồm cả các biến thuế/NTM khác, nên đây là đóng góp của **cả block chính sách**, không riêng biến EVFTA.
 
-Nguồn: [`evfta1y/delta_brier1y_F4_minus_F3_bootstrap.csv`](benchmark/reports/eu27_v3/evfta1y/delta_brier1y_F4_minus_F3_bootstrap.csv). Bootstrap ghép cặp theo spell, 200 lần, seed 4246. File này tính ngoài `make_reports.py`, vì script đó chỉ bootstrap so với CoxPH. Kiểm tra: Brier 1y tính lại trùng `metrics.parquet`.
+Nguồn: [`evfta1y/delta_brier1y_F4_minus_F3_bootstrap.csv`](../benchmark/reports/eu27_v3/evfta1y/delta_brier1y_F4_minus_F3_bootstrap.csv). Bootstrap ghép cặp theo spell, 200 lần, seed 4246. File này tính ngoài `make_reports.py`, vì script đó chỉ bootstrap so với CoxPH. Kiểm tra: Brier 1y tính lại trùng `metrics.parquet`.
 
 | Model | Brier 1y F0–F3 | Brier 1y F0–F4 | Δ (F4 − F3) | CI 95% bootstrap |
 |---|---:|---:|---:|---|
@@ -723,12 +723,12 @@ Nguồn: [`evfta1y/delta_brier1y_F4_minus_F3_bootstrap.csv`](benchmark/reports/e
 
 - [Trao đổi nền về phân loại feature và hazard models](https://chatgpt.com/share/6aaa9afc-8bdc-83ec-8fac-5ff7b919cc7f) — nguồn thảo luận dẫn tới literature review; các claim học thuật trong tài liệu này được dẫn về bốn paper ở trên
 - [`SRT_Literature_Review_and_Benchmark_Plan.md`](SRT_Literature_Review_and_Benchmark_Plan.md) — literature review đầy đủ và benchmark plan làm căn cứ cho §2
-- [`Stage1_Research_Framework.md`](Stage1_Research_Framework.md) — khung nghiên cứu, khối B0
-- [`benchmark/config/benchmark_eu27_v2.yaml`](benchmark/config/benchmark_eu27_v2.yaml) — config của run (dùng chung cho `eu27_v2` và `eu27_v3`)
-- [`benchmark/config/splits_eu27_v2.yaml`](benchmark/config/splits_eu27_v2.yaml), [`splits_eu27_v2_evfta1y.yaml`](benchmark/config/splits_eu27_v2_evfta1y.yaml) — chia fold
-- [`benchmark/features/feature_registry_eu27_v3.yaml`](benchmark/features/feature_registry_eu27_v3.yaml) — feature registry
-- [`benchmark/features/eu27_scope.py`](benchmark/features/eu27_scope.py) — định nghĩa mẫu EU-27
-- [`benchmark/evaluation/`](benchmark/evaluation/) — metric và kiểm thử quy ước censoring
-- [`docs/DU_LIEU_EVFTA_VA_THUE_EU.md`](docs/DU_LIEU_EVFTA_VA_THUE_EU.md) — dữ liệu EVFTA staging và thuế EU
-- [`benchmark/runs/eu27_v3/`](benchmark/runs/eu27_v3/), [`benchmark/runs/eu27_v3_evfta1y/`](benchmark/runs/eu27_v3_evfta1y/) — kết quả từng cell
-- [`benchmark/reports/eu27_v3/`](benchmark/reports/eu27_v3/) — bảng tổng hợp và hình
+- [`Stage1_Research_Framework.md`](../../Stage1_Research_Framework.md) — khung nghiên cứu, khối B0
+- [`benchmark/config/benchmark_eu27_v2.yaml`](../benchmark/config/benchmark_eu27_v2.yaml) — config của run (dùng chung cho `eu27_v2` và `eu27_v3`)
+- [`benchmark/config/splits_eu27_v2.yaml`](../benchmark/config/splits_eu27_v2.yaml), [`splits_eu27_v2_evfta1y.yaml`](../benchmark/config/splits_eu27_v2_evfta1y.yaml) — chia fold
+- [`benchmark/features/feature_registry_eu27_v3.yaml`](../benchmark/features/feature_registry_eu27_v3.yaml) — feature registry
+- [`benchmark/features/eu27_scope.py`](../benchmark/features/eu27_scope.py) — định nghĩa mẫu EU-27
+- [`benchmark/evaluation/`](../benchmark/evaluation/) — metric và kiểm thử quy ước censoring
+- [`docs/DU_LIEU_EVFTA_VA_THUE_EU.md`](../../docs/DU_LIEU_EVFTA_VA_THUE_EU.md) — dữ liệu EVFTA staging và thuế EU
+- [`benchmark/runs/eu27_v3/`](../benchmark/runs/eu27_v3/), [`benchmark/runs/eu27_v3_evfta1y/`](../benchmark/runs/eu27_v3_evfta1y/) — kết quả từng cell
+- [`benchmark/reports/eu27_v3/`](../benchmark/reports/eu27_v3/) — bảng tổng hợp và hình

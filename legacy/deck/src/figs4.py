@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Rectangle
 import polars as pl
 
-OUT = "deck/fig4"
+OUT = "legacy/deck/fig4"
 BG, INK, BODY, MUTED = "#F0F4F8", "#16324F", "#33556E", "#8CA0B3"
 BLUE, BLUE_D, BLUE_M, BLUE_L = "#2E6E9E", "#143D63", "#6FA3C7", "#BBD3E5"
 ORANGE, GRID = "#E8763A", "#DCE5ED"

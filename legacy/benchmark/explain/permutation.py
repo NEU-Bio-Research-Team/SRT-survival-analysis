@@ -42,8 +42,8 @@ from benchmark.features.preprocess import Preprocessor
 from benchmark.models import FitContext, build_registry
 from benchmark.splits.rolling_origin import load_yaml, make_folds
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-OUT = os.path.join(ROOT, "benchmark", "reports")
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+OUT = os.path.join(ROOT, "legacy", "benchmark", "reports")
 
 
 def main() -> int:

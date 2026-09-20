@@ -51,8 +51,8 @@ from benchmark.splits.rolling_origin import load_yaml, make_folds
 
 warnings.filterwarnings("ignore")
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RUNS = os.path.join(ROOT, "benchmark", "runs")
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+RUNS = os.path.join(ROOT, "legacy", "benchmark", "runs")
 
 # The COVID-era test block is fold 3; the shock split of plan section 16.4 is
 # read off the origin year rather than off a hand-drawn regime label.
@@ -188,13 +188,13 @@ def main() -> int:
     # config snapshot - a metric is only interpretable against the task that
     # produced it, so the task travels with the numbers
     for f in (args.benchmark_config, args.splits_config, args.horizons_config):
-        shutil.copy(os.path.join(ROOT, "benchmark", "config", f),
+        shutil.copy(os.path.join(ROOT, "legacy", "benchmark", "config", f),
                     os.path.join(run_dir, f"config_{f}"))
-    shutil.copy(os.path.join(ROOT, "benchmark", "features", args.registry),
+    shutil.copy(os.path.join(ROOT, "legacy", "benchmark", "features", args.registry),
                 os.path.join(run_dir, "config_feature_registry.yaml"))
 
     feat_registry = load_feat_registry(
-        os.path.join(ROOT, "benchmark", "features", args.registry))
+        os.path.join(ROOT, "legacy", "benchmark", "features", args.registry))
     registry = build_registry(cfg)
     models = ([m for m in args.models.split(",") if m] or list(registry))
     fsets = ([f for f in args.feature_sets.split(",") if f] or list(FEATURE_SETS))

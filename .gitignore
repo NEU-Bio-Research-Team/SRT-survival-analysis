@@ -25,7 +25,7 @@ data/final/*
 !data/final/README.md
 
 # Kết quả mô hình (KM, hazard, sensitivity) — dựng lại bằng survival_baseline.py
-analysis/
+legacy/analysis/
 
 # Log của các luồng tải — chỉ có ý nghĩa trên máy đang chạy
 logs/
@@ -42,14 +42,14 @@ probe_out/*
 # Thư mục gói đã gom sẵn (851 MB) — dựng lại được từ chính lệnh đó
 /wits_data_2*/
 
-# Slide: code và template gốc thì TRACK (deck/src, deck/assets); phần dưới đây
-# đều dựng lại được bằng deck/src/make_figs.py, figs2.py, figs4.py,
+# Slide: code và template gốc thì TRACK (legacy/deck/src, legacy/deck/assets); phần dưới đây
+# đều dựng lại được bằng legacy/deck/src/make_figs.py, figs2.py, figs4.py,
 # build_deck.py, build2.py, build4.py
-deck/fig/
-deck/fig2/
-deck/fig4/
-deck/preview/
-deck/out/
+legacy/deck/fig/
+legacy/deck/fig2/
+legacy/deck/fig4/
+legacy/deck/preview/
+legacy/deck/out/
 
 # Rác hệ điều hành / trình soạn thảo
 .DS_Store
@@ -58,11 +58,11 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Benchmark: code, frozen config và bảng kết quả thì TRACK. Phần dưới đây đều
-# dựng lại được bằng benchmark/run_benchmark.py và quá nặng để đưa vào git.
-benchmark/runs/*/predictions/
-benchmark/runs/*/cells/
-benchmark/runs/*/metrics.parquet
+# Benchmark (legacy): code, frozen config và bảng kết quả thì TRACK. Phần dưới đây đều
+# dựng lại được bằng legacy/benchmark/run_benchmark.py và quá nặng để đưa vào git.
+legacy/benchmark/runs/*/predictions/
+legacy/benchmark/runs/*/cells/
+legacy/benchmark/runs/*/metrics.parquet
 # checkpoint tạm của pycox EarlyStopping (đã đổi hướng ra thư mục tạm, dòng này
 # chỉ để chặn nếu ai đó chạy với biến môi trường mặc định)
 weight_checkpoint_*.pt

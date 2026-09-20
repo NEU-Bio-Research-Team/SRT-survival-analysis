@@ -48,8 +48,8 @@ from benchmark.models import FitContext, build_registry
 from benchmark.splits.rolling_origin import (censor_block, load_matrix,
                                              load_yaml, subsample)
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-OUT = os.path.join(ROOT, "benchmark", "reports")
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+OUT = os.path.join(ROOT, "legacy", "benchmark", "reports")
 US_CODES = {"USA", "US", "United States", "United States of America", "840"}
 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys, os
-sys.path.insert(0, "deck/src")
+sys.path.insert(0, "legacy/deck/src")
 from deck import *
 from content import C
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
@@ -9,7 +9,7 @@ from pptx.enum.shapes import MSO_SHAPE
 ACC = [TEAL, ORANGE, PURPLE]
 TIER = [MUTED, TEAL, TEAL, NAVY, PURPLE, MUTED]
 import json
-FT = json.load(open("deck/src/fig_titles.json"))
+FT = json.load(open("legacy/deck/src/fig_titles.json"))
 
 def reorder_prune(prs, order):
     lst = prs.slides._sldIdLst
@@ -24,7 +24,7 @@ def reorder_prune(prs, order):
 
 def build(lang):
     T = C[lang]
-    F = lambda n: f"deck/fig/{n}_{lang}.png"
+    F = lambda n: f"legacy/deck/fig/{n}_{lang}.png"
     prs = Presentation(TPL)
     AUTHOR = prs.slides[2].shapes[1].text_frame.text  # keep the template's footer name
 
@@ -193,7 +193,7 @@ def build(lang):
 
     order = [0, 1] + list(range(4, 4 + N)) + [3]
     reorder_prune(prs, order)
-    out = f"deck/out/Sinking_Relationships_Data_{'VI' if lang=='vi' else 'EN'}.pptx"
+    out = f"legacy/deck/out/Sinking_Relationships_Data_{'VI' if lang=='vi' else 'EN'}.pptx"
     prs.save(out)
     print(f"saved {out}  ({len(prs.slides.__iter__.__self__._sldIdLst)} slides)")
     return out

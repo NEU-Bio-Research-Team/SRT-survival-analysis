@@ -7,9 +7,9 @@ from matplotlib.ticker import FuncFormatter, PercentFormatter
 from matplotlib.patches import Rectangle, FancyArrowPatch
 
 A = "analysis/"
-CORE = json.load(open("deck/src/data_core.json"))
-QUAL = json.load(open("deck/src/data_quality.json"))
-EDA  = json.load(open("deck/src/data_eda.json"))
+CORE = json.load(open("legacy/deck/src/data_core.json"))
+QUAL = json.load(open("legacy/deck/src/data_quality.json"))
+EDA  = json.load(open("legacy/deck/src/data_eda.json"))
 
 BG     = "#F0F4F8"
 INK    = "#16324F"
@@ -37,7 +37,7 @@ plt.rcParams.update({
 
 L, LANG = {}, "vi"
 def save(fig, name):
-    p = f"deck/fig2/{name}_{LANG}.png"
+    p = f"legacy/deck/fig2/{name}_{LANG}.png"
     fig.savefig(p, dpi=200); plt.close(fig); print("  ", p)
 
 def clean(ax, grid="y", left=True):

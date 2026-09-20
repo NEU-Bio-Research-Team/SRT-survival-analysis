@@ -36,8 +36,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 from benchmark.evaluation import ibs, paired_bootstrap, summarise_differences
 from benchmark.splits.rolling_origin import load_yaml
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-REPORTS = os.path.join(ROOT, "benchmark", "reports")
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+REPORTS = os.path.join(ROOT, "legacy", "benchmark", "reports")
 
 METRICS = ["ibs_1_3", "ibs_1_5", "brier_1y", "brier_3y", "brier_5y",
            "antolini_c", "auc_1y", "auc_3y", "auc_5y",
@@ -212,7 +212,7 @@ def main() -> int:
                          "follow-up, where IBS 1-3 is unobservable")
     args = ap.parse_args()
     out, primary = args.out_dir, args.primary
-    run_dir = os.path.join(ROOT, "benchmark", "runs", args.run_id)
+    run_dir = os.path.join(ROOT, "legacy", "benchmark", "runs", args.run_id)
     df = pd.read_parquet(os.path.join(run_dir, "metrics.parquet"))
     cfg = load_yaml(args.benchmark_config)
     hz = load_yaml(args.horizons_config)

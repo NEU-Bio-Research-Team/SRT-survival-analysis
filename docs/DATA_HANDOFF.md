@@ -4,7 +4,7 @@
 earlier notes. Four requirements the brief names were closed that day; two
 turned out to be already done; three cannot be closed by any amount of
 downloading, and this document says exactly why. Companions:
-[TIEN_DO_SO_VOI_SINKING.md](TIEN_DO_SO_VOI_SINKING.md) (Vietnamese progress
+[TIEN_DO_SO_VOI_SINKING.md](../legacy/docs/TIEN_DO_SO_VOI_SINKING.md) (Vietnamese progress
 tracker), [BRIEF_SINKING_COVERAGE.md](BRIEF_SINKING_COVERAGE.md),
 [DATA_INVENTORY_VN.md](DATA_INVENTORY_VN.md).*
 
@@ -372,7 +372,7 @@ These block the modelling and none of them is the machine's to settle.
 | `data_raw/ntm/ave_gtap/` | exporter, importer, gtapcode | NTM ad-valorem equivalents, 2017 cross-section |
 | `analysis/ntm_ave_vn.csv` | importer, year | The two collapsed AVE columns merged into the panel — see §2.6 |
 
-Rebuild order is in §7 below, and in [README.md](../README.md) §5.
+Rebuild order is in §7 below, and in [README.md](../legacy/docs/README_v1_2026-08-25.md) §5.
 
 ---
 

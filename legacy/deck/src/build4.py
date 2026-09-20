@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Short Stage-1 deck: what the final df is, and what built it."""
-import sys; sys.path.insert(0, "deck/src")
+import sys; sys.path.insert(0, "legacy/deck/src")
 from deck2 import *
 from content4 import C
 from pptx.enum.text import PP_ALIGN
@@ -20,7 +20,7 @@ def reorder_prune(prs, order):
 
 def build(lang):
     T = C[lang]
-    F = lambda n: f"deck/fig4/{n}_{lang}.png"
+    F = lambda n: f"legacy/deck/fig4/{n}_{lang}.png"
     prs = Presentation(TPL)
     AU = prs.slides[2].shapes[1].text_frame.text
     N = 0
@@ -120,7 +120,7 @@ def build(lang):
          align=PP_ALIGN.CENTER, first=True, after=0)
 
     reorder_prune(prs, [0] + list(range(4, 4 + N)) + [3])
-    out = f"deck/out/Final_DF_{'VI' if lang == 'vi' else 'EN'}.pptx"
+    out = f"legacy/deck/out/Final_DF_{'VI' if lang == 'vi' else 'EN'}.pptx"
     prs.save(out)
     print(f"saved {out}  ({N + 2} slides)")
 
