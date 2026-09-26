@@ -1,5 +1,16 @@
 # Vietnamese export survival — Stage 1 panel
 
+> **Mọi thứ nằm trong [`notebook/`](notebook/).** Code, input làm tay, tài liệu
+> và dữ liệu đều ở trong đó, và đó cũng chính là folder gửi cho cộng sự — copy
+> hay nén kiểu gì cũng chạy được, không có symlink nào. Bắt đầu ở
+> [`notebook/README.md`](notebook/README.md), chạy
+> [`notebook/stage1_pipeline.ipynb`](notebook/stage1_pipeline.ipynb).
+>
+> Gốc repo chỉ còn `.env` (key Comtrade, không commit) và `v1_backup/` (bản v1
+> để đối chiếu).
+
+File này là bản tóm tắt tiếng Anh của panel.
+
 A spell-level panel of **Viet Nam's export relationships**, built from WITS and
 UN Comtrade, for survival analysis of how long a relationship lasts.
 
@@ -32,61 +43,85 @@ data/final/stage1_panel.parquet   932,204 rows × 209 columns   178 MB
 ## Start here
 
 1. **What each column means** —
-   [`docs/TU_DIEN_DU_LIEU_FINAL_DF.md`](docs/TU_DIEN_DU_LIEU_FINAL_DF.md).
+   [`notebook/docs/TU_DIEN_DU_LIEU_FINAL_DF.md`](notebook/docs/TU_DIEN_DU_LIEU_FINAL_DF.md).
    Source, grain and formula for all 209 columns.
 2. **How the modules are joined** —
-   [`docs/KHOA_GHEP_STAGE1_PANEL.md`](docs/KHOA_GHEP_STAGE1_PANEL.md). The six
+   [`notebook/docs/KHOA_GHEP_STAGE1_PANEL.md`](notebook/docs/KHOA_GHEP_STAGE1_PANEL.md). The six
    join keys, which module attaches at which key, and the traps (country codes,
    `EUN`, HS revisions).
 3. **Why the panel looks the way it does** —
-   [`docs/STAGE1_PANEL_FIX_PLAN.md`](docs/STAGE1_PANEL_FIX_PLAN.md). Every
+   [`notebook/docs/STAGE1_PANEL_FIX_PLAN.md`](notebook/docs/STAGE1_PANEL_FIX_PLAN.md). Every
    defect found in v1, how it was fixed, and §7 for the limits that remain.
 4. **What was collected and from where** —
-   [`docs/DATA_HANDOFF.md`](docs/DATA_HANDOFF.md).
+   [`notebook/docs/DATA_HANDOFF.md`](notebook/docs/DATA_HANDOFF.md).
 
 The data itself is not in git (5.8 GB). Get it from the team's Drive/USB copy,
-or rebuild it — see below. `data/final/README.md` explains the parquet/CSV
+or rebuild it — see below. `notebook/data/final/README.md` explains the parquet/CSV
 choice.
 
 ## Rebuilding from raw
 
-In this order. Full details and runtimes in
-[`docs/STAGE1_PANEL_FIX_PLAN.md`](docs/STAGE1_PANEL_FIX_PLAN.md) §8.
+The notebook is the supported way — it runs exactly these scripts, in this
+order, and checks each step's inputs and outputs:
+[`notebook/stage1_pipeline.ipynb`](notebook/stage1_pipeline.ipynb). Measured
+22/09/2026: **16 minutes** from `raw/` to an audited panel, offline, on 8 GB
+WSL2. The rebuilt panel matched the reference v2 panel on every column.
+
+By hand, from inside `notebook/`:
 
 ```
+cd notebook
 python3 scripts/fetch_concordance_unsd.py        # UNSD correlation tables
 python3 scripts/extend_eu_tariff_mapping.py      # EU mapping to 2025
+python3 scripts/fetch_macro.py --ntm-only        # interim/ntm_country.csv (offline)
+python3 scripts/families.py                      # the product-family key
 python3 scripts/screen_hs6_coverage.py           # selection/hs6_unobserved_years.csv
-python3 scripts/build_spells.py                  # families, spells, episodes
+python3 scripts/build_spells.py                  # spells, episodes
 python3 scripts/build_evfta_staging.py
-python3 scripts/build_eu_mfn_cn.py --families-only
+python3 scripts/build_eu_mfn_cn.py               # drop the flag only if eu_mfn_hs6.csv exists:
+                                                 #   --families-only
 python3 scripts/build_eu_tariff_panel.py
 python3 scripts/fetch_cbam_scope.py
 python3 scripts/extract_us_exemptions.py
 python3 scripts/build_ntm6.py
-python3 -c "import sys; sys.path.insert(0,'scripts'); import build_covariates as b; b.build_ttbd(b.importers())"
+python3 scripts/build_ntm.py
+python3 scripts/build_ntm_ave.py
+python3 scripts/build_covariates.py
+python3 scripts/build_glpi.py
+python3 scripts/build_us_tariff_panel.py         # interim/us_tariff_vn.csv
 python3 scripts/merge_panel.py
 python3 scripts/build_stage1_df.py features
 python3 scripts/build_stage1_df.py join
 ```
 
+Two traps this list exists to avoid, both of which fail **silently**:
+
+* **`build_us_tariff_panel.py`** writes `interim/us_tariff_vn.csv`.
+  `merge_panel.py` skips any side table it cannot find, so leaving this out
+  produces a complete-looking panel with every `us_recip_*` column missing.
+* **`fetch_macro.py --ntm-only`** writes `interim/ntm_country.csv`, which both
+  `build_ntm.py` and `merge_panel.py` require. Nothing else produces it.
+
 Then confirm the result:
 
 ```
-python3 scripts/audit_stage1.py --tag v2 --family-map data/interim/family_map.csv
+python3 scripts/audit_stage1.py --tag local --family-map data/interim/family_map.csv
 ```
 
-All 18 checks must pass. The report lands in `docs/audit/`. The same script
-fails 11 checks on the v1 panel, which is how we know the checks bite.
+`--tag local` writes `docs/audit/stage1_local.md` and leaves
+`docs/audit/stage1_v2.md` — the reference report — alone, so the two can be
+compared. 17 checks run. A18 (two consecutive builds identical) needs a second parquet via
+`--compare`; the notebook's optional step 30b does that. All must pass. The same
+script fails 11 checks on the v1 panel, which is how we know the checks bite.
 
 ## Layout
 
 | Path | What it holds |
 |---|---|
-| `scripts/` | The whole Stage 1 pipeline: `fetch_*` pull from APIs, `build_*` construct interim tables, `merge_panel.py` joins them, `build_stage1_df.py` writes the final panel, `audit_stage1.py` checks it. |
-| `selection/` | Hand-maintained inputs the build reads: importer screens, the EU tariff-reporter mapping, the unobserved-year list, the mass-death allowlist. Tracked in git. |
-| `docs/` | Why each decision was made. Data dictionary, join keys, fix plan, audit reports, collection log. |
-| `data/` | Not in git. `raw/` from the APIs, `interim/` the build's intermediate tables, `final/` the panel, `v1_backup/` the frozen v1 files with their sha256. |
+| `notebook/scripts/` | The whole Stage 1 pipeline: `fetch_*` pull from APIs, `build_*` construct interim tables, `merge_panel.py` joins them, `build_stage1_df.py` writes the final panel, `audit_stage1.py` checks it. |
+| `notebook/selection/` | Hand-maintained inputs the build reads: importer screens, the EU tariff-reporter mapping, the unobserved-year list, the mass-death allowlist. Tracked in git. |
+| `notebook/docs/` | Why each decision was made. Data dictionary, join keys, fix plan, audit reports, collection log. |
+| `notebook/data/` | Not in git. `raw/` from the APIs, `interim/` the build's intermediate tables, `final/` the panel. The frozen v1 files live in `v1_backup/` at the repo root. |
 | `Stage1_Research_Framework.md` | The advisor's research framework, blocks B0–B9. B0 is the EU27 sample Stage 2 should target. |
 
 ## Everything after the panel was removed
@@ -133,13 +168,13 @@ the features. The four that changed the most:
 
 The effect on the target: 131,675 events became 112,885, and EU27 hazard in
 2016 fell from 13.4% to 12.1%. Before/after for every figure is in
-[`docs/STAGE1_PANEL_FIX_PLAN.md`](docs/STAGE1_PANEL_FIX_PLAN.md) §8; the audit
-reports are [`docs/audit/stage1_v1.md`](docs/audit/stage1_v1.md) and
-[`docs/audit/stage1_v2.md`](docs/audit/stage1_v2.md).
+[`notebook/docs/STAGE1_PANEL_FIX_PLAN.md`](notebook/docs/STAGE1_PANEL_FIX_PLAN.md) §8; the audit
+reports are [`notebook/docs/audit/stage1_v1.md`](notebook/docs/audit/stage1_v1.md) and
+[`notebook/docs/audit/stage1_v2.md`](notebook/docs/audit/stage1_v2.md).
 
 ## What is still open
 
-From [`docs/STAGE1_PANEL_FIX_PLAN.md`](docs/STAGE1_PANEL_FIX_PLAN.md) §7:
+From [`notebook/docs/STAGE1_PANEL_FIX_PLAN.md`](notebook/docs/STAGE1_PANEL_FIX_PLAN.md) §7:
 
 - Orphans with no same-HS4 receiver (~30% of exposed rows) are censored, so
   their post-switch history is lost.

@@ -1,0 +1,8 @@
+# Dữ liệu KHÔNG vào git (raw 765 MB, interim 1,2 GB, final 178 MB).
+# Chỉ giữ khung thư mục và hướng dẫn; gửi cộng sự qua Drive/USB.
+*
+!.gitignore
+!README.md
+!final/
+final/*
+!final/README.md

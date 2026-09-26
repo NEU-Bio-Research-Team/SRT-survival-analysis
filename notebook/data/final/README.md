@@ -10,7 +10,7 @@ không track git (quá lớn — xem `.gitignore`):
 
 Bản v2 (20/09/2026): **932.204 dòng × 209 cột**. `stage1_panel.csv` trên đĩa
 vẫn là bản v1 cho tới khi xuất lại từ parquet (lệnh bên dưới). Bản v1
-đầy đủ nằm ở `data/v1_backup/`. Kết quả kiểm định: `docs/audit/stage1_v2.md`.
+đầy đủ nằm ở `v1_backup/` ở gốc repo (không đi kèm bản gửi). Kết quả kiểm định: `docs/audit/stage1_v2.md`.
 Parquet dựng từ
 `data/interim/panel_final.csv` bằng:
 

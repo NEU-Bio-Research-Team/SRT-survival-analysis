@@ -1,53 +1,31 @@
 # Bí mật — TUYỆT ĐỐI không commit, không gửi cho ai
 .env
 
-# Rác Python
+# Rác Python / Jupyter
 __pycache__/
 *.pyc
 *.pyo
 .ipynb_checkpoints/
 .venv/
 venv/
+.pytest_cache/
 
-# Toàn bộ dữ liệu sống dưới data/ kể từ 03/09/2026.
-#   data/raw/     — tải từ API/nguồn gốc, tái tạo bằng scripts/fetch_*.py
-#   data/interim/ — bảng trung gian, dựng bằng build_*.py + merge_panel.py
-#   data/final/   — dataframe Stage 1, dựng bằng build_stage1_df.py
-# Không đưa vào git; gửi cộng sự qua Drive/USB. Từ điển biến thì TRACK.
-# `data/*` (không phải `data/`) là bắt buộc: một pattern trơ "dir/" loại trừ
-# cả thư mục như một khối kín, git sẽ không descend vào để áp các dòng "!"
-# phía sau (xem "It is not possible to re-include a file if a parent
-# directory of that file is excluded" trong gitignore(5)). "dir/*" chỉ loại
-# từng file con nên các dòng "!" bên dưới vẫn có hiệu lực.
-data/*
-!data/final/
-data/final/*
-!data/final/README.md
+# Dữ liệu không vào git — xem notebook/data/.gitignore.
+# Gửi cộng sự qua Drive/USB, không qua git.
 
-# Kết quả mô hình (KM, hazard, sensitivity) — dựng lại bằng survival_baseline.py
-analysis/
+# Bản lưu v1 (2,6 GB) — chỉ để đối chiếu, dựng lại được từ raw
+/v1_backup/
 
 # Log của các luồng tải — chỉ có ý nghĩa trên máy đang chạy
 logs/
 
-# Output kiểm chứng API, tái tạo bằng scripts/wits_probe.py.
+# Kết quả mô hình (Stage 2 trở đi)
+analysis/
+
+# Output kiểm chứng API, tái tạo bằng notebook/scripts/wits_probe.py.
 # Giữ lại đúng nhật ký 22 phép thử vì tài liệu KIEM_CHUNG có trích dẫn.
-probe_out/*
-!probe_out/_probe_log.csv
-
-# Gói bàn giao cho cộng sự — dựng lại được bằng lệnh tar trong README §8.
-# Chỉ chặn ở thư mục gốc: bản hash của gói đã gửi nằm trong docs/ và được TRACK.
-/wits_data_*.tar.gz
-/wits_data_*.tar.gz.sha256
-# Thư mục gói đã gom sẵn (851 MB) — dựng lại được từ chính lệnh đó
-/wits_data_2*/
-
-# Slide: nếu dựng lại deck, hình và output không vào git
-deck/fig/
-deck/fig2/
-deck/fig4/
-deck/preview/
-deck/out/
+notebook/probe_out/*
+!notebook/probe_out/_probe_log.csv
 
 # Rác hệ điều hành / trình soạn thảo
 .DS_Store
@@ -56,13 +34,8 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Benchmark: nếu dựng lại giai đoạn mô hình, code và config thì TRACK, còn
-# predictions/cells/metrics quá nặng để đưa vào git.
-benchmark/runs/*/predictions/
-benchmark/runs/*/cells/
-benchmark/runs/*/metrics.parquet
-# checkpoint tạm của pycox EarlyStopping (đã đổi hướng ra thư mục tạm, dòng này
-# chỉ để chặn nếu ai đó chạy với biến môi trường mặc định)
-weight_checkpoint_*.pt
-pycox_ckpt_*.pt
-logs/benchmark/
+# Báo cáo kiểm định của từng máy (bước 30 notebook). Bản tham chiếu là stage1_v2.*
+notebook/docs/audit/stage1_local*
+
+/wits_notebook_raw_20260922
+

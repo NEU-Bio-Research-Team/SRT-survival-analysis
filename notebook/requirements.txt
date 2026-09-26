@@ -1,0 +1,28 @@
+# Môi trường để chạy notebook/stage1_pipeline.ipynb và toàn bộ pipeline Stage 1.
+#   pip install -r requirements.txt
+#
+# Pipeline dùng thư viện chuẩn là chính (csv, urllib, gzip, zipfile, xml). Danh
+# sách dưới đây là toàn bộ phần bên thứ ba mà scripts/ thật sự import.
+
+# Đọc/ghi parquet và mọi phép tính trên panel: build_stage1_df.py, audit_stage1.py.
+# GHIM ĐÚNG PHIÊN BẢN — đây là bản đã dựng ra stage1_panel.parquet v2, và
+# audit A18 (hai lần dựng phải giống hệt nhau) so sánh tới từng cột.
+polars==1.38.1
+
+# build_glpi.py (PCA cho Green LPI)
+numpy>=2.0,<3
+
+# Bóc PDF: build_evfta_staging.py (Annex 2-A), build_eu_mfn_cn.py (công báo CN)
+pdfplumber>=0.11
+
+# Đọc Excel: families.py (bảng correlation UNSD), build_covariates.py
+openpyxl>=3.1      # .xlsx
+xlrd>=2.0          # .xls đời cũ
+
+# Chỉ notebook cần, pipeline không dùng
+jupyterlab>=4.2
+ipykernel>=6.29
+
+# Tuỳ chọn: chỉ cần nếu đồng nghiệp muốn đọc panel bằng pandas thay vì polars
+# pandas>=2.2
+# pyarrow>=17

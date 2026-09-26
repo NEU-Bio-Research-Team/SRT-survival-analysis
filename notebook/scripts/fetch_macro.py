@@ -5,7 +5,13 @@ Development, which republishes WDI. One call per country covers all years.
 NTM indicators are downloaded from the WITS public NTM files and reshaped;
 see the caveat printed at the end - they are a cross-section, not a panel.
 
+    python3 fetch_macro.py               cả hai nửa
+    python3 fetch_macro.py --ntm-only    bỏ qua WITS Development (chạy được
+                                         ngoại tuyến từ data/raw/ntm/*.csv)
+    python3 fetch_macro.py --refresh     tải lại ba file NTM kể cả khi đã có
+
 Output: data/interim/macro_panel.csv, data/interim/ntm_country.csv
+        data/raw/ntm/NTM-*.csv
 """
 
 import csv
@@ -101,21 +107,32 @@ def macro():
     print(f"  wrote macro_panel.csv ({len(rows):,} country-years)")
 
 
-def ntm():
+def ntm(refresh=False):
     os.makedirs(RAW, exist_ok=True)
     frames = {}
     for name, label in NTM_FILES.items():
-        status, payload = fetch(
-            f"https://wits.worldbank.org/data/public/NTM/{name}.zip")
-        if status != 200 or not payload:
-            print(f"  {name}: download failed ({status})")
-            continue
-        with zipfile.ZipFile(io.BytesIO(payload)) as z:
-            inner = [n for n in z.namelist() if n.lower().endswith(".csv")][0]
-            text = z.read(inner).decode("utf-8-sig", errors="replace")
         path = os.path.join(RAW, f"{name}.csv")
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(text)
+        # Đã tải lần trước thì đọc lại từ đĩa, đúng như fetch_epi_annual.py và
+        # fetch_cbam_scope.py vẫn làm. Điều này quan trọng hơn vẻ ngoài của nó:
+        # ntm_country.csv dựng ra từ đây là thứ build_ntm.py *và*
+        # merge_panel.py đều bắt buộc phải có, nên nếu bước này không chạy
+        # được ngoại tuyến thì một máy chỉ nhận data/raw/ không thể dựng lại
+        # panel. Ba file này nhỏ và tĩnh; bỏ qua lượt tải không mất gì.
+        if os.path.exists(path) and os.path.getsize(path) > 0 and not refresh:
+            with open(path, encoding="utf-8-sig") as f:
+                text = f.read()
+            print(f"  {name}: already on disk ({os.path.getsize(path):,} bytes)")
+        else:
+            status, payload = fetch(
+                f"https://wits.worldbank.org/data/public/NTM/{name}.zip")
+            if status != 200 or not payload:
+                print(f"  {name}: download failed ({status})")
+                continue
+            with zipfile.ZipFile(io.BytesIO(payload)) as z:
+                inner = [n for n in z.namelist() if n.lower().endswith(".csv")][0]
+                text = z.read(inner).decode("utf-8-sig", errors="replace")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
         rows = list(csv.DictReader(io.StringIO(text)))
         frames[label] = rows
         print(f"  {name}: {len(rows):,} rows -> {path}")
@@ -150,7 +167,23 @@ def ntm():
 
 
 if __name__ == "__main__":
-    print("Macro covariates (WITS Development / WDI)")
-    macro()
-    print("NTM indicators (WITS public files)")
-    ntm()
+    import sys
+
+    args = set(sys.argv[1:])
+    unknown = args - {"--ntm-only", "--macro-only", "--refresh"}
+    if unknown:
+        raise SystemExit(f"unknown option(s): {', '.join(sorted(unknown))}\n"
+                         "usage: fetch_macro.py [--ntm-only|--macro-only] [--refresh]")
+
+    # Hai nửa độc lập, và chỉ nửa macro mới bắt buộc phải gọi API:
+    #   macro() -> data/interim/macro_panel.csv   (WITS Development, cần mạng;
+    #              merge_panel.py chỉ dùng nó làm dự phòng cho macro_panel_v2)
+    #   ntm()   -> data/interim/ntm_country.csv   (dựng lại được từ
+    #              data/raw/ntm/*.csv đã có; build_ntm.py và merge_panel.py
+    #              đều BẮT BUỘC phải có file này)
+    if "--ntm-only" not in args:
+        print("Macro covariates (WITS Development / WDI)")
+        macro()
+    if "--macro-only" not in args:
+        print("NTM indicators (WITS public files)")
+        ntm(refresh="--refresh" in args)

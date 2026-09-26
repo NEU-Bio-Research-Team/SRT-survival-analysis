@@ -53,7 +53,7 @@ The v2 panel is done when all of the following hold:
 | ID | Defect | Measured | Fix |
 |---|---|---|---|
 | T4 | **Interior holes read as deaths.** Years missing at HS6 inside an importer's record - no file (DZA 2018-2021, KEN 2011-2012, NGA 2004-2005) or an `_empty_years.csv` entry of any kind (ARE 2009 "only the 999999 aggregate") - counted as observed. | 31 importer-years lose >60% of their relationships at once in v1, 14 of them at 100% (ARE 2008: 455 of 455). | One rule for T2-T4: a death in E is an event only if E+1 .. E+1+GAP were all published at HS6 (`censor_reason`); starts mirror it (`start_reason`, `left_trunc`). |
-| T5 | **Double-counted trade.** 12 legacy files (BRA 2002-2007, CHN 2015-2017, NIC 2016-2017, BDI 2010) carry the customs-procedure breakdown *and* its total: every value is exactly 2x. | HS6 / reporter TOTAL = 2.00 for BRA and NIC, 1.5-1.6 for CHN. | Re-fetched with the aggregate filter; the old files are in `data/v1_backup/raw_trade_double_counted/`. |
+| T5 | **Double-counted trade.** 12 legacy files (BRA 2002-2007, CHN 2015-2017, NIC 2016-2017, BDI 2010) carry the customs-procedure breakdown *and* its total: every value is exactly 2x. | HS6 / reporter TOTAL = 2.00 for BRA and NIC, 1.5-1.6 for CHN. | Re-fetched with the aggregate filter; the old files are in `v1_backup/raw_trade_double_counted/`. |
 | T6 | **HS6 detail far below the reporter's own total.** | 13 importer-years with coverage < 50% (ALB 2014: 7 lines, 47%). | `scripts/screen_hs6_coverage.py` writes `selection/hs6_unobserved_years.csv`; those years count as unobserved. CHN from 2015 (0.73-0.94) is persistent partial coverage and stays observed. |
 | T7 | **No build-time check against mass deaths.** | - | `build_spells.py` stops when >60% of an importer's live relationships (n >= 30) die in one year, unless `selection/mass_death_allowlist.csv` gives a verified reason. 16 such cases remain; each was checked against the reporter's TOTAL and the VN mirror and is genuine. |
 
@@ -328,7 +328,7 @@ The critical path for B0 is: Phase 0 → 1.1 → 1.2 → 1.3 → 1.4 → 2.1 →
 ## 8. Execution record (20/09/2026)
 
 All of Phases 0-3 and the data side of Phase 4 are done on branch
-`fix/stage1-panel-v2`. The v1 files are kept in `data/v1_backup/` (with
+`fix/stage1-panel-v2`. The v1 files are kept in `v1_backup/` (with
 `SHA256SUMS`). Audit reports: [audit/stage1_v1.md](audit/stage1_v1.md) (11
 checks fail) and [audit/stage1_v2.md](audit/stage1_v2.md) (all 18 pass,
 including A18: two consecutive builds are identical in every column).
