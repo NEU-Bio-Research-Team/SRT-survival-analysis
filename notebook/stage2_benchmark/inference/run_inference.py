@@ -13,9 +13,13 @@ Specification choices (written before any fit):
   * explanatory mode: LAGGED covariates only (the S-sets with @lagonly - the
     current-year trade value is dropped), standardised on the sample, missing
     -> median + indicator; indicators that duplicate a duration dummy dropped;
-  * SE: two-way cluster by importer and HS2 (CGM), plus an unrestricted wild
-    score bootstrap over the 27 importer clusters (Kline-Santos 2012, Webb
-    weights, 999 draws) for the coefficients of interest;
+  * SE: two-way cluster by importer and HS2 (CGM) - the primary inference -
+    plus an unrestricted wild score bootstrap (Kline-Santos 2012, Webb weights,
+    999 draws) for the coefficients of interest, run one-way over the 27
+    importer clusters and, separately, over the ~96 HS2 clusters. Policy
+    intensity varies by product, so the importer-only bootstrap ignores the
+    dimension the treatment varies on and is reported only as a small-cluster
+    check;
   * event time is read on the OUTCOME year (t + 1): origin 2019's outcome is
     exit during 2020, the EVFTA entry year, so the reference period is outcome
     year 2019 (origin 2018), 2020 is the transition, 2021+ post.
@@ -149,10 +153,11 @@ def glm_result(df, X, names, link, key_prefixes, ridge=1e-8, cluster=True, wild=
         se2 = se_model
     key = [i for i, nm in enumerate(names) if nm.startswith(tuple(key_prefixes))
            and not nm.startswith("FE_")]
-    boot = None
+    boot = boot_h = None
     if wild and key:
         boot, G = wild_score_bootstrap(fit, X, df["importer"].to_numpy(), key)
-        res["wild_clusters"] = G
+        boot_h, Gh = wild_score_bootstrap(fit, X, df["hs2"].to_numpy(), key)
+        res["wild_clusters"] = {"importer": G, "hs2": Gh}
     coefs = []
     for i, nm in enumerate(names):
         if nm.startswith("FE_"):
@@ -164,6 +169,7 @@ def glm_result(df, X, names, link, key_prefixes, ridge=1e-8, cluster=True, wild=
             r["hazard_ratio"] = float(np.exp(fit["beta"][i]))
         if boot is not None and i in key:
             r.update(boot[key.index(i)])
+            r.update({k + "_hs2": v for k, v in boot_h[key.index(i)].items()})
         coefs.append(r)
     res["coefs"] = coefs
     return res, fit
@@ -217,6 +223,31 @@ def spec_frailty(fset, full=False):
                       "coef_pooled": float(pooled["beta"][i])}
                      for i, nm in enumerate(names)]}
     return res
+
+
+def spec_frailty_parametric(fset="S4"):
+    """Sensitivity for I7: the same frailty model with a parametric baseline
+    (log age, log age^2) instead of free age dummies. With free dummies the
+    duration dependence can absorb dynamic selection, so theta may be weakly
+    identified; this spec shows how much the frailty estimate leans on that."""
+    df = sample()
+    la = np.log(df["age_obs"].to_numpy().astype(float))
+    extra = pd.DataFrame({"const": 1.0, "log_age": la, "log_age_sq": la ** 2})
+    X, names, _ = design(df, fset, extra=extra, duration_dummies=False)
+    pooled = fit_glm(X, df["y"].to_numpy(), "cloglog", penalty=np.full(X.shape[1], 1e-8 * len(df)))
+    m = GammaFrailtyCloglog().fit(X.toarray(), df["y"].to_numpy(), df["relation"].to_numpy(),
+                                  beta0=pooled["beta"])
+    se = np.sqrt(np.maximum(np.diag(m.cov_)[:-1], 0))
+    lr = 2 * (m.loglik_ - pooled["loglik"])
+    from scipy.stats import chi2
+    return {"spec": f"cloglog + shared gamma frailty, parametric baseline (log age, log age^2) @{fset}",
+            "sample": "known-start", "n": len(df), "events": int(df["y"].sum()),
+            "groups": m.n_groups_, "theta": m.theta_, "loglik": m.loglik_,
+            "loglik_pooled": pooled["loglik"], "LR_theta0": float(lr),
+            "p_LR_theta0_boundary": float(0.5 * chi2.sf(max(lr, 0), 1)), "grad_max": m.grad_max_,
+            "coefs": [{"term": nm, "coef": float(m.beta_[i]), "se_model": float(se[i]),
+                       "hazard_ratio": float(np.exp(m.beta_[i])),
+                       "coef_pooled": float(pooled["beta"][i])} for i, nm in enumerate(names)]}
 
 
 def spec_re(link):
@@ -356,6 +387,7 @@ SPECS = {
     "I12": spec_event_study, "I13": spec_incumbent_entrant, "I14": spec_placebo,
     "I15": lambda: spec_ladder("I5", full=True),
     "I16": lambda: spec_frailty("S4", full=True),
+    "I7p": spec_frailty_parametric,
 }
 
 

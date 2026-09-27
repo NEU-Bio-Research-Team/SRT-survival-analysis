@@ -1,0 +1,244 @@
+{
+ "LR_theta0": 0.010598959852359258,
+ "code_commit": "7ab2d35236ed5540b53689feab76f71a935b97c4-dirty",
+ "coefs": [
+  {
+   "coef": -0.36089180600407955,
+   "coef_pooled": -0.36090309361300155,
+   "hazard_ratio": 0.6970544114893341,
+   "se_model": 0.023949914042297772,
+   "term": "log_value_lag"
+  },
+  {
+   "coef": -0.1532997381650533,
+   "coef_pooled": -0.15307389424696738,
+   "hazard_ratio": 0.8578725461278096,
+   "se_model": 0.01027204195836977,
+   "term": "log_initial_value"
+  },
+  {
+   "coef": -0.05513036336347871,
+   "coef_pooled": -0.055180025560584565,
+   "hazard_ratio": 0.9463617690083359,
+   "se_model": 0.021407234684589004,
+   "term": "vn_market_share_lag1"
+  },
+  {
+   "coef": 0.11490864947629521,
+   "coef_pooled": 0.11487087764738067,
+   "hazard_ratio": 1.1217709585267142,
+   "se_model": 0.013055948913223354,
+   "term": "volatility_3y_lag1"
+  },
+  {
+   "coef": 0.08742167819232226,
+   "coef_pooled": 0.08736638693982234,
+   "hazard_ratio": 1.0913567840593574,
+   "se_model": 0.019765484877193915,
+   "term": "log_gdp_d_lag1"
+  },
+  {
+   "coef": 0.015991682510723772,
+   "coef_pooled": 0.01599665222644188,
+   "hazard_ratio": 1.0161202338017987,
+   "se_model": 0.00927699165480411,
+   "term": "log_gdpcap_d_lag1"
+  },
+  {
+   "coef": 0.0019146346583347952,
+   "coef_pooled": 0.0018564771021123904,
+   "hazard_ratio": 1.0019164687416187,
+   "se_model": 0.008635785398676887,
+   "term": "importer_gdp_growth_lag1"
+  },
+  {
+   "coef": 0.04189012435010335,
+   "coef_pooled": 0.04189163634923233,
+   "hazard_ratio": 1.0427798963371606,
+   "se_model": 0.009701191020537056,
+   "term": "importer_inflation_lag1"
+  },
+  {
+   "coef": -0.15773103493195337,
+   "coef_pooled": -0.15762915092137722,
+   "hazard_ratio": 0.8540794686206489,
+   "se_model": 0.019147743678129492,
+   "term": "log_total_import_cp_lag1"
+  },
+  {
+   "coef": 0.02102390773370405,
+   "coef_pooled": 0.020988012894410168,
+   "hazard_ratio": 1.0212464670342492,
+   "se_model": 0.00911245141592611,
+   "term": "log_dist"
+  },
+  {
+   "coef": -0.3341139312926106,
+   "coef_pooled": -0.3336188109568284,
+   "hazard_ratio": 0.7159722059413547,
+   "se_model": 0.018217924846630932,
+   "term": "log_n_products_to_c_lag1"
+  },
+  {
+   "coef": -0.18309753446773855,
+   "coef_pooled": -0.1827649222318019,
+   "hazard_ratio": 0.832686936099193,
+   "se_model": 0.015562913590061036,
+   "term": "log_n_markets_for_p_lag1"
+  },
+  {
+   "coef": -0.2921022181510472,
+   "coef_pooled": -0.291817121252474,
+   "hazard_ratio": 0.7466922065755411,
+   "se_model": 0.015534840287625872,
+   "term": "log_n_markets_eu27_for_p_lag1"
+  },
+  {
+   "coef": -0.048172916899907776,
+   "coef_pooled": -0.04812450471634347,
+   "hazard_ratio": 0.9529689883864959,
+   "se_model": 0.010048674304137748,
+   "term": "hs2_share_lag1"
+  },
+  {
+   "coef": -0.07651584379549634,
+   "coef_pooled": -0.07634486433653469,
+   "hazard_ratio": 0.9263382374589594,
+   "se_model": 0.011842984137232468,
+   "term": "log_rca_lag"
+  },
+  {
+   "coef": -0.020499497614827365,
+   "coef_pooled": -0.02052384347098889,
+   "hazard_ratio": 0.9797091886657641,
+   "se_model": 0.006686330268570018,
+   "term": "vn_product_growth_lag"
+  },
+  {
+   "coef": 0.038681154809208265,
+   "coef_pooled": 0.038656028140195954,
+   "hazard_ratio": 1.0394390106790083,
+   "se_model": 0.007513705864792778,
+   "term": "world_growth_lag1"
+  },
+  {
+   "coef": 0.03210260572429448,
+   "coef_pooled": 0.03209293698542596,
+   "hazard_ratio": 1.0326234529469214,
+   "se_model": 0.009372334019092737,
+   "term": "tariff_applied_lag"
+  },
+  {
+   "coef": -0.08585856698804883,
+   "coef_pooled": -0.08574890269483856,
+   "hazard_ratio": 0.9177240185139091,
+   "se_model": 0.013249208541054807,
+   "term": "pref_margin_lag"
+  },
+  {
+   "coef": 0.05186387569432383,
+   "coef_pooled": 0.051791752199370454,
+   "hazard_ratio": 1.053232362230791,
+   "se_model": 0.014681668474877495,
+   "term": "evfta_cut_cum_pp_lag"
+  },
+  {
+   "coef": 0.8083566506268273,
+   "coef_pooled": 0.8081116097848804,
+   "hazard_ratio": 2.2442169221805526,
+   "se_model": 0.0763508819879982,
+   "term": "log_value_lag_isna"
+  },
+  {
+   "coef": -0.5744389065565015,
+   "coef_pooled": -0.5743349451706188,
+   "hazard_ratio": 0.5630206874130569,
+   "se_model": 0.050876013877902714,
+   "term": "vn_market_share_lag1_isna"
+  },
+  {
+   "coef": 0.12053159942040716,
+   "coef_pooled": 0.12040042545100538,
+   "hazard_ratio": 1.1280963875945662,
+   "se_model": 0.03374061085053813,
+   "term": "volatility_3y_lag1_isna"
+  },
+  {
+   "coef": 0.010217820997803367,
+   "coef_pooled": 0.010158402297588562,
+   "hazard_ratio": 1.0102702011825473,
+   "se_model": 0.013816715785643639,
+   "term": "log_n_markets_for_p_lag1_isna"
+  },
+  {
+   "coef": 0.0020210271292419924,
+   "coef_pooled": 0.002004639045792337,
+   "hazard_ratio": 1.0020230707810973,
+   "se_model": 0.005299831740220916,
+   "term": "hs2_share_lag1_isna"
+  },
+  {
+   "coef": 0.06006326362629794,
+   "coef_pooled": 0.05997004298223925,
+   "hazard_ratio": 1.0619037243007616,
+   "se_model": 0.03300982279651089,
+   "term": "log_rca_lag_isna"
+  },
+  {
+   "coef": -0.003997649417052195,
+   "coef_pooled": -0.00398810487971886,
+   "hazard_ratio": 0.9960103305461387,
+   "se_model": 0.007433457380538331,
+   "term": "vn_product_growth_lag_isna"
+  },
+  {
+   "coef": -0.020146868623810633,
+   "coef_pooled": -0.02007291218183235,
+   "hazard_ratio": 0.9800547234476633,
+   "se_model": 0.029921802487308212,
+   "term": "world_growth_lag1_isna"
+  },
+  {
+   "coef": 0.06861085960859006,
+   "coef_pooled": 0.06858433260894763,
+   "hazard_ratio": 1.071019351155949,
+   "se_model": 0.004759007300041067,
+   "term": "tariff_applied_lag_isna"
+  },
+  {
+   "coef": -1.826322338224132,
+   "coef_pooled": -1.8254950747595748,
+   "hazard_ratio": 0.16100460076527517,
+   "se_model": 0.14505968808712735,
+   "term": "const"
+  },
+  {
+   "coef": -0.03625925017683203,
+   "coef_pooled": -0.03867897540242527,
+   "hazard_ratio": 0.9643902427307096,
+   "se_model": 0.23330464545976454,
+   "term": "log_age"
+  },
+  {
+   "coef": -0.1935468695639952,
+   "coef_pooled": -0.19294698514221165,
+   "hazard_ratio": 0.8240312133063128,
+   "se_model": 0.06545426194985282,
+   "term": "log_age_sq"
+  }
+ ],
+ "events": 15405,
+ "grad_max": 0.00012063231477466019,
+ "groups": 20975,
+ "id": "I7p",
+ "loglik": -32801.97978653928,
+ "loglik_pooled": -32801.98508601921,
+ "n": 98097,
+ "p_LR_theta0_boundary": 0.45900083111748957,
+ "panel_hash": "e480392d6ef1aabd5553291b1a925720e7c8f59295bf9b05577f706681fc9c12",
+ "peak_rss_mb": 1457,
+ "sample": "known-start",
+ "seconds_total": 4.1,
+ "spec": "cloglog + shared gamma frailty, parametric baseline (log age, log age^2) @S4",
+ "theta": 0.0019835171401217607
+}

@@ -1,0 +1,248 @@
+{
+ "code_commit": "7ab2d35236ed5540b53689feab76f71a935b97c4-dirty",
+ "coefs": [
+  {
+   "coef": -1.2555874562464842,
+   "coef_pooled": -1.2555927135676763,
+   "se_model": 152657.36466170882,
+   "term": "age_1"
+  },
+  {
+   "coef": -2.4970286761856735,
+   "coef_pooled": -2.4970191801379404,
+   "se_model": 152657.36466180364,
+   "term": "age_2"
+  },
+  {
+   "coef": -0.8493626266791994,
+   "coef_pooled": -0.8493613443780138,
+   "se_model": 75700.15323920923,
+   "term": "age_3"
+  },
+  {
+   "coef": -0.9540900307795357,
+   "coef_pooled": -0.9540886009534443,
+   "se_model": 75700.15323921098,
+   "term": "age_4"
+  },
+  {
+   "coef": -0.994453559812382,
+   "coef_pooled": -0.994452033317779,
+   "se_model": 75700.15323921267,
+   "term": "age_5"
+  },
+  {
+   "coef": -1.1111944122129507,
+   "coef_pooled": -1.1111927149977134,
+   "se_model": 75700.15323921495,
+   "term": "age_6"
+  },
+  {
+   "coef": -1.1514834500554791,
+   "coef_pooled": -1.1514815039506692,
+   "se_model": 75700.15323921655,
+   "term": "age_7"
+  },
+  {
+   "coef": -1.2112157953889235,
+   "coef_pooled": -1.2112134864097612,
+   "se_model": 75700.15323921846,
+   "term": "age_8"
+  },
+  {
+   "coef": -1.2169016862801496,
+   "coef_pooled": -1.2168992756057293,
+   "se_model": 75700.15323921974,
+   "term": "age_9"
+  },
+  {
+   "coef": -1.3384208896931542,
+   "coef_pooled": -1.3384195157475947,
+   "se_model": 75700.15323921299,
+   "term": "age_10+"
+  },
+  {
+   "coef": -0.21194384774947286,
+   "coef_pooled": -0.2119416592533351,
+   "se_model": 0.014997799457323368,
+   "term": "log_value_lag"
+  },
+  {
+   "coef": -0.07365667324380964,
+   "coef_pooled": -0.07365705943455944,
+   "se_model": 0.006600873676469962,
+   "term": "log_initial_value"
+  },
+  {
+   "coef": -0.022334137374106947,
+   "coef_pooled": -0.022335091731151592,
+   "se_model": 0.012472759628581258,
+   "term": "vn_market_share_lag1"
+  },
+  {
+   "coef": 0.06841830316892465,
+   "coef_pooled": 0.06841797166135637,
+   "se_model": 0.007576790937836495,
+   "term": "volatility_3y_lag1"
+  },
+  {
+   "coef": 0.05662738619725878,
+   "coef_pooled": 0.056627230917600975,
+   "se_model": 0.01341630302039943,
+   "term": "log_gdp_d_lag1"
+  },
+  {
+   "coef": 0.009261692620260971,
+   "coef_pooled": 0.009261727908309795,
+   "se_model": 0.006245682959050358,
+   "term": "log_gdpcap_d_lag1"
+  },
+  {
+   "coef": 0.005625784447410029,
+   "coef_pooled": 0.005625761247938965,
+   "se_model": 0.00584596886447783,
+   "term": "importer_gdp_growth_lag1"
+  },
+  {
+   "coef": 0.029726479194226958,
+   "coef_pooled": 0.029726457516230504,
+   "se_model": 0.006504557304803974,
+   "term": "importer_inflation_lag1"
+  },
+  {
+   "coef": -0.07008458249406233,
+   "coef_pooled": -0.07008521326889396,
+   "se_model": 0.011460341116905994,
+   "term": "log_total_import_cp_lag1"
+  },
+  {
+   "coef": 0.013026727328932567,
+   "coef_pooled": 0.013026748991116947,
+   "se_model": 0.006218587568333343,
+   "term": "log_dist"
+  },
+  {
+   "coef": -0.2480486774121919,
+   "coef_pooled": -0.24804852726221413,
+   "se_model": 0.012133294808493317,
+   "term": "log_n_products_to_c_lag1"
+  },
+  {
+   "coef": -0.14702104290679274,
+   "coef_pooled": -0.14702086600537714,
+   "se_model": 0.011469583219733117,
+   "term": "log_n_markets_for_p_lag1"
+  },
+  {
+   "coef": -0.21705408641761897,
+   "coef_pooled": -0.2170542400360515,
+   "se_model": 0.011445279541844619,
+   "term": "log_n_markets_eu27_for_p_lag1"
+  },
+  {
+   "coef": -0.029513496430924428,
+   "coef_pooled": -0.02951349512914029,
+   "se_model": 0.0063874438735508675,
+   "term": "hs2_share_lag1"
+  },
+  {
+   "coef": -0.04204621822671146,
+   "coef_pooled": -0.04204618332479072,
+   "se_model": 0.007611553799867647,
+   "term": "log_rca_lag"
+  },
+  {
+   "coef": -0.01908975611003059,
+   "coef_pooled": -0.019089770925640237,
+   "se_model": 0.004975454283827113,
+   "term": "vn_product_growth_lag"
+  },
+  {
+   "coef": 0.03093804780004728,
+   "coef_pooled": 0.030938030450612938,
+   "se_model": 0.0055668449993843665,
+   "term": "world_growth_lag1"
+  },
+  {
+   "coef": 0.023545390022599092,
+   "coef_pooled": 0.02354539921259932,
+   "se_model": 0.006261222483112776,
+   "term": "tariff_applied_lag"
+  },
+  {
+   "coef": -0.05472623067530609,
+   "coef_pooled": -0.05472622822457728,
+   "se_model": 0.008865061992136094,
+   "term": "pref_margin_lag"
+  },
+  {
+   "coef": 0.03048314691032872,
+   "coef_pooled": 0.03048316895156172,
+   "se_model": 0.009731996446016137,
+   "term": "evfta_cut_cum_pp_lag"
+  },
+  {
+   "coef": -0.3349060184165759,
+   "coef_pooled": -0.3349002255144902,
+   "se_model": 0.03427225373392623,
+   "term": "vn_market_share_lag1_isna"
+  },
+  {
+   "coef": 0.8869795018516764,
+   "coef_pooled": 0.886975679722243,
+   "se_model": 107499.70266024547,
+   "term": "volatility_3y_lag1_isna"
+  },
+  {
+   "coef": 0.011624319722531482,
+   "coef_pooled": 0.011624306663269956,
+   "se_model": 0.012052725431939863,
+   "term": "log_n_markets_for_p_lag1_isna"
+  },
+  {
+   "coef": 0.005901340777907517,
+   "coef_pooled": 0.005901363346057652,
+   "se_model": 0.004373351605494592,
+   "term": "hs2_share_lag1_isna"
+  },
+  {
+   "coef": 0.04679717353701224,
+   "coef_pooled": 0.04679693970625847,
+   "se_model": 0.034585957763147955,
+   "term": "log_rca_lag_isna"
+  },
+  {
+   "coef": 0.001560243706071457,
+   "coef_pooled": 0.0015602726130598814,
+   "se_model": 0.006758505054628552,
+   "term": "vn_product_growth_lag_isna"
+  },
+  {
+   "coef": -0.015902000124995996,
+   "coef_pooled": -0.015901788999514447,
+   "se_model": 0.03229062150045282,
+   "term": "world_growth_lag1_isna"
+  },
+  {
+   "coef": 0.053357616916865275,
+   "coef_pooled": 0.05335758953221259,
+   "se_model": 0.0043067951441896285,
+   "term": "tariff_applied_lag_isna"
+  }
+ ],
+ "events": 15405,
+ "grad_max": 0.0001559191297246798,
+ "groups": 20975,
+ "id": "I9",
+ "loglik": -32676.338408278643,
+ "loglik_pooled": -32676.33840830067,
+ "n": 98097,
+ "panel_hash": "e480392d6ef1aabd5553291b1a925720e7c8f59295bf9b05577f706681fc9c12",
+ "peak_rss_mb": 1457,
+ "rho": 2.1413424302065126e-13,
+ "sample": "known-start",
+ "seconds": 35.6,
+ "seconds_total": 38.0,
+ "sigma_u": 4.627464132985766e-07,
+ "spec": "random-intercept probit (relation) @S4"
+}

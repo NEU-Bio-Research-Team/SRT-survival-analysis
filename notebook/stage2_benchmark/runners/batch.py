@@ -49,6 +49,66 @@ def expand(plan_name: str, include_optional: bool = True) -> list[dict]:
     return specs
 
 
+STOCHASTIC = {"D05", "D06", "L05", "L06", "L07", "L08", "L09", "L10"}
+
+
+def expand_batch2() -> list[dict]:
+    """Đợt 2 (plan §6.1): shortlist x {S1, S4, S*} x F1/F2/F3.
+
+    valid : F1 and F3 are tuned independently (15 trials). F2 reuses the batch1
+            tuning when that cell exists; otherwise it is tuned here.
+    test  : refit at the refit cutoff with those params; stochastic models get
+            seeds 1-3; F1 also scores horizon 5.
+    """
+    sl = paths.load_yaml("shortlist.yaml")
+    specs = []
+    for fold in ("F1", "F2", "F3"):
+        for task, ref in (("D", "D00"), ("L", "L00")):
+            for stage in ("valid", "test"):
+                specs.append({"batch": "batch2", "fold": fold, "task": task, "model": ref,
+                              "fset": None, "stage": stage, "group": "reference",
+                              "params_batch": "batch2", "seeds": [1],
+                              "horizons": [1, 2, 3, 4, 5] if (fold == "F1" and task == "L") else [1, 2, 3]})
+        for task in ("D", "L"):
+            for m in sl[f"{task}_models"]:
+                for fs in sl[f"{task}_sets"]:
+                    reuse = False
+                    if fold == "F2":
+                        from stage2_benchmark.runners import cell as C
+                        b1 = {"batch": "batch1", "fold": "F2", "task": task, "model": m,
+                              "fset": fs, "stage": "valid"}
+                        reuse = C.read_status(b1).get("state") == "done"
+                    common = {"fold": fold, "task": task, "model": m, "fset": fs,
+                              "n_trials": 15, "group": "confirm"}
+                    if not reuse:
+                        specs.append(dict(common, batch="batch2", stage="valid", seeds=[1]))
+                    specs.append(dict(common, batch="batch2", stage="test",
+                                      params_batch="batch1" if reuse else "batch2",
+                                      seeds=[1, 2, 3] if m in STOCHASTIC else [1],
+                                      horizons=[1, 2, 3, 4, 5] if (fold == "F1" and task == "L") else [1, 2, 3]))
+    return specs
+
+
+def expand_lobo() -> list[dict]:
+    """Đợt 2 LOBO (plan §6.2) on F2 validation: S8 minus one block, for L02,
+    L* and D05. Where S8 is ineligible for the task (block N, see 0.3), the base
+    is the widest eligible package S8-N and N is not dropped separately."""
+    sl = paths.load_yaml("shortlist.yaml")
+    elig = pd.read_csv(os.path.join(paths.REPORTS, "stage0", "0.3_eligibility.csv"))
+    specs = []
+    for task, models in (("L", ["L02", sl["L_star"]]), ("D", ["D05"])):
+        ok = elig[(elig.fold == "F2") & (elig.task == task) & (elig.stage == "valid") & (elig.set == "S8")]
+        base, blocks = ("S8", list("RMEPNCLH")) if ok["eligible"].all() else ("S8-N", list("RMEPCLH"))
+        specs.append({"batch": "batch2_lobo", "fold": "F2", "task": task, "model": "L00" if task == "L" else "D00",
+                      "fset": None, "stage": "valid", "group": "reference"})
+        for m in dict.fromkeys(models):
+            for fs in [base] + [f"{base}-{b}" for b in blocks]:
+                specs.append({"batch": "batch2_lobo", "fold": "F2", "task": task, "model": m,
+                              "fset": fs, "stage": "valid", "n_trials": 15, "seeds": [1],
+                              "group": "lobo", "lobo_base": base})
+    return specs
+
+
 def widest_eligible(spec: dict, status: dict) -> str | None:
     """S8 minus every block that failed eligibility - the widest package that is
     eligible in this fold (plan §4.3 'gói rộng nhất còn eligible')."""
@@ -85,7 +145,9 @@ def progress_table(specs: list[dict]) -> pd.DataFrame:
 
 def run_plan(plan_name: str, only=None, retry_failed=False, dry=False,
              include_optional=True, specs=None):
-    specs = specs if specs is not None else expand(plan_name, include_optional)
+    if specs is None:
+        specs = {"batch2": expand_batch2, "batch2_lobo": expand_lobo}.get(
+            plan_name, lambda: expand(plan_name, include_optional))()
     if only:
         specs = [s for s in specs if any(o in C.cell_id(s) for o in only)]
     log = Logger(plan_name)

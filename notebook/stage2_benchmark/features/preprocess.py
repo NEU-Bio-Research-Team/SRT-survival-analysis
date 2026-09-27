@@ -112,6 +112,15 @@ class Preprocessor:
         Z = self._assemble(df)
         sd = Z.std(axis=0)
         self.keep_ = sd > 1e-12
+        # exact duplicates in train (e.g. the missing flags of tariff, margin and
+        # EVFTA cut, which are null on the same rows) are dropped, keeping the first
+        seen = {}
+        for j in np.flatnonzero(self.keep_):
+            key = Z[:, j].tobytes()
+            if key in seen:
+                self.keep_[j] = False
+            else:
+                seen[key] = j
         names = self.cols + [f"{c}_isna" for c in self.flag_cols_]
         self.names_ = [n for n, k in zip(names, self.keep_) if k]
         self.dropped_constant_ = [n for n, k in zip(names, self.keep_) if not k]

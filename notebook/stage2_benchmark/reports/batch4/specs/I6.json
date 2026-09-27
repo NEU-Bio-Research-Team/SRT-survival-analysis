@@ -1,0 +1,135 @@
+{
+ "LR_theta0": 5.129404598847032e-07,
+ "code_commit": "7ab2d35236ed5540b53689feab76f71a935b97c4-dirty",
+ "coefs": [
+  {
+   "coef": -1.7558497761346692,
+   "coef_pooled": -1.7558720872791533,
+   "hazard_ratio": 0.17276037225586924,
+   "se_model": 0.0,
+   "term": "age_1"
+  },
+  {
+   "coef": -4.780734540693662,
+   "coef_pooled": -4.780688533869717,
+   "hazard_ratio": 0.008389834029062172,
+   "se_model": 0.0,
+   "term": "age_2"
+  },
+  {
+   "coef": -1.3915274971038398,
+   "coef_pooled": -1.3915207963641716,
+   "hazard_ratio": 0.2486951332544636,
+   "se_model": 0.0,
+   "term": "age_3"
+  },
+  {
+   "coef": -1.5669408320807063,
+   "coef_pooled": -1.5669332410509276,
+   "hazard_ratio": 0.20868260199439556,
+   "se_model": 0.0,
+   "term": "age_4"
+  },
+  {
+   "coef": -1.6742322683710986,
+   "coef_pooled": -1.6742244531317394,
+   "hazard_ratio": 0.1874520371106571,
+   "se_model": 0.0,
+   "term": "age_5"
+  },
+  {
+   "coef": -1.9230901299621779,
+   "coef_pooled": -1.9230810332806725,
+   "hazard_ratio": 0.1461546268114104,
+   "se_model": 0.0,
+   "term": "age_6"
+  },
+  {
+   "coef": -2.037693169414819,
+   "coef_pooled": -2.0376830630137355,
+   "hazard_ratio": 0.13032901132358785,
+   "se_model": 0.0,
+   "term": "age_7"
+  },
+  {
+   "coef": -2.1955312208721094,
+   "coef_pooled": -2.19551900098073,
+   "hazard_ratio": 0.11129942122242009,
+   "se_model": 0.0,
+   "term": "age_8"
+  },
+  {
+   "coef": -2.250451016713483,
+   "coef_pooled": -2.250437330222897,
+   "hazard_ratio": 0.10535169846833567,
+   "se_model": 0.0,
+   "term": "age_9"
+  },
+  {
+   "coef": -2.743958696885297,
+   "coef_pooled": -2.743952211049286,
+   "hazard_ratio": 0.06431523774509207,
+   "se_model": 0.0,
+   "term": "age_10+"
+  },
+  {
+   "coef": -0.5869868242840011,
+   "coef_pooled": -0.5869776659716612,
+   "hazard_ratio": 0.5560000892088469,
+   "se_model": 0.018721724718240827,
+   "term": "log_value_lag"
+  },
+  {
+   "coef": -0.14062200711559752,
+   "coef_pooled": -0.1406226177173545,
+   "hazard_ratio": 0.8688176565297648,
+   "se_model": 0.009769464606943928,
+   "term": "log_initial_value"
+  },
+  {
+   "coef": 0.15481139839764568,
+   "coef_pooled": 0.15480913269364793,
+   "hazard_ratio": 1.1674377597084797,
+   "se_model": 0.01289896961355271,
+   "term": "vn_market_share_lag1"
+  },
+  {
+   "coef": 0.10031061155813092,
+   "coef_pooled": 0.10030779010369643,
+   "hazard_ratio": 1.1055142502552233,
+   "se_model": 0.013528340729795172,
+   "term": "volatility_3y_lag1"
+  },
+  {
+   "coef": -0.8349008012987416,
+   "coef_pooled": -0.8348744269133767,
+   "hazard_ratio": 0.4339175233528742,
+   "se_model": 0.0423269028305018,
+   "term": "vn_market_share_lag1_isna"
+  },
+  {
+   "coef": 1.8320975559208958,
+   "coef_pooled": 1.8320793051144444,
+   "hazard_ratio": 6.246976307731843,
+   "se_model": 0.0,
+   "term": "volatility_3y_lag1_isna"
+  }
+ ],
+ "events": 15405,
+ "grad_max": 0.00012896751549362762,
+ "groups": 20975,
+ "id": "I6",
+ "loglik": -34665.36783856275,
+ "loglik_pooled": -34665.36783881922,
+ "max_events_per_group": 4,
+ "n": 98097,
+ "p_LR_theta0_boundary": 0.4997142781146916,
+ "panel_hash": "e480392d6ef1aabd5553291b1a925720e7c8f59295bf9b05577f706681fc9c12",
+ "peak_rss_mb": 1023,
+ "sample": "known-start",
+ "seconds": 2.1,
+ "seconds_total": 2.7,
+ "spec": "cloglog + shared gamma frailty (relation) @S1",
+ "theta": 4.456536854020363e-13,
+ "theta_se_log": 73093.13739791722
+}

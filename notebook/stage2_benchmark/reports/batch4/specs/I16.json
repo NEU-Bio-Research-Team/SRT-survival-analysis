@@ -1,0 +1,289 @@
+{
+ "LR_theta0": 0.258120400540065,
+ "code_commit": "7ab2d35236ed5540b53689feab76f71a935b97c4-dirty",
+ "coefs": [
+  {
+   "coef": -2.126867810791716,
+   "coef_pooled": -2.1287702793181524,
+   "hazard_ratio": 0.11921009828397804,
+   "se_model": 90797.18050877606,
+   "term": "age_1"
+  },
+  {
+   "coef": -4.5338873458309825,
+   "coef_pooled": -4.539008407234112,
+   "hazard_ratio": 0.01073884920697473,
+   "se_model": 90797.18050877155,
+   "term": "age_2"
+  },
+  {
+   "coef": -2.282851134194047,
+   "coef_pooled": -2.284379551854797,
+   "hazard_ratio": 0.10199299605386751,
+   "se_model": 30397.70015293449,
+   "term": "age_3"
+  },
+  {
+   "coef": -2.4275787790262533,
+   "coef_pooled": -2.4304754149366934,
+   "hazard_ratio": 0.08825024746592061,
+   "se_model": 30397.700152937963,
+   "term": "age_4"
+  },
+  {
+   "coef": -2.5093093034247804,
+   "coef_pooled": -2.5129082162789107,
+   "hazard_ratio": 0.0813243903248579,
+   "se_model": 30397.70015294224,
+   "term": "age_5"
+  },
+  {
+   "coef": -2.7110669803973098,
+   "coef_pooled": -2.714854277356949,
+   "hazard_ratio": 0.06646585110740515,
+   "se_model": 30397.700152954614,
+   "term": "age_6"
+  },
+  {
+   "coef": -2.793566505937242,
+   "coef_pooled": -2.7972348455400917,
+   "hazard_ratio": 0.06120254496474275,
+   "se_model": 30397.700152964902,
+   "term": "age_7"
+  },
+  {
+   "coef": -2.9119068750997226,
+   "coef_pooled": -2.915638984234585,
+   "hazard_ratio": 0.054371950435019197,
+   "se_model": 30397.70015298062,
+   "term": "age_8"
+  },
+  {
+   "coef": -2.9323936761329112,
+   "coef_pooled": -2.935791825597882,
+   "hazard_ratio": 0.05326937578155267,
+   "se_model": 30397.70015299191,
+   "term": "age_9"
+  },
+  {
+   "coef": -3.3358123729103055,
+   "coef_pooled": -3.337847036801334,
+   "hazard_ratio": 0.03558566563505889,
+   "se_model": 30397.700152930796,
+   "term": "age_10+"
+  },
+  {
+   "coef": -0.436373002444848,
+   "coef_pooled": -0.43635021372826865,
+   "hazard_ratio": 0.6463765809194199,
+   "se_model": 0.02447637667317189,
+   "term": "log_value_lag"
+  },
+  {
+   "coef": -0.1840781819810674,
+   "coef_pooled": -0.1827996090262965,
+   "hazard_ratio": 0.8318707639799128,
+   "se_model": 0.012085211672163674,
+   "term": "log_initial_value"
+  },
+  {
+   "coef": -0.08527619123942191,
+   "coef_pooled": -0.0855789695833874,
+   "hazard_ratio": 0.918258634384773,
+   "se_model": 0.022538794552540885,
+   "term": "vn_market_share_lag1"
+  },
+  {
+   "coef": 0.11343860854975868,
+   "coef_pooled": 0.11322434997055651,
+   "hazard_ratio": 1.1201231207986808,
+   "se_model": 0.01174536772000333,
+   "term": "volatility_3y_lag1"
+  },
+  {
+   "coef": 0.09455319862641556,
+   "coef_pooled": 0.0943683139130903,
+   "hazard_ratio": 1.0991676357860682,
+   "se_model": 0.019303505351903966,
+   "term": "log_gdp_d_lag1"
+  },
+  {
+   "coef": 0.00968355008414632,
+   "coef_pooled": 0.00974464839650565,
+   "hazard_ratio": 1.0097305873619413,
+   "se_model": 0.008766628842825738,
+   "term": "log_gdpcap_d_lag1"
+  },
+  {
+   "coef": 0.0017734605901590379,
+   "coef_pooled": 0.0014799337773430826,
+   "hazard_ratio": 1.0017750341014406,
+   "se_model": 0.00832605278521341,
+   "term": "importer_gdp_growth_lag1"
+  },
+  {
+   "coef": 0.04433024218909218,
+   "coef_pooled": 0.04433141203959948,
+   "hazard_ratio": 1.0453275091379954,
+   "se_model": 0.009076070385506313,
+   "term": "importer_inflation_lag1"
+  },
+  {
+   "coef": -0.18841801905827427,
+   "coef_pooled": -0.18796516616393608,
+   "hazard_ratio": 0.8282684028790437,
+   "se_model": 0.01887495253880421,
+   "term": "log_total_import_cp_lag1"
+  },
+  {
+   "coef": 0.022169366037918987,
+   "coef_pooled": 0.021998145654225486,
+   "hazard_ratio": 1.0224169325122863,
+   "se_model": 0.008843365913886911,
+   "term": "log_dist"
+  },
+  {
+   "coef": -0.33957687680101817,
+   "coef_pooled": -0.33723206464597044,
+   "hazard_ratio": 0.7120715530227788,
+   "se_model": 0.017374476592726302,
+   "term": "log_n_products_to_c_lag1"
+  },
+  {
+   "coef": -0.18729997186185554,
+   "coef_pooled": -0.18569224062517697,
+   "hazard_ratio": 0.8291949639177316,
+   "se_model": 0.015349004688955371,
+   "term": "log_n_markets_for_p_lag1"
+  },
+  {
+   "coef": -0.28784776185026195,
+   "coef_pooled": -0.2864272553299657,
+   "hazard_ratio": 0.7498757432454369,
+   "se_model": 0.015159739059442838,
+   "term": "log_n_markets_eu27_for_p_lag1"
+  },
+  {
+   "coef": -0.04970437297007983,
+   "coef_pooled": -0.049499627125969774,
+   "hazard_ratio": 0.9515106752008581,
+   "se_model": 0.009150196171085269,
+   "term": "hs2_share_lag1"
+  },
+  {
+   "coef": -0.08912803720071492,
+   "coef_pooled": -0.08819381593159652,
+   "hazard_ratio": 0.9147284468065768,
+   "se_model": 0.01273286827567626,
+   "term": "log_rca_lag"
+  },
+  {
+   "coef": -0.016972254226628514,
+   "coef_pooled": -0.01709360309775242,
+   "hazard_ratio": 0.9831709630952044,
+   "se_model": 0.006016876072017241,
+   "term": "vn_product_growth_lag"
+  },
+  {
+   "coef": 0.03547290444185951,
+   "coef_pooled": 0.03533477752781553,
+   "hazard_ratio": 1.036109573780525,
+   "se_model": 0.0073103217653534445,
+   "term": "world_growth_lag1"
+  },
+  {
+   "coef": 0.027555619259195134,
+   "coef_pooled": 0.027580195465183657,
+   "hazard_ratio": 1.0279387867111316,
+   "se_model": 0.009858756875266718,
+   "term": "tariff_applied_lag"
+  },
+  {
+   "coef": -0.07584451414757516,
+   "coef_pooled": -0.07538318062456933,
+   "hazard_ratio": 0.9269603245711658,
+   "se_model": 0.012863671183515876,
+   "term": "pref_margin_lag"
+  },
+  {
+   "coef": 0.040536105639795476,
+   "coef_pooled": 0.04026102234354952,
+   "hazard_ratio": 1.0413689083144502,
+   "se_model": 0.01427700016256935,
+   "term": "evfta_cut_cum_pp_lag"
+  },
+  {
+   "coef": -0.5895303037862556,
+   "coef_pooled": -0.588851506074641,
+   "hazard_ratio": 0.5545877113172242,
+   "se_model": 0.04474719072380428,
+   "term": "vn_market_share_lag1_isna"
+  },
+  {
+   "coef": 1.162407945720205,
+   "coef_pooled": 1.164528782888237,
+   "hazard_ratio": 3.1976237176631583,
+   "se_model": 52535.94324270286,
+   "term": "volatility_3y_lag1_isna"
+  },
+  {
+   "coef": 0.011424391044040194,
+   "coef_pooled": 0.011159845493518889,
+   "hazard_ratio": 1.0114898986231275,
+   "se_model": 0.012397005577173681,
+   "term": "log_n_markets_for_p_lag1_isna"
+  },
+  {
+   "coef": 4.503866929264239e-05,
+   "coef_pooled": -1.6467250047290074e-05,
+   "hazard_ratio": 1.0000450396835487,
+   "se_model": 0.004627241460033097,
+   "term": "hs2_share_lag1_isna"
+  },
+  {
+   "coef": 0.049709766577013585,
+   "coef_pooled": 0.049492192558996936,
+   "hazard_ratio": 1.0509660266400944,
+   "se_model": 0.029027790843040326,
+   "term": "log_rca_lag_isna"
+  },
+  {
+   "coef": -0.004363881142549454,
+   "coef_pooled": -0.00431582595847071,
+   "hazard_ratio": 0.9956456267512961,
+   "se_model": 0.006614547711481279,
+   "term": "vn_product_growth_lag_isna"
+  },
+  {
+   "coef": -0.018385047511807015,
+   "coef_pooled": -0.018228322965876714,
+   "hazard_ratio": 0.9817829264956297,
+   "se_model": 0.026471137420867777,
+   "term": "world_growth_lag1_isna"
+  },
+  {
+   "coef": 0.07556869968166778,
+   "coef_pooled": 0.07540189916710813,
+   "hazard_ratio": 1.078497317595445,
+   "se_model": 0.004458661276392882,
+   "term": "tariff_applied_lag_isna"
+  }
+ ],
+ "events": 15958,
+ "grad_max": 0.00033973812817578164,
+ "groups": 23799,
+ "id": "I16",
+ "loglik": -35038.796443511,
+ "loglik_pooled": -35038.92550371127,
+ "max_events_per_group": 4,
+ "n": 131016,
+ "p_LR_theta0_boundary": 0.30570720761599834,
+ "panel_hash": "e480392d6ef1aabd5553291b1a925720e7c8f59295bf9b05577f706681fc9c12",
+ "peak_rss_mb": 1457,
+ "sample": "all spells",
+ "seconds": 2.3,
+ "seconds_total": 5.1,
+ "spec": "cloglog + shared gamma frailty (relation) @S4",
+ "theta": 0.009439856065708843,
+ "theta_se_log": 1.9816072907734066
+}
