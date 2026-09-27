@@ -1,0 +1,39 @@
+# Frozen by runners/shortlist.py from batch1 validation only. Do not edit.
+source: batch1 F2 validation
+code_commit: 9b8406cf863c9cf84a04dd6ad10aec9879bcf7b8-dirty
+D_models:
+- D01
+- D04
+- D05
+- D06
+L_models:
+- L02
+- L07
+- L08
+- L09
+- L05
+D_sets:
+- S1
+- S4
+- S6
+L_sets:
+- S1
+- S4
+- S6
+L_star: L05
+R4:
+- D01
+- D05
+- L02
+- L05
+names:
+  D01: Cloglog
+  D04: FlexCloglog
+  D05: BoostedHazard
+  D06: MLPHazard
+  L02: CoxNet
+  L07: DeepSurv
+  L08: CoxTime
+  L09: DeepHitSingle
+  L05: RSF
+not_converged: []
