@@ -43,6 +43,7 @@ def expand(plan_name: str, include_optional: bool = True) -> list[dict]:
                               "model": m, "fset": fs, "stage": plan["stage"],
                               "n_trials": plan.get("n_trials", 15),
                               "convergence_rule": plan.get("convergence_rule", True),
+                              "grid_limit": plan.get("grid_limit"),
                               "seeds": plan.get("seeds", [1]), "group": grp["id"],
                               "fallback": grp.get("fallback_if_ineligible")})
     return specs

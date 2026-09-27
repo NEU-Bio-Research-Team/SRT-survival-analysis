@@ -10,6 +10,7 @@ pilot0:               # Đợt 0.6: 16 models x S4 x 1 trial on F2 validation
   fold: F2
   stage: valid
   n_trials: 1
+  grid_limit: 1
   convergence_rule: false
   cells:
     - id: pilot

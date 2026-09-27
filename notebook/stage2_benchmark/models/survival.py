@@ -164,12 +164,17 @@ class RSF(Model):
     id, name, task = "L05", "RSF", "L"
     family, nonlinear, ph, stochastic, tuning = "tree", True, False, True, "optuna"
 
+    # Pilot 0.6: 200 trees x min_leaf 5 on 58k rows took 308 s per trial with
+    # sksurv's log-rank splitter. Rows stay full_eligible; the space is narrowed
+    # instead (100 trees, leaf >= 20, max_features in {sqrt, 0.2}, each tree on a
+    # 50% bootstrap draw): ~60 s per trial (max_features 0.5 alone cost 208 s). Recorded in reports/stage0/0.6_pilot.md.
     def suggest(self, trial):
-        return {"n_estimators": trial.suggest_categorical("n_estimators", [100, 200]),
-                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 5, 300, log=True),
+        return {"n_estimators": 100,
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 20, 300, log=True),
                 "max_features": trial.suggest_categorical("max_features",
-                                                          ["sqrt", 0.2, 0.33, 0.5]),
-                "max_depth": trial.suggest_categorical("max_depth", [None, 8, 12, 20])}
+                                                          ["sqrt", 0.2]),
+                "max_depth": trial.suggest_categorical("max_depth", [None, 8, 12, 20]),
+                "max_samples": 0.5}
 
     def fit(self, data: FitData, params, seed=1):
         from sksurv.ensemble import RandomSurvivalForest

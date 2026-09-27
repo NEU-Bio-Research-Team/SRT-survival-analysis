@@ -58,10 +58,10 @@ def read_status(spec: dict) -> dict:
     return {}
 
 
-def write_status(spec: dict, **kw) -> None:
-    st = read_status(spec)
+def write_status(cell_spec: dict, /, **kw) -> None:
+    st = read_status(cell_spec)
     st.update(kw, updated=time.strftime("%Y-%m-%d %H:%M:%S"))
-    paths.atomic_write_json(os.path.join(cell_dir(spec), "status.json"), st)
+    paths.atomic_write_json(os.path.join(cell_dir(cell_spec), "status.json"), st)
 
 
 def load_base(variant: dict | None = None) -> pd.DataFrame:
@@ -223,6 +223,8 @@ def tune(spec, tr, ev, d, log):
 
     if model.tuning in ("none", "grid"):
         grid = model.grid()
+        if spec.get("grid_limit"):
+            grid = grid[: spec["grid_limit"]]
         for i, params in enumerate(grid):
             if i < len(done):
                 continue
