@@ -1,0 +1,60 @@
+# Task contracts (design doc §6.1, plan §2). Fixed before any model is fit.
+panel_version: stage1_v2
+target_version: exit_gap1_threshold10000_v1
+target:
+  threshold_usd: 10000
+  gap_tolerance: 1          # g: a death needs g+1 observed empty years
+scope: EU27                 # B0: the 27 post-Brexit members, fixed for every year
+                            # (same definition as scripts/audit_stage1.py)
+first_training_origin: 2005 # 2002-2004 only feed covariate history
+b0_training_origin: 2012    # the ">= 2012" variant is reported separately
+
+# Censoring at an information cutoff C (the last calendar year whose filings a
+# block may read). With gap g, a death whose last active year is E is only
+# confirmed once E+1..E+1+g are observed empty, i.e. E <= C-1-g. We therefore
+# censor EVERYONE administratively at H = C - g:
+#   E >= H            -> censored, duration H - t      (alive through H)
+#   E <  H, died      -> event,    duration E - t + 1
+#   E <  H, not died  -> censored, duration E - t      (reporter/HS-revision stop)
+#   duration <= 0     -> dropped (no follow-up)
+# This differs from legacy eu27_v4, which censored unconfirmed deaths at E - t
+# while survivors ran to C - t: that makes censoring depend on the outcome
+# (see reports/stage0/0.5_adapter_reproduction.md).
+censoring_rule: administrative_at_C_minus_gap
+
+tasks:
+  D:
+    name: annual_active_origin_risk
+    output: one_year_exit_probability
+    label: "y = 1{event and duration == 1}, known iff duration >= 1 after censoring"
+    unconfirmed_next_year: mask       # never scored as event = 0
+    primary_metric: brier_1y
+    secondary_metrics: [logloss, pr_auc, roc_auc, calib_slope, calib_intercept]
+    reference: age_only_empirical_hazard
+    time_clock: spell_age          # baseline duration = observed spell age
+  L:
+    name: landmark_remaining_lifetime
+    output: survival_on_grid
+    time_grid: [1, 2, 3, 4, 5]
+    primary_metric: ibs_1_3        # IPCW, trapezoid over u = 1..3
+    secondary_metrics: [brier_1, brier_2, brier_3, antolini_ctd, td_auc_1, td_auc_3]
+    extended_metric: ibs_1_5       # only for origins with 5y follow-up (F1 test)
+    reference: kaplan_meier
+    time_clock: years_since_origin # spell age at origin is a covariate
+  I:
+    name: inference_person_period
+    output: coefficients
+    sample: B0 person-period, origins 2012-2023, confirmed outcomes only
+
+conventions:
+  cox_ties: efron                  # CoxNet (glmnet-style) supports Breslow only; recorded per model
+  time_grid_years: [1, 2, 3, 4, 5]
+  event_at_boundary: "an event in remaining year k belongs to interval (k-1, k]"
+  survival_at_u: "S(u) read from the model's step function at the last time <= u"
+  ipcw_floor: 0.001
+  missing: "median + missing indicator fitted in the train fold; never zero-fill"
+  bootstrap:
+    unit: relation            # importer x product_family
+    B: 1000
+    seed: 20260927
+  brier_skill: "1 - score/score_reference"

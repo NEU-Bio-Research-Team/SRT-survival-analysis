@@ -1,0 +1,43 @@
+# Experiment registry: only valid combinations, each tied to a question.
+# Run with:  python -m stage2_benchmark.runners.batch --plan <name>
+# Reruns resume: finished cells are skipped, unfinished tuning continues.
+
+references:           # refit per fold, every batch that scores a cohort
+  D: D00
+  L: L00
+
+pilot0:               # Đợt 0.6: 16 models x S4 x 1 trial on F2 validation
+  fold: F2
+  stage: valid
+  n_trials: 1
+  convergence_rule: false
+  cells:
+    - id: pilot
+      feature_sets: [S4]
+      models: [D01, D02, D03, D04, D05, D06,
+               L01, L02, L03, L04, L05, L06, L07, L08, L09, L10]
+
+batch1:
+  fold: F2
+  stage: valid          # evaluate_on: validation - test origin 2020 not opened
+  seeds: [1]
+  n_trials: 15
+  cells:
+    - id: A_method_sweep
+      feature_sets: [S4]
+      models: [D01, D02, D03, D04, D05, D06,
+               L01, L02, L03, L04, L05, L06, L07, L08, L09, L10]
+      questions: [C02, C03]
+    - id: B_feature_sweep
+      feature_sets: [S1, S2, S3, S5, S6, S7, S8]
+      models: [D01, D05, L02, L05, L07]
+      questions: [C01]
+    - id: b_thin_deterministic
+      feature_sets: [S1, S8]
+      models: [D02, D03, D04, L01, L03, L04]
+      fallback_if_ineligible: widest_eligible
+    - id: b_thin_stochastic
+      optional: true
+      feature_sets: [S1, S8]
+      models: [D06, L06, L08, L09, L10]
+      fallback_if_ineligible: widest_eligible

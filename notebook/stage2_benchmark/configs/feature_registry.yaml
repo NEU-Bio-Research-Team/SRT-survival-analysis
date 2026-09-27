@@ -1,0 +1,335 @@
+# Feature registry (plan §3.1, design doc §4, template §10.2).
+#
+# Every feature a model may see is listed here and nowhere else. Built by
+# data/base_table.py. Fields:
+#   block              D R M E P N C L H
+#   source             panel column, or `constructed` (formula given)
+#   grain              the key the value truly varies on
+#   available_at       origin = known at the end of the origin year
+#   missing_semantics  what a null means; imputation is always fold-fitted
+#   transform          identity | log1p | log | clip_pct (applied in base_table)
+#   future_derived     must be false for every feature below
+#
+# Defaults applied to every entry unless overridden:
+defaults:
+  available_at: origin
+  transform_fit_scope: train_fold
+  allowed_tasks: [D, L, I]
+  future_derived: false
+  missing_semantics: unknown_is_not_zero
+
+features:
+  # ------------------------------------------------------------------ D
+  age_obs:
+    block: D
+    source: constructed
+    formula: year - spell_start_year + 1
+    grain: [spell, year]
+    transform: identity
+    literature_role: duration_baseline (PG, Brenton, Nitsch)
+    note: observed age; for left-truncated spells the true age is unknown (known_start = 0)
+  log_age:
+    block: D
+    source: constructed
+    formula: log(age_obs)
+    grain: [spell, year]
+    transform: identity
+  known_start:
+    block: D
+    source: constructed
+    formula: 1{start_reason is null}
+    grain: [spell]
+    transform: identity
+    missing_semantics: never_missing
+
+  # ------------------------------------------------------------------ R
+  log_value:
+    block: R
+    source: log_value
+    grain: [importer, product_family, year]
+    transform: identity
+    note: current-year value is valid because exit begins the following year
+  log_value_lag:
+    block: R
+    source: log_value_lag
+    grain: [importer, product_family, year]
+    transform: identity
+    missing_semantics: no_history_first_spell_year
+  log_initial_value:
+    block: R
+    source: constructed
+    formula: log1p(import_value_usd at the spell's first active year)
+    grain: [spell]
+    history_requirement: spell start <= origin (always true for an origin in the spell)
+    transform: identity
+    literature_role: Nitsch initial value; Brenton
+  vn_market_share_lag1:
+    block: R
+    source: vn_market_share_pct_lag1
+    grain: [importer, product_family, year]
+    transform: log1p
+  volatility_3y_lag1:
+    block: R
+    source: volatility_3y_lag1
+    grain: [importer, product_family, year]
+    formula: SD(ln value) over t-3..t-1, >= 2 of 3 years
+    transform: identity
+    missing_semantics: insufficient_history
+  unit_value_lag1:
+    block: R
+    source: unit_value_usd_per_kg_lag1
+    grain: [importer, product_family, year]
+    transform: log1p
+    optional: true           # not in any core set (plan §3.1)
+
+  # ------------------------------------------------------------------ M
+  log_gdp_d_lag1:
+    block: M
+    source: log_gdp_d_lag1
+    grain: [importer, year]
+    transform: identity
+  log_gdpcap_d_lag1:
+    block: M
+    source: log_gdpcap_d_lag1
+    grain: [importer, year]
+    transform: identity
+    note: log_pop_d_lag1 excluded (log GDP = log GDPcap + log pop)
+  importer_gdp_growth_lag1:
+    block: M
+    source: importer_gdp_growth_pct_lag1
+    grain: [importer, year]
+    transform: clip_pct
+  importer_inflation_lag1:
+    block: M
+    source: importer_inflation_pct_lag1
+    grain: [importer, year]
+    transform: clip_pct
+  log_total_import_cp_lag1:
+    block: M
+    source: log_total_import_cp_lag1
+    grain: [importer, product_family, year]
+    transform: identity
+  log_dist:
+    block: M
+    source: dist
+    grain: [importer]
+    transform: log
+    note: static within importer; dropped per fold if constant
+
+  # ------------------------------------------------------------------ E
+  log_n_products_to_c_lag1:
+    block: E
+    source: n_products_to_c_lag1
+    grain: [importer, year]
+    transform: log1p
+  log_n_markets_for_p_lag1:
+    block: E
+    source: n_markets_for_p_lag1
+    grain: [product_family, year]
+    transform: log1p
+    note: counted over the 147-importer universe
+  log_n_markets_eu27_for_p_lag1:
+    block: E
+    source: constructed
+    formula: log1p(# EU27 importers active (gap_filled==0) for the family in t-1)
+    grain: [product_family, year]
+    transform: identity
+    missing_semantics: t-1 before 2002 is null
+  hs2_share_lag1:
+    block: E
+    source: hs2_share_lag1
+    grain: [importer, hs2, year]
+    transform: identity
+  log_rca_lag:
+    block: E
+    source: rca_lag
+    grain: [product_family, year]
+    transform: log1p
+  vn_product_growth_lag:
+    block: E
+    source: growth_lag_pct
+    grain: [product_family, year]
+    transform: clip_pct
+    note: growth of VN's total exports of the family - NOT bilateral growth
+  world_growth_lag1:
+    block: E
+    source: world_growth_pct_lag1
+    grain: [product_family, year]
+    transform: clip_pct
+
+  # ------------------------------------------------------------------ P
+  tariff_applied_lag:
+    block: P
+    source: tariff_applied_lag
+    grain: [product_family, year]
+    transform: identity
+  pref_margin_lag:
+    block: P
+    source: pref_margin_lag
+    grain: [product_family, year]
+    transform: identity
+    note: tariff_mfn_pct_lag1 excluded (MFN = applied + margin); tariff_rate_lag1 duplicate
+  evfta_cut_cum_pp_lag:
+    block: P
+    source: evfta_cut_cum_pp_lag
+    grain: [product_family, year]
+    transform: identity
+    note: zero in every training origin <= 2019, dropped as constant in F1-F3 (plan §12.1)
+
+  # ------------------------------------------------------------------ N
+  # ntm6_*_inforce pools every collection year, INCLUDING collections after the
+  # origin (scripts/build_ntm6.py docstring), so it is not as-of even when
+  # ntm6_source_year <= origin. The core block uses the *_survey counts, which
+  # are stamped at the latest collection year <= origin. inforce is kept only
+  # for the C10(b) lenient probe.
+  log_ntm_sps_survey:
+    block: N
+    source: ntm6_sps_survey
+    grain: [importer, product_family, year]
+    asof_rule: ntm6_source_year <= year
+    transform: log1p
+    missing_semantics: reporter_not_yet_collected_or_unmappable
+  log_ntm_tbt_survey:
+    block: N
+    source: ntm6_tbt_survey
+    grain: [importer, product_family, year]
+    asof_rule: ntm6_source_year <= year
+    transform: log1p
+  log_ntm_other_survey:
+    block: N
+    source: constructed
+    formula: log1p(max(ntm6_all_survey - ntm6_sps_survey - ntm6_tbt_survey, 0))
+    grain: [importer, product_family, year]
+    asof_rule: ntm6_source_year <= year
+    transform: identity
+  ntm_source_age:
+    block: N
+    source: constructed
+    formula: year - ntm6_source_year
+    grain: [importer, year]
+    asof_rule: ntm6_source_year <= year
+    transform: identity
+  ntm6_observed:
+    block: N
+    source: ntm6_observed
+    grain: [importer, year]
+    transform: identity
+  ntm6_mappable:
+    block: N
+    source: ntm6_mappable
+    grain: [product_family]
+    transform: identity
+
+  # ------------------------------------------------------------------ C
+  pci:
+    block: C
+    source: pci
+    grain: [product_hs4, year]
+    asof_rule: pci_source_year <= year
+    transform: identity
+  importer_eci:
+    block: C
+    source: importer_eci
+    grain: [importer, year]
+    asof_rule: carried forward only from earlier years (merge_panel.attach_complexity)
+    transform: identity
+  log_importer_diversity:
+    block: C
+    source: importer_diversity
+    grain: [importer, year]
+    transform: log1p
+
+  # ------------------------------------------------------------------ L
+  importer_lpi_overall:
+    block: L
+    source: importer_lpi_overall
+    grain: [importer, survey_wave]
+    asof_rule: importer_lpi_source_year <= year
+    transform: identity
+    note: importer_glpi_* excluded (EPI 2026 cross-section, PCA on all rows)
+  lpi_age:
+    block: L
+    source: constructed
+    formula: year - importer_lpi_source_year
+    grain: [importer, year]
+    asof_rule: importer_lpi_source_year <= year
+    transform: identity
+
+  # ------------------------------------------------------------------ H
+  n_prior_spells:
+    block: H
+    source: constructed
+    formula: "# earlier spells of the relation that ended with a confirmed death (E_prev + 2 <= spell start <= origin)"
+    grain: [importer, product_family, year]
+    transform: log1p
+    missing_semantics: never_missing
+  years_since_prior_exit:
+    block: H
+    source: constructed
+    formula: year - last active year of the most recent earlier spell
+    grain: [importer, product_family, year]
+    transform: log
+    missing_semantics: no_prior_spell (flagged)
+  log_active_years_prefix:
+    block: H
+    source: constructed
+    formula: log1p(# active (gap_filled==0) relation-years in 2002..year)
+    grain: [importer, product_family, year]
+    transform: identity
+    note: history before 2002 is not known
+  bilateral_growth_lag1:
+    block: H
+    source: constructed
+    formula: log1p(value[c,p,t-1]) - log1p(value[c,p,t-2])
+    grain: [importer, product_family, year]
+    history_requirement: both years present in the panel (no zero-fill)
+    transform: identity
+  trend_3y_lag1:
+    block: H
+    source: constructed
+    formula: OLS slope of log1p(value) on year over t-3..t-1, >= 2 observed years
+    grain: [importer, product_family, year]
+    transform: identity
+  hhi_dest_p_lag1:
+    block: H
+    source: constructed
+    formula: sum_c (value[c,p,t-1] / sum_c value[c,p,t-1])^2 over the panel's 147 importers
+    grain: [product_family, year]
+    transform: identity
+    note: relations below threshold outside a spell are not in the panel, so this is HHI over spell rows
+  hhi_prod_c_lag1:
+    block: H
+    source: constructed
+    formula: sum_p (value[c,p,t-1] / sum_p value[c,p,t-1])^2
+    grain: [importer, year]
+    transform: identity
+
+# Never allowed into X (checked by tests/test_leakage.py).
+forbidden:
+  - event
+  - spell_end_year
+  - right_censored
+  - censor_reason
+  - t_stop
+  - gap_filled
+  - hhi_market
+  - hhi_product
+  - tariff_mfn_pct_lag1
+  - tariff_rate_lag1
+  - years_since_evfta_policy
+  - log_pop_d_lag1
+  - ntm6_all_inforce
+  - ntm6_sps_inforce
+  - ntm6_tbt_inforce
+  - importer_glpi_pca_lpi_epi
+  - importer_glpi_ratio_lpi_epi
+  - importer_glpi_pca_components
+  - importer_glpi_equal_weights
+  - ntm_ave_border_pct
+  - ntm_coverage_ratio
+
+# Diagnostic-only columns (C10(b) lenient probe), never on a leaderboard.
+lenient_probe:
+  log_ntm_sps_inforce: {source: ntm6_sps_inforce, transform: log1p}
+  log_ntm_tbt_inforce: {source: ntm6_tbt_inforce, transform: log1p}
+  ntm_ave_border_pct: {source: ntm_ave_border_pct, transform: identity}

@@ -1,0 +1,37 @@
+# Horizon-matched temporal folds (design doc §8.2 table; plan §2).
+#
+# inner_cutoff   last calendar year whose filings the inner (tuning) fit may read
+# valid_origin   the one validation cohort scored while tuning
+# valid_read_to  last year read to score it (= refit_cutoff)
+# refit_cutoff   last year the refit may read before predicting the test origin
+# test_read_to   test outcomes are read retrospectively to the end of the data
+#
+# With gap g = 1 and administrative censoring at H = C - g, a training block cut
+# at C holds origins t <= C - 2. D needs one year of confirmed outcome, L needs
+# three for IBS 1-3 (L + h + g <= D).
+first_training_origin: 2005
+test_read_to: 2025
+
+folds:
+  F1:
+    test_origin: 2019
+    D: {inner_cutoff: 2015, valid_origin: 2016, refit_cutoff: 2018}
+    L: {inner_cutoff: 2013, valid_origin: 2014, refit_cutoff: 2018}
+    horizons_test: [1, 2, 3, 4, 5]       # only fold with 5y follow-up
+  F2:
+    test_origin: 2020
+    D: {inner_cutoff: 2016, valid_origin: 2017, refit_cutoff: 2019}
+    L: {inner_cutoff: 2014, valid_origin: 2015, refit_cutoff: 2019}
+    horizons_test: [1, 2, 3]
+    development: true                    # screening fold (plan §2)
+  F3:
+    test_origin: 2021
+    D: {inner_cutoff: 2017, valid_origin: 2018, refit_cutoff: 2020}
+    L: {inner_cutoff: 2015, valid_origin: 2016, refit_cutoff: 2020}
+    horizons_test: [1, 2, 3]
+
+# Legacy eu27_v3/v4 folds, used ONLY by the adapter reproduction (Đợt 0.5).
+legacy_folds:
+  1: {train: [2012, 2015], valid: [2016, 2018], test: [2019, 2019]}
+  2: {train: [2012, 2016], valid: [2017, 2019], test: [2020, 2020]}
+  3: {train: [2012, 2017], valid: [2018, 2020], test: [2021, 2021]}

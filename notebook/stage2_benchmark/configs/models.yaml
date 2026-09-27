@@ -1,0 +1,32 @@
+# Model registry (design doc §6.2; plan §2 tuning budget). Implementations:
+# models/{discrete,boosted,survival,neural}.py. Search spaces live next to the
+# adapter code (`grid()` / `suggest()`); this file fixes budgets and seeds.
+sample_budget: full_eligible     # no row caps (pilot 0.6 decides if one is needed)
+tuning_seed: 1                   # one seed while tuning (plan rule 3)
+refit_seeds_stochastic: [1, 2, 3]
+convergence_rule:
+  extra_trials: 15               # added once if the best trial is in the last 25%
+  late_share: 0.25
+
+budgets:
+  optuna_trials: {batch1: 15, batch2_new_fold: 15, batch3_extra: 6}
+
+models:
+  D00: {name: AgeOnly,        task: D, family: reference, tuning: none}
+  D01: {name: Cloglog,        task: D, family: linear, ph: true,  tuning: "grid ridge {0,1e-3,1e-2}"}
+  D02: {name: Logit,          task: D, family: linear, ph: false, tuning: "grid ridge {0,1e-3,1e-2}"}
+  D03: {name: Probit,         task: D, family: linear, ph: false, tuning: "grid ridge {0,1e-3,1e-2}"}
+  D04: {name: FlexCloglog,    task: D, family: linear, ph: false, tuning: "grid df {3,5} x age-interaction {no,yes}"}
+  D05: {name: BoostedHazard,  task: D, family: tree,   stochastic: true, tuning: optuna, implementation: "xgboost binary:logistic"}
+  D06: {name: MLPHazard,      task: D, family: neural, stochastic: true, tuning: optuna, implementation: torch}
+  L00: {name: KM,             task: L, family: reference, tuning: none}
+  L01: {name: CoxPH,          task: L, family: linear, ph: true,  tuning: none, implementation: "sksurv efron"}
+  L02: {name: CoxNet,         task: L, family: linear, ph: true,  tuning: "grid l1_ratio {0.1,0.5,0.9} x auto alpha path"}
+  L03: {name: WeibullAFT,     task: L, family: linear, ph: true,  tuning: "grid penalizer {0,0.01,0.1}", implementation: lifelines}
+  L04: {name: LogNormalAFT,   task: L, family: linear, ph: false, tuning: "grid penalizer {0,0.01,0.1}", implementation: lifelines}
+  L05: {name: RSF,            task: L, family: tree,   ph: false, stochastic: true, tuning: optuna, implementation: sksurv}
+  L06: {name: GBCox,          task: L, family: tree,   ph: true,  stochastic: true, tuning: optuna, implementation: "xgboost survival:cox"}
+  L07: {name: DeepSurv,       task: L, family: neural, ph: true,  stochastic: true, tuning: optuna}
+  L08: {name: CoxTime,        task: L, family: neural, ph: false, stochastic: true, tuning: optuna, implementation: pycox}
+  L09: {name: DeepHitSingle,  task: L, family: neural, ph: false, stochastic: true, tuning: optuna, implementation: pycox}
+  L10: {name: CBNN,           task: L, family: neural, ph: false, stochastic: true, tuning: optuna}

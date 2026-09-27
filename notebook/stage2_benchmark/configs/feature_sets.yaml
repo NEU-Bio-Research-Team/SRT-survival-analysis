@@ -1,0 +1,37 @@
+# Feature packages (design doc §5). Every set keeps D. Blocks are cumulative
+# exactly as listed. D-task models receive spell age through their own baseline
+# (age dummies / age input) in addition to the D block.
+blocks_order: [D, R, M, E, P, N, C, L, H]
+
+sets:
+  S1: [D, R]
+  S2: [D, R, M]
+  S3: [D, R, M, E]
+  S4: [D, R, M, E, P]            # anchor
+  S5: [D, R, M, E, P, N]
+  S6: [D, R, M, E, P, C]
+  S7: [D, R, M, E, P, L]
+  S8: [D, R, M, E, P, N, C, L, H]
+
+# Auxiliary sets used by later batches.
+aux:
+  S4H: [D, R, M, E, P, H]        # C06(c)
+  # leave-one-block-out from S8 (Đợt 2 LOBO) are generated as S8-<block>
+
+eligibility:
+  # A secondary block (N, C, L, H) is eligible in a fold when >= this share of
+  # training rows has an as-of value and the block is not constant in train.
+  min_asof_share: 0.50
+  secondary_blocks: [N, C, L, H]
+  # "has an as-of value" is read on the block's substantive columns - not on
+  # flags such as ntm6_observed that are defined for every row. A row counts
+  # when ANY listed column is non-null.
+  key_columns:
+    N: [log_ntm_sps_survey, log_ntm_tbt_survey, log_ntm_other_survey]
+    C: [pci, importer_eci, log_importer_diversity]
+    L: [importer_lpi_overall]
+    H: [n_prior_spells, bilateral_growth_lag1, trend_3y_lag1, hhi_dest_p_lag1]
+
+references:
+  D: age_only_empirical_hazard
+  L: kaplan_meier

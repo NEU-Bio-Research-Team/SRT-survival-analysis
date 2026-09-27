@@ -1,0 +1,3 @@
+# Large, regenerable run outputs (views, predictions, optuna DBs). Small results live in reports/.
+*
+!.gitignore
