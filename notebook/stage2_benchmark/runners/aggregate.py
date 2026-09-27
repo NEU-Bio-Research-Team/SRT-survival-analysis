@@ -60,8 +60,15 @@ def load_cells(batch: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+OPTUNA = {k for k, v in paths.load_yaml("models.yaml")["models"].items()
+          if v.get("tuning") == "optuna"}
+
+
 def not_converged(row) -> bool:
-    """Best trial in the last 25% of an optuna budget (plan §2)."""
+    """Best trial in the last 25% of an optuna budget (plan §2). Grid-tuned
+    models sweep a fixed grid, so the flag does not apply to them."""
+    if row.get("model") not in OPTUNA:
+        return False
     try:
         curve = json.loads(row["budget_curve"])
     except (TypeError, ValueError):
@@ -304,6 +311,310 @@ def report_batch1(plan="batch1"):
     return df
 
 
+# ------------------------------------------------------- batch2 report
+ASSUMPTION = {  # (linear/nonlinear, PH/non-PH) as declared in models.yaml
+    "D01": ("tuyến tính", "PH (grouped)"), "D02": ("tuyến tính", "non-PH (logit)"),
+    "D03": ("tuyến tính", "non-PH (probit)"), "D04": ("spline + X×tuổi", "non-PH"),
+    "D05": ("phi tuyến (cây)", "non-PH"), "D06": ("phi tuyến (neural)", "non-PH"),
+    "L01": ("tuyến tính", "PH"), "L02": ("tuyến tính", "PH"), "L03": ("tuyến tính", "PH (Weibull)"),
+    "L04": ("tuyến tính", "non-PH (AFT)"), "L05": ("phi tuyến (cây)", "non-PH"),
+    "L06": ("phi tuyến (cây)", "PH"), "L07": ("phi tuyến (neural)", "PH"),
+    "L08": ("phi tuyến (neural)", "non-PH"), "L09": ("phi tuyến (neural)", "non-PH"),
+    "L10": ("phi tuyến (neural)", "non-PH"),
+}
+
+
+def pooled_losses(df, model, fset, folds=("F1", "F2", "F3"), stage="test"):
+    parts = []
+    for f in folds:
+        sub = df[(df.model == model) & (df.fset == fset) & (df.fold == f) & (df.stage == stage)
+                 & (df.state == "done")]
+        if not len(sub):
+            return None
+        r = sub.iloc[0]
+        l = row_losses(r["dir"], r["task"])
+        l["fold"] = f
+        parts.append(l)
+    return pd.concat(parts, ignore_index=True)
+
+
+def pooled_paired(df, a, b, folds=("F1", "F2", "F3")):
+    """(model, fset) a minus b on the pooled test rows of the folds, relations
+    resampled jointly across folds (a relation observed in two test origins
+    moves as one unit)."""
+    la, lb = pooled_losses(df, *a, folds), pooled_losses(df, *b, folds)
+    if la is None or lb is None:
+        return None
+    m = la.merge(lb, on=["spell_id", "year", "relation", "fold"], suffixes=("_a", "_b"))
+    return BS.paired_diff(m["loss_a"], m["loss_b"], m["relation"], B=B)
+
+
+def report_batch2():
+    df = load_cells("batch2")
+    sl = paths.load_yaml("shortlist.yaml")
+    out = os.path.join(paths.REPORTS, "batch2")
+    os.makedirs(out, exist_ok=True)
+    paths.atomic_write_csv(df.drop(columns=["dir"]), os.path.join(out, "cells.csv"))
+    test = df[(df.stage == "test") & (df.state == "done")]
+    L = ["# Đợt 2 — Xác nhận shortlist trên F1/F2/F3 (test origin 2019/2020/2021)", "",
+         f"Shortlist đóng băng: `configs/shortlist.yaml`. Code `{paths.code_commit()}`. Model ngẫu nhiên: "
+         "trung bình 3 seed ở bước refit + test. CI: bootstrap paired theo relation trên các dòng test **gộp 3 fold** "
+         f"(B = {B}); không t-test giữa các fold. Âm = tốt hơn.", "",
+         f"Trạng thái ô: {df['state'].value_counts().to_dict()}", ""]
+    rows = []
+    for task, metric, name in (("D", "m_brier_1y", "Brier 1y"), ("L", "m_ibs_1_3", "IBS 1–3")):
+        ref = "D00" if task == "D" else "L00"
+        L += [f"## Leaderboard task {task} ({name}, test)", "",
+              "| model | set | F1 | F2 | F3 | mean | skill | Δ vs ref gộp [95% CI] | sd seed |",
+              "|---|---|---:|---:|---:|---:|---:|---|---:|"]
+        refv = {f: test[(test.model == ref) & (test.fold == f)][metric].mean() for f in ("F1", "F2", "F3")}
+        L.append(f"| {ref} {NAMES[ref]} | — | " + " | ".join(f"{refv[f]:.5f}" for f in refv)
+                 + f" | {np.mean(list(refv.values())):.5f} | 0 | | |")
+        ents = []
+        for m in sl[f"{task}_models"]:
+            for fs in sl[f"{task}_sets"]:
+                v = {f: test[(test.model == m) & (test.fset == fs) & (test.fold == f)][metric]
+                     for f in ("F1", "F2", "F3")}
+                v = {f: (x.iloc[0] if len(x) else np.nan) for f, x in v.items()}
+                ents.append((np.nanmean(list(v.values())), m, fs, v))
+        for mean, m, fs, v in sorted(ents):
+            d = pooled_paired(df, (m, fs), (ref, "REF"))
+            sds = []
+            for f in ("F1", "F2", "F3"):
+                sub = df[(df.model == m) & (df.fset == fs) & (df.fold == f) & (df.stage == "test") & (df.state == "done")]
+                if len(sub):
+                    res = json.load(open(os.path.join(sub.iloc[0]["dir"], "result.json")))
+                    ps = [s[metric[2:]] for s in res.get("per_seed", {}).values()]
+                    if len(ps) > 1:
+                        sds.append(np.std(ps, ddof=1))
+            skill = 1 - mean / np.mean(list(refv.values()))
+            L.append(f"| {m} {NAMES[m]} | {fs} | " + " | ".join(f"{v[f]:.5f}" for f in v)
+                     + f" | {mean:.5f} | {skill:.3f} | {fmt_ci(d)} | {np.mean(sds):.5f} |"
+                     if sds else
+                     f"| {m} {NAMES[m]} | {fs} | " + " | ".join(f"{v[f]:.5f}" for f in v)
+                     + f" | {mean:.5f} | {skill:.3f} | {fmt_ci(d)} | — |")
+            rows.append({"task": task, "model": m, "fset": fs, "mean": mean, **{f"test_{f}": v[f] for f in v},
+                         "skill": skill, **{f"dref_{k}": x for k, x in (d or {}).items()}})
+        L.append("")
+        # feature increments
+        s1, s4, sstar = sl[f"{task}_sets"]
+        L += [f"### Increment feature — task {task} (gộp 3 fold)", "",
+              f"| model | S1 → S4 | S4 → {sstar} | S1 → {sstar} |", "|---|---|---|---|"]
+        for m in sl[f"{task}_models"]:
+            L.append(f"| {m} {NAMES[m]} | {fmt_ci(pooled_paired(df, (m, s4), (m, s1)))} | "
+                     f"{fmt_ci(pooled_paired(df, (m, sstar), (m, s4)))} | "
+                     f"{fmt_ci(pooled_paired(df, (m, sstar), (m, s1)))} |")
+        L.append("")
+    paths.atomic_write_csv(pd.DataFrame(rows), os.path.join(out, "leaderboard.csv"))
+
+    # assumptions table @S4
+    L += ["## Bảng giả định mô hình (@S4, trung bình test 3 fold)", "",
+          "| model | dạng hàm | PH | task | điểm | Δ vs baseline tuyến tính cùng task [CI] |",
+          "|---|---|---|---|---:|---|"]
+    for task, metric, base in (("D", "m_brier_1y", "D01"), ("L", "m_ibs_1_3", "L02")):
+        for m in sl[f"{task}_models"]:
+            v = test[(test.model == m) & (test.fset == "S4")][metric].mean()
+            d = None if m == base else pooled_paired(df, (m, "S4"), (base, "S4"))
+            lin, ph = ASSUMPTION[m]
+            L.append(f"| {m} {NAMES[m]} | {lin} | {ph} | {task} | {v:.5f} | {fmt_ci(d)} |")
+    # horizon 5 on F1
+    L += ["", "## Horizon 5 — chỉ F1 (test origin 2019), bảng riêng", "",
+          "| model | set | IBS 1–5 | IBS 1–3 |", "|---|---|---:|---:|"]
+    f1 = test[(test.fold == "F1") & (test.task == "L")]
+    for _, r in f1.sort_values("m_ibs_1_5" if "m_ibs_1_5" in f1 else "m_ibs_1_3").iterrows():
+        L.append(f"| {r['model']} {NAMES.get(r['model'])} | {r['fset']} | {r.get('m_ibs_1_5', np.nan):.5f} | {r['m_ibs_1_3']:.5f} |")
+    # C_td / AUC / calibration secondary
+    L += ["", "## Metric phụ (test, trung bình 3 fold)", "",
+          "| model | set | D: AUC / PR-AUC / slope — L: C_td / td-AUC@1 / td-AUC@3 |", "|---|---|---|"]
+    for (m, fs), g in test[test.fset != "REF"].groupby(["model", "fset"]):
+        if m[0] == "D":
+            s = f"{g['m_roc_auc'].mean():.3f} / {g['m_pr_auc'].mean():.3f} / {g['m_calib_slope'].mean():.2f}"
+        else:
+            s = f"{g['m_antolini_ctd'].mean():.3f} / {g['m_td_auc_1'].mean():.3f} / {g['m_td_auc_3'].mean():.3f}"
+        L.append(f"| {m} {NAMES[m]} | {fs} | {s} |")
+    write_md(os.path.join(out, "REPORT.md"), L)
+    return df
+
+
+def report_lobo():
+    df = load_cells("batch2_lobo")
+    out = os.path.join(paths.REPORTS, "batch2_lobo")
+    os.makedirs(out, exist_ok=True)
+    paths.atomic_write_csv(df.drop(columns=["dir"]), os.path.join(out, "cells.csv"))
+    cells = df.set_index("cell")
+    L = ["# Đợt 2 — Leave-one-block-out (F2 validation)", "",
+         "Δ = (gói bỏ block) − (gói đầy đủ): **dương = block đó mang thông tin riêng** "
+         "khi các block khác đã có mặt. Gói gốc là S8; với L (S8 ineligible do block N) gốc là S8-N.", "",
+         "| model | gốc | block bỏ | điểm | Δ [95% CI] |", "|---|---|---|---:|---|"]
+    rows = []
+    for m in [x for x in df.model.unique() if not x.endswith("00")]:
+        sub = df[(df.model == m) & (df.state == "done")]
+        base = "S8" if (sub.fset == "S8").any() else "S8-N"
+        cb = cell_key(df, m, base)
+        metric = "m_brier_1y" if m[0] == "D" else "m_ibs_1_3"
+        for _, r in sub[sub.fset != base].sort_values("fset").iterrows():
+            d = paired(cells, r["cell"], cb)
+            blk = r["fset"][len(base) + 1:]
+            rows.append({"model": m, "base": base, "dropped": blk, "score": r[metric], **d})
+            L.append(f"| {m} {NAMES[m]} | {base} | {blk} | {r[metric]:.5f} | {fmt_ci(d)} |")
+    paths.atomic_write_csv(pd.DataFrame(rows), os.path.join(out, "lobo.csv"))
+    write_md(os.path.join(out, "REPORT.md"), L)
+
+
+# ------------------------------------------------------- batch3 report
+def report_batch3():
+    df = load_cells("batch3")
+    b1 = load_cells("batch1")
+    sl = paths.load_yaml("shortlist.yaml")
+    lstar = sl["L_star"]
+    out = os.path.join(paths.REPORTS, "batch3")
+    os.makedirs(out, exist_ok=True)
+    paths.atomic_write_csv(df.drop(columns=["dir"]), os.path.join(out, "cells.csv"))
+    both = pd.concat([df.assign(src="batch3"), b1.assign(src="batch1")], ignore_index=True)
+    allc = both.set_index("cell", drop=False)
+    allc = both.drop_duplicates("dir").set_index("dir", drop=False)
+
+    def find(src, model, fset, variant=None):
+        m = both[(both.src == src) & (both.model == model) & (both.fset == fset)
+                 & (both.state == "done")
+                 & ((both.variant == variant) if variant else both.variant.isna())]
+        return m.iloc[0]["dir"] if len(m) else None
+
+    def cmp(a, b):
+        if not (a and b):
+            return None
+        ta, tb = allc.loc[a], allc.loc[b]
+        if ta["eval_hash"] != tb["eval_hash"]:
+            return {"diff": np.nan, "lo": np.nan, "hi": np.nan, "note": "cohorts differ"}
+        la, lb = row_losses(a, ta["task"]), row_losses(b, tb["task"])
+        m = la.merge(lb, on=["spell_id", "year", "relation"], suffixes=("_a", "_b"))
+        return BS.paired_diff(m["loss_a"], m["loss_b"], m["relation"], B=B)
+
+    def val(d):
+        if not d:
+            return np.nan
+        r = allc.loc[d]
+        return r["m_brier_1y"] if r["task"] == "D" else r["m_ibs_1_3"]
+
+    R4 = ["D01", "D05", "L02", lstar]
+    L = ["# Đợt 3 — Câu hỏi trọng tâm trên R4 = " + ", ".join(f"{m} {NAMES[m]}" for m in R4), "",
+         "F2 validation. Δ = biến thể − gốc (âm = biến thể tốt hơn), CI bootstrap paired theo relation "
+         f"(B = {B}). Hyperparameter khởi đầu từ ô gốc của Đợt 1; model ngẫu nhiên tune thêm 6 trial.", "",
+         f"Trạng thái: {df['state'].value_counts().to_dict()}", ""]
+    rows = []
+    # C05
+    L += ["## C05 — lựa chọn biến (lồng trong train)", "",
+          "| model | gốc | selector | #cột chọn / ứng viên | điểm | Δ vs gốc không chọn [CI] |", "|---|---|---|---|---:|---|"]
+    for m in R4:
+        base_fs = "S8" if find("batch1", m, "S8") else "S8-N"
+        base = find("batch1", m, base_fs)
+        for sel in ("enet_stability", "consensus"):
+            d = find("batch3", m, base_fs, sel)
+            nsel = ""
+            if d and os.path.exists(os.path.join(d, "selection.json")):
+                sj = json.load(open(os.path.join(d, "selection.json")))
+                nsel = f"{len(sj['chosen'])}/{len(sj['candidates'])}"
+            c = cmp(d, base)
+            rows.append({"q": "C05", "model": m, "variant": sel, "score": val(d), **(c or {})})
+            L.append(f"| {m} | {base_fs} ({val(base):.5f}) | {sel} | {nsel} | {val(d):.5f} | {fmt_ci(c)} |")
+    # C06
+    L += ["", "## C06 — timing và lịch sử (so với S4 của Đợt 1)", "",
+          "| model | S4 | lag-only | Δ | lịch sử 5 năm | Δ | S4 + H | Δ |", "|---|---:|---:|---|---:|---|---:|---|"]
+    for m in R4:
+        base = find("batch1", m, "S4")
+        cells_ = [find("batch3", m, fs) for fs in ("S4@lagonly", "S4@hist5", "S4+H")]
+        cs = [cmp(c, base) for c in cells_]
+        for fs, c, d in zip(("lagonly", "hist5", "S4+H"), cs, cells_):
+            rows.append({"q": "C06", "model": m, "variant": fs, "score": val(d), **(c or {})})
+        L.append(f"| {m} | {val(base):.5f} | " + " | ".join(f"{val(d):.5f} | {fmt_ci(c)}" for d, c in zip(cells_, cs)) + " |")
+    # C09
+    tv = json.load(open(os.path.join(paths.VIEWS, "target_variants.json")))
+    L += ["", "## C09 — định nghĩa survival (OFAT quanh 10k · gap 1)", "",
+          "Metric tuyệt đối **không so được** giữa các target. Chỉ so tỷ lệ event/KM, thứ hạng model, "
+          "và dấu cùng độ lớn tương đối của increment S1 → S4.", "",
+          "| target | exit rate B0 | spell 1 năm | ref | D01 S1 | D01 S4 | D05 S4 | L02 S1 | L02 S4 | "
+          f"{lstar} S4 | Δ D01 S1→S4 | Δ L02 S1→S4 | skill D05/L★ |",
+          "|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---|---|---|"]
+    targets = [("t10k_g1 (gốc)", None)] + [(n, n) for n in ("t5k_g1", "t50k_g1", "t10k_g0", "t10k_g2")]
+    for label, v in targets:
+        src = "batch1" if v is None else "batch3"
+        refD, refL = find(src, "D00", "REF", v), find(src, "L00", "REF", v)
+        g = {k: find(src, *k.split("|"), v) for k in ("D01|S1", "D01|S4", "D05|S4", "L02|S1", "L02|S4", f"{lstar}|S4")}
+        info = tv.get(v or "t10k_g1", {})
+        dD = cmp(g["D01|S4"], g["D01|S1"])
+        dL = cmp(g["L02|S4"], g["L02|S1"])
+        skD = 1 - val(g["D05|S4"]) / val(refD) if refD and g["D05|S4"] else np.nan
+        skL = 1 - val(g[f"{lstar}|S4"]) / val(refL) if refL and g[f"{lstar}|S4"] else np.nan
+        rows.append({"q": "C09", "variant": label, "dD01": (dD or {}).get("diff"), "dL02": (dL or {}).get("diff")})
+        L.append(f"| {label} | {info.get('exit_rate_b0', np.nan):.3f} | {info.get('one_year_spell_share', np.nan):.3f} | "
+                 f"{val(refD):.4f} / {val(refL):.4f} | " + " | ".join(f"{val(x):.5f}" for x in g.values())
+                 + f" | {fmt_ci(dD)} | {fmt_ci(dL)} | {skD:.3f} / {skL:.3f} |")
+    # C10
+    L += ["", "## C10 — coverage và vintage", "",
+          "(a) Trên subset có giá trị as-of của block (cùng cohort cho cả hai gói):", "",
+          "| model | subset | S4 | gói + block | Δ [CI] |", "|---|---|---:|---:|---|"]
+    for sub, fs in (("subN", "S5"), ("subL", "S7")):
+        for m in ("L02", lstar):
+            a, b = find("batch3", m, fs, sub), find("batch3", m, "S4", sub)
+            c = cmp(a, b)
+            rows.append({"q": "C10a", "model": m, "variant": f"{sub}:{fs}", **(c or {})})
+            L.append(f"| {m} | {sub} | {val(b):.5f} | {fs} {val(a):.5f} | {fmt_ci(c)} |")
+    L += ["", "(b) Probe rò rỉ — S4 + NTM snapshot có source year tương lai (`inforce` gộp mọi đợt, AVE). "
+          "**Chỉ để chẩn đoán, không vào leaderboard.**", "",
+          "| model | S4 (strict) | S4 + NTM lenient | Δ [CI] |", "|---|---:|---:|---|"]
+    for m in ("L02", lstar):
+        a, b = find("batch3", m, "S4", "lenientN"), find("batch1", m, "S4")
+        c = cmp(a, b)
+        rows.append({"q": "C10b", "model": m, **(c or {})})
+        L.append(f"| {m} | {val(b):.5f} | {val(a):.5f} | {fmt_ci(c)} |")
+    L += ["", "C07 (first vs recurrent, known- vs unknown-start) không fit mới: xem "
+          "`reports/batch2/C07_strata.md` (đánh giá phân tầng trên prediction đã lưu) và I11 ở Đợt 4."]
+    paths.atomic_write_csv(pd.DataFrame(rows), os.path.join(out, "questions.csv"))
+    write_md(os.path.join(out, "REPORT.md"), L)
+
+
+def report_c07():
+    """C07 without refitting: stratified test scores from the saved batch2 predictions."""
+    df = load_cells("batch2")
+    sl = paths.load_yaml("shortlist.yaml")
+    out = os.path.join(paths.REPORTS, "batch2")
+    L = ["# C07 — hiệu năng phân tầng (không fit mới)", "",
+         "Prediction test đã lưu của Đợt 2 (@S4, gộp F1–F3), chấm riêng theo tầng. Với L, G của IPCW "
+         "được ước lượng lại trong từng tầng. Tầng: spell đầu tiên vs tái gia nhập; known-start vs unknown-start.", "",
+         "| model | tầng | n | điểm | điểm ref (cùng tầng) | skill |", "|---|---|---:|---:|---:|---:|"]
+    for task, ref in (("D", "D00"), ("L", "L00")):
+        for m in [ref] + sl[f"{task}_models"]:
+            fs = "REF" if m == ref else "S4"
+            parts = []
+            for f in ("F1", "F2", "F3"):
+                sub = df[(df.model == m) & (df.fset == fs) & (df.fold == f) & (df.stage == "test") & (df.state == "done")]
+                if len(sub):
+                    parts.append(pd.read_parquet(os.path.join(sub.iloc[0]["dir"], "pred.parquet")).assign(fold=f))
+            if not parts:
+                continue
+            pf = pd.concat(parts, ignore_index=True)
+            strata = {"first spell": pf.meta_recurrent == 0, "recurrent": pf.meta_recurrent == 1,
+                      "known-start": pf.meta_known_start == 1, "unknown-start": pf.meta_known_start == 0}
+            for sname, mask in strata.items():
+                s = pf[mask]
+                if task == "D":
+                    pc = [c for c in s.columns if c.startswith("p")]
+                    sc = float(np.mean([M.D_rows(s[c].to_numpy(), s["y"].to_numpy()).mean() for c in pc]))
+                else:
+                    tags = sorted({c[2:] for c in s.columns if c.startswith("S1")})
+                    vals = []
+                    for fo, g in s.groupby("fold"):
+                        G = M.CensoringKM(g["duration"].to_numpy(), g["event"].to_numpy())
+                        for t in tags:
+                            S = g[[f"S{u}{t}" for u in GRID]].to_numpy("float64")
+                            vals.append(M.ibs_rows(S, GRID, g["duration"].to_numpy(), g["event"].to_numpy(), [1, 2, 3], G).sum())
+                    sc = float(np.sum(vals) / (len(s) * len(tags)))
+                strata[sname] = (len(s), sc)
+            for sname, (n, sc) in strata.items():
+                L.append(f"| {m} {NAMES[m]} | {sname} | {n:,} | {sc:.5f} | | |")
+    write_md(os.path.join(out, "C07_strata.md"), L)
+
+
 def plot_heatmap(hm, path):
     import matplotlib
     matplotlib.use("Agg")
@@ -361,6 +672,16 @@ def main():
     a = ap.parse_args()
     if a.plan == "batch1":
         report_batch1(a.plan)
+        return
+    if a.plan == "batch2":
+        report_batch2()
+        report_c07()
+        return
+    if a.plan == "batch2_lobo":
+        report_lobo()
+        return
+    if a.plan == "batch3":
+        report_batch3()
         return
     df = load_cells(a.plan)
     out = os.path.join(paths.REPORTS, a.plan)
