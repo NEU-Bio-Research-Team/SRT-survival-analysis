@@ -1,0 +1,106 @@
+{
+ "t10k_g0": {
+  "events_b0": 24406,
+  "exit_rate_b0": 0.16711630900699798,
+  "gap": 0,
+  "null_share": {
+   "log_total_import_cp_lag1": 0.21159214489519618,
+   "log_value_lag": 0.24323394647133276,
+   "vn_market_share_lag1": 0.21159214489519618
+  },
+  "one_year_spell_share": 0.4858489710814976,
+  "rows_b0": 146042,
+  "spells": 55155,
+  "threshold": 10000
+ },
+ "t10k_g1": {
+  "events_b0": 15958,
+  "exit_rate_b0": 0.10926993604579505,
+  "feature_mismatch_share_vs_base": {
+   "age_obs": 0.0,
+   "evfta_cut_cum_pp_lag": 0.013190331500240293,
+   "hs2_share_lag1": 0.0,
+   "import_value_usd": 0.0,
+   "importer_gdp_growth_lag1": 0.0,
+   "importer_inflation_lag1": 0.0,
+   "known_start": 0.0,
+   "log_age": 0.0,
+   "log_dist": 0.0,
+   "log_gdp_d_lag1": 0.0,
+   "log_gdpcap_d_lag1": 0.0,
+   "log_initial_value": 0.0,
+   "log_n_markets_eu27_for_p_lag1": 0.0,
+   "log_n_markets_for_p_lag1": 0.0,
+   "log_n_products_to_c_lag1": 0.0,
+   "log_rca_lag": 0.0,
+   "log_total_import_cp_lag1": 0.0,
+   "log_value": 0.0,
+   "log_value_lag": 0.03106409063446769,
+   "pref_margin_lag": 0.013190331500240293,
+   "tariff_applied_lag": 0.013190331500240293,
+   "vn_market_share_lag1": 0.0,
+   "vn_product_growth_lag": 0.0,
+   "volatility_3y_lag1": 0.055835101011214694,
+   "world_growth_lag1": 0.0
+  },
+  "gap": 1,
+  "null_share": {
+   "log_total_import_cp_lag1": 0.21159214489519618,
+   "log_value_lag": 0.21159214489519618,
+   "vn_market_share_lag1": 0.21159214489519618
+  },
+  "one_year_spell_share": 0.4166351270120444,
+  "panel_rows": 236995,
+  "pass": true,
+  "rebuild_rows": 236995,
+  "rows_b0": 146042,
+  "rows_matched": 226757,
+  "same_event": true,
+  "same_gap_filled": true,
+  "same_keys": true,
+  "spells": 44917,
+  "threshold": 10000
+ },
+ "t10k_g2": {
+  "events_b0": 11546,
+  "exit_rate_b0": 0.07905944865175771,
+  "gap": 2,
+  "null_share": {
+   "log_total_import_cp_lag1": 0.21159214489519618,
+   "log_value_lag": 0.19810634291333895,
+   "vn_market_share_lag1": 0.21159214489519618
+  },
+  "one_year_spell_share": 0.37692231125267506,
+  "rows_b0": 146042,
+  "spells": 40186,
+  "threshold": 10000
+ },
+ "t50k_g1": {
+  "events_b0": 9566,
+  "exit_rate_b0": 0.09691897751795828,
+  "gap": 1,
+  "null_share": {
+   "log_total_import_cp_lag1": 0.10899725457792467,
+   "log_value_lag": 0.19167310819095343,
+   "vn_market_share_lag1": 0.10899725457792467
+  },
+  "one_year_spell_share": 0.381023881023881,
+  "rows_b0": 98701,
+  "spells": 27972,
+  "threshold": 50000
+ },
+ "t5k_g1": {
+  "events_b0": 18501,
+  "exit_rate_b0": 0.11161923608304022,
+  "gap": 1,
+  "null_share": {
+   "log_total_import_cp_lag1": 0.2953476862162831,
+   "log_value_lag": 0.21828213932195,
+   "vn_market_share_lag1": 0.2953476862162831
+  },
+  "one_year_spell_share": 0.42229247792728536,
+  "rows_b0": 165751,
+  "spells": 51874,
+  "threshold": 5000
+ }
+}

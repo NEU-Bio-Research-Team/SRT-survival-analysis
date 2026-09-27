@@ -84,7 +84,15 @@ def fold_views(base: pd.DataFrame, splits: dict, fold: str, task: str,
     first = first_origin or splits["first_training_origin"]
     if stage == "valid":
         train = training_view(base, first, spec["inner_cutoff"], task, gap)
-        ev = view(base, spec["valid_origin"], spec["refit_cutoff"], gap, task)
+        # the validation cohort is read until its horizon is confirmable for the
+        # whole cohort: origin + h + g (h = 1 for D, 3 for L). With the default
+        # g = 1 this is exactly splits.yaml's refit_cutoff; C09's gap variants
+        # shift it (plan §7: splits are rebuilt per gap).
+        h = 1 if task == "D" else 3
+        read_to = spec["valid_origin"] + h + gap
+        if gap == GAP:
+            assert read_to == spec["refit_cutoff"], "splits.yaml disagrees with L + h + g"
+        ev = view(base, spec["valid_origin"], read_to, gap, task)
     elif stage == "test":
         train = training_view(base, first, spec["refit_cutoff"], task, gap)
         ev = view(base, f["test_origin"], test_read_to or splits["test_read_to"],

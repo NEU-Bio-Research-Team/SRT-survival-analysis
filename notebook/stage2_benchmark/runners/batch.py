@@ -109,6 +109,85 @@ def expand_lobo() -> list[dict]:
     return specs
 
 
+def _batch1_params(model, fsets):
+    """Best params of the first finished batch1 F2 cell among `fsets`."""
+    from stage2_benchmark.runners import cell as C
+    for fs in fsets:
+        sp = {"batch": "batch1", "fold": "F2", "task": model[0], "model": model,
+              "fset": fs, "stage": "valid"}
+        p = os.path.join(C.cell_dir(sp), "result.json")
+        if C.read_status(sp).get("state") == "done" and os.path.exists(p):
+            import json
+            return json.load(open(p))["best_params"], fs
+    return None, None
+
+
+def expand_batch3() -> list[dict]:
+    """Đợt 3 (plan §7) on F2 validation, R4 = {D01, D05, L02, L*}.
+
+    Hyperparameters start from the matching batch1 cell: grid models rerun
+    their (cheap) grid; stochastic models run that cell's best params as trial 0
+    plus 6 new TPE trials."""
+    sl = paths.load_yaml("shortlist.yaml")
+    lstar = sl["L_star"]
+    R4 = ["D01", "D05", "L02", lstar]
+    elig = pd.read_csv(os.path.join(paths.REPORTS, "stage0", "0.3_eligibility.csv"))
+    wide = {}
+    for task in "DL":
+        ok = elig[(elig.fold == "F2") & (elig.task == task) & (elig.stage == "valid") & (elig.set == "S8")]
+        wide[task] = "S8" if ok["eligible"].all() else "S8-N"
+    specs = []
+
+    def add(model, fset, question, variant=None, warm_sets=None):
+        warm, src = _batch1_params(model, warm_sets or [fset, "S4"])
+        s = {"batch": "batch3", "fold": "F2", "task": model[0], "model": model, "fset": fset,
+             "stage": "valid", "seeds": [1], "group": question, "n_trials": 7,
+             "convergence_rule": False, "warm_params": warm, "warm_from": src}
+        if variant:
+            s["variant"] = variant
+        specs.append(s)
+
+    def ref(task, variant=None, question="reference"):
+        s = {"batch": "batch3", "fold": "F2", "task": task, "model": task + "00", "fset": None,
+             "stage": "valid", "group": question}
+        if variant:
+            s["variant"] = variant
+        specs.append(s)
+
+    ref("D")
+    ref("L")
+    # C05 selection
+    for m in R4:
+        for sel in ("enet_stability", "consensus"):
+            add(m, wide[m[0]], "C05", {"name": sel, "selector": sel}, [wide[m[0]], "S4"])
+    # C06 timing / history
+    for m in R4:
+        add(m, "S4@lagonly", "C06a", warm_sets=["S4"])
+        add(m, "S4@hist5", "C06b", warm_sets=["S4"])
+        add(m, "S4+H", "C06c", warm_sets=["S4"])
+    # C09 survival definition (OFAT around 10k, gap 1)
+    for name, gap in (("t5k_g1", 1), ("t50k_g1", 1), ("t10k_g0", 0), ("t10k_g2", 2)):
+        v = {"name": name, "base": f"base_{name}", "gap": gap, "target_version": f"exit_{name}"}
+        ref("D", v, "C09")
+        ref("L", v, "C09")
+        for m, sets in (("D01", ["S1", "S4"]), ("L02", ["S1", "S4"]), ("D05", ["S4"]), (lstar, ["S4"])):
+            for fs in sets:
+                add(m, fs, "C09", v)
+    # C10 coverage / vintage
+    for sub, sets in (("N", ["S4", "S5"]), ("L", ["S4", "S7"])):
+        v = {"name": f"sub{sub}", "subset": sub}
+        ref("L", v, "C10a")
+        for m in ("L02", lstar):
+            for fs in sets:
+                add(m, fs, "C10a", v, [fs, "S4"])
+    lenient = {"name": "lenientN", "skip_eligibility": True,
+               "extra_cols": ["probe_log_ntm_sps_inforce", "probe_log_ntm_tbt_inforce",
+                              "probe_ntm_ave_border_pct"]}
+    for m in ("L02", lstar):
+        add(m, "S4", "C10b", lenient)
+    return specs
+
+
 def widest_eligible(spec: dict, status: dict) -> str | None:
     """S8 minus every block that failed eligibility - the widest package that is
     eligible in this fold (plan §4.3 'gói rộng nhất còn eligible')."""
@@ -146,7 +225,8 @@ def progress_table(specs: list[dict]) -> pd.DataFrame:
 def run_plan(plan_name: str, only=None, retry_failed=False, dry=False,
              include_optional=True, specs=None):
     if specs is None:
-        specs = {"batch2": expand_batch2, "batch2_lobo": expand_lobo}.get(
+        specs = {"batch2": expand_batch2, "batch2_lobo": expand_lobo,
+                 "batch3": expand_batch3}.get(
             plan_name, lambda: expand(plan_name, include_optional))()
     if only:
         specs = [s for s in specs if any(o in C.cell_id(s) for o in only)]

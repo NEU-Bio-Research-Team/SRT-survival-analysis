@@ -237,6 +237,8 @@ def tune(spec, tr, ev, d, log):
         study = optuna.create_study(study_name="s", storage=storage, direction="minimize",
                                     load_if_exists=True,
                                     sampler=optuna.samplers.TPESampler(seed=spec.get("tune_seed", 1)))
+        if spec.get("warm_params") and not study.get_trials(deepcopy=False):
+            study.enqueue_trial(to_optuna(spec["model"], spec["warm_params"]))
         # trials left RUNNING by a crash are closed as FAIL and not counted
         for t in study.get_trials(deepcopy=False):
             if t.state == optuna.trial.TrialState.RUNNING:
@@ -293,7 +295,8 @@ def run_cell(spec: dict, log=print) -> dict:
         train, ev = make_views(spec)
         cols = feature_columns(spec)
         manifest = build_manifest(spec, train, ev, cols)
-        if cols:
+        variant = spec.get("variant") or {}
+        if cols and not variant.get("skip_eligibility"):
             el = eligibility(train, spec["fset"])
             manifest["eligibility"] = el
             if not el["eligible"]:
@@ -301,6 +304,20 @@ def run_cell(spec: dict, log=print) -> dict:
                 write_status(spec, state="ineligible", reasons=el["reasons"])
                 log(f"  {cid}: INELIGIBLE - {'; '.join(el['reasons'])}")
                 return read_status(spec)
+        if variant.get("selector"):
+            sel_path = os.path.join(d, "selection.json")
+            if os.path.exists(sel_path):
+                with open(sel_path) as f:
+                    sel = json.load(f)
+            else:
+                from stage2_benchmark.features.selectors import select
+                chosen, detail = select(train, cols, variant["selector"], task)
+                sel = {"method": variant["selector"], "candidates": cols, "chosen": chosen,
+                       "detail": detail}
+                paths.atomic_write_json(sel_path, sel)
+            cols = sel["chosen"]
+            manifest["selected_columns"] = cols
+            log(f"    selector {variant['selector']}: {len(cols)}/{len(sel['candidates'])} columns")
         pre = Preprocessor(cols).fit(train)
         Ztr, Zev = pre.transform(train), pre.transform(ev)
         manifest["preprocessor"] = pre.state()
@@ -357,6 +374,18 @@ def run_cell(spec: dict, log=print) -> dict:
                      traceback=traceback.format_exc()[-3000:])
         log(f"  {cid}: FAILED {type(ex).__name__}: {ex}")
     return read_status(spec)
+
+
+def to_optuna(model_id, params):
+    """Invert an adapter's params back to the names its suggest() samples."""
+    p = dict(params)
+    if "nodes" in p:
+        nodes = p.pop("nodes")
+        p["n_layers"], p["width"] = len(nodes), nodes[0]
+    if model_id == "L05":
+        p.pop("n_estimators", None)
+        p.pop("max_samples", None)
+    return p
 
 
 def test_params(spec):

@@ -290,6 +290,22 @@ features:
     formula: OLS slope of log1p(value) on year over t-3..t-1, >= 2 observed years
     grain: [importer, product_family, year]
     transform: identity
+  # 5-year history window (C06b only; optional = in no core set)
+  volatility_5y_lag1:
+    block: R
+    source: constructed
+    formula: SD(log1p value) over t-5..t-1, >= 3 of 5 years present in the panel
+    grain: [importer, product_family, year]
+    transform: identity
+    optional: true
+    note: computed from panel rows (log1p), whereas volatility_3y_lag1 is the Stage 1 column
+  trend_5y_lag1:
+    block: H
+    source: constructed
+    formula: OLS slope of log1p(value) over t-5..t-1, >= 3 observed years
+    grain: [importer, product_family, year]
+    transform: identity
+    optional: true
   hhi_dest_p_lag1:
     block: H
     source: constructed

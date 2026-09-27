@@ -68,8 +68,10 @@ def resolve_set(spec: str) -> list[str]:
         if mod == "lagonly":
             cols = [c for c in cols if c not in CURRENT_YEAR_COLS]
         elif mod == "hist5":
-            cols = cols + [c for c in ("volatility_5y_lag1", "trend_5y_lag1")
-                           if c not in cols]
+            # the 3-year history window is replaced by the 5-year one
+            swap = {"volatility_3y_lag1": "volatility_5y_lag1",
+                    "trend_3y_lag1": "trend_5y_lag1"}
+            cols = [swap.get(c, c) for c in cols]
         else:
             raise ValueError(f"unknown modifier {mod!r}")
     return cols

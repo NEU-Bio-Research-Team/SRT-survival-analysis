@@ -121,7 +121,7 @@ def relation_history(p: pd.DataFrame) -> pd.DataFrame:
     key = pd.MultiIndex.from_arrays([v["rel"], v["year"]])
     lv = pd.Series(v["lv"].to_numpy(), index=key)
     lag = {}
-    for k in (1, 2, 3):
+    for k in (1, 2, 3, 4, 5):
         idx = pd.MultiIndex.from_arrays([v["rel"], v["year"] - k])
         lag[k] = lv.reindex(idx).to_numpy()
     out = pd.DataFrame({"importer": v["importer"], "product_family": v["product_family"],
@@ -140,6 +140,21 @@ def relation_history(p: pd.DataFrame) -> pd.DataFrame:
     with np.errstate(invalid="ignore", divide="ignore"):
         slope = np.where((n >= 2) & (sxx > 0), (dx * dy).sum(1) / sxx, np.nan)
     out["trend_3y_lag1"] = slope.astype("float32")
+    # 5-year window variants for C06(b): same rules, t-5..t-1, >= 3 observed years
+    Y5 = np.column_stack([lag[5], lag[4], lag[3], lag[2], lag[1]])
+    X5 = np.array([-5.0, -4.0, -3.0, -2.0, -1.0])
+    m5 = np.isfinite(Y5)
+    n5 = m5.sum(1)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        xm5 = (m5 * X5).sum(1) / np.maximum(n5, 1)
+        ym5 = np.where(m5, Y5, 0).sum(1) / np.maximum(n5, 1)
+        dx5 = np.where(m5, X5 - xm5[:, None], 0.0)
+        dy5 = np.where(m5, np.nan_to_num(Y5) - ym5[:, None], 0.0)
+        sxx5 = (dx5 * dx5).sum(1)
+        out["trend_5y_lag1"] = np.where((n5 >= 3) & (sxx5 > 0), (dx5 * dy5).sum(1) / sxx5,
+                                        np.nan).astype("float32")
+        var5 = (dy5 * dy5).sum(1) / np.maximum(n5 - 1, 1)
+        out["volatility_5y_lag1"] = np.where(n5 >= 3, np.sqrt(var5), np.nan).astype("float32")
     act = (v["gap_filled"] == 0).astype("int32")
     out["active_years_prefix"] = act.groupby(v["rel"]).cumsum().to_numpy()
     return out
@@ -264,6 +279,8 @@ def build(panel_path: str | None = None, max_year: int | None = None,
         "log_active_years_prefix": np.log1p(b["active_years_prefix"]),
         "bilateral_growth_lag1": b["bilateral_growth_lag1"],
         "trend_3y_lag1": b["trend_3y_lag1"],
+        "trend_5y_lag1": b["trend_5y_lag1"],
+        "volatility_5y_lag1": b["volatility_5y_lag1"],
         "hhi_dest_p_lag1": b["hhi_dest_p_lag1"],
         "hhi_prod_c_lag1": b["hhi_prod_c_lag1"],
     }
