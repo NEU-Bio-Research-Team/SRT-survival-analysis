@@ -470,7 +470,9 @@ def report_batch3():
     out = os.path.join(paths.REPORTS, "batch3")
     os.makedirs(out, exist_ok=True)
     paths.atomic_write_csv(df.drop(columns=["dir"]), os.path.join(out, "cells.csv"))
-    both = pd.concat([df.assign(src="batch3"), b1.assign(src="batch1")], ignore_index=True)
+    lobo = load_cells("batch2_lobo")
+    both = pd.concat([df.assign(src="batch3"), b1.assign(src="batch1"),
+                      lobo.assign(src="batch2_lobo")], ignore_index=True)
     allc = both.set_index("cell", drop=False)
     allc = both.drop_duplicates("dir").set_index("dir", drop=False)
 
@@ -507,7 +509,9 @@ def report_batch3():
           "| model | gốc | selector | #cột chọn / ứng viên | điểm | Δ vs gốc không chọn [CI] |", "|---|---|---|---|---:|---|"]
     for m in R4:
         base_fs = "S8" if find("batch1", m, "S8") else "S8-N"
-        base = find("batch1", m, base_fs)
+        # L has no S8-N cell in batch1 (Track B records S8 as ineligible); the
+        # LOBO base cell is the same F2 cohort and set
+        base = find("batch1", m, base_fs) or find("batch2_lobo", m, base_fs)
         for sel in ("enet_stability", "consensus"):
             d = find("batch3", m, base_fs, sel)
             nsel = ""
@@ -581,7 +585,9 @@ def report_c07():
     L = ["# C07 — hiệu năng phân tầng (không fit mới)", "",
          "Prediction test đã lưu của Đợt 2 (@S4, gộp F1–F3), chấm riêng theo tầng. Với L, G của IPCW "
          "được ước lượng lại trong từng tầng. Tầng: spell đầu tiên vs tái gia nhập; known-start vs unknown-start.", "",
-         "| model | tầng | n | điểm | điểm ref (cùng tầng) | skill |", "|---|---|---:|---:|---:|---:|"]
+         "Điểm tuyệt đối giữa các tầng không so trực tiếp được (tỷ lệ exit khác nhau); so model với "
+         "reference (D00/L00) **trong cùng tầng**.", "",
+         "| model | tầng | n | điểm |", "|---|---|---:|---:|"]
     for task, ref in (("D", "D00"), ("L", "L00")):
         for m in [ref] + sl[f"{task}_models"]:
             fs = "REF" if m == ref else "S4"
@@ -611,7 +617,7 @@ def report_c07():
                     sc = float(np.sum(vals) / (len(s) * len(tags)))
                 strata[sname] = (len(s), sc)
             for sname, (n, sc) in strata.items():
-                L.append(f"| {m} {NAMES[m]} | {sname} | {n:,} | {sc:.5f} | | |")
+                L.append(f"| {m} {NAMES[m]} | {sname} | {n:,} | {sc:.5f} |")
     write_md(os.path.join(out, "C07_strata.md"), L)
 
 

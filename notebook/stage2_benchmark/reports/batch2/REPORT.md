@@ -1,6 +1,6 @@
 # Đợt 2 — Xác nhận shortlist trên F1/F2/F3 (test origin 2019/2020/2021)
 
-Shortlist đóng băng: `configs/shortlist.yaml`. Code `71b3c9c448e29a976cf1de4cdc00122dff1b31d0`. Model ngẫu nhiên: trung bình 3 seed ở bước refit + test. CI: bootstrap paired theo relation trên các dòng test **gộp 3 fold** (B = 1000); không t-test giữa các fold. Âm = tốt hơn.
+Shortlist đóng băng: `configs/shortlist.yaml`. Code `1439be9d462a5e832f6f2567845540b592242495-dirty`. Model ngẫu nhiên: trung bình 3 seed ở bước refit + test. CI: bootstrap paired theo relation trên các dòng test **gộp 3 fold** (B = 1000); không t-test giữa các fold. Âm = tốt hơn.
 
 Trạng thái ô: {'done': 151}
 

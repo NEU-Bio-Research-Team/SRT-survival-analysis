@@ -286,6 +286,32 @@ def run_cell(spec: dict, log=print) -> dict:
     st = read_status(spec)
     if st.get("state") in TERMINAL and not spec.get("force"):
         return st
+    # one process per cell: an O_EXCL lock file holding the owner's pid. A lock
+    # whose pid is gone (crash) is stale and taken over.
+    lock = os.path.join(d, "lock")
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        try:
+            pid = int(open(lock).read().strip() or 0)
+            os.kill(pid, 0)
+            log(f"  {cell_id(spec)}: locked by pid {pid}, skipped")
+            return read_status(spec)
+        except (ValueError, ProcessLookupError, PermissionError, OSError):
+            os.remove(lock)
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    os.write(fd, str(os.getpid()).encode())
+    os.close(fd)
+    try:
+        return _run_cell(spec, d, log)
+    finally:
+        try:
+            os.remove(lock)
+        except OSError:
+            pass
+
+
+def _run_cell(spec: dict, d: str, log) -> dict:
     cid = cell_id(spec)
     task = spec["task"]
     t0 = time.time()
