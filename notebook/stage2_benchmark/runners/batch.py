@@ -223,14 +223,22 @@ def progress_table(specs: list[dict]) -> pd.DataFrame:
 
 
 def run_plan(plan_name: str, only=None, retry_failed=False, dry=False,
-             include_optional=True, specs=None):
+             include_optional=True, specs=None, models=None, exclude_models=None):
     if specs is None:
         specs = {"batch2": expand_batch2, "batch2_lobo": expand_lobo,
                  "batch3": expand_batch3}.get(
             plan_name, lambda: expand(plan_name, include_optional))()
     if only:
         specs = [s for s in specs if any(o in C.cell_id(s) for o in only)]
-    log = Logger(plan_name)
+    # --models / --exclude-models split one plan across two processes (e.g. a
+    # GPU worker for the neural models beside the CPU process); the sets of
+    # cells are disjoint, so no locking is needed.
+    if models:
+        specs = [s for s in specs if s["model"] in models]
+    if exclude_models:
+        specs = [s for s in specs if s["model"] not in exclude_models]
+    tag = "" if not (models or exclude_models) else ("_gpu" if models else "_cpu")
+    log = Logger(plan_name + tag)
     if dry:
         for s in specs:
             print(C.cell_id(s), C.read_status(s).get("state", "pending"))
@@ -262,7 +270,7 @@ def run_plan(plan_name: str, only=None, retry_failed=False, dry=False,
     prog = progress_table(allspecs)
     outdir = os.path.join(paths.REPORTS, plan_name)
     os.makedirs(outdir, exist_ok=True)
-    paths.atomic_write_csv(prog, os.path.join(outdir, "progress.csv"))
+    paths.atomic_write_csv(prog, os.path.join(outdir, f"progress{tag}.csv"))
     log(f"=== {plan_name}: " + ", ".join(f"{k}={v}" for k, v in
                                           prog["state"].value_counts().items()) + " ===")
     return allspecs
@@ -275,8 +283,11 @@ def main():
     ap.add_argument("--retry-failed", action="store_true")
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--no-optional", action="store_true")
+    ap.add_argument("--models", nargs="*")
+    ap.add_argument("--exclude-models", nargs="*")
     a = ap.parse_args()
-    run_plan(a.plan, a.only, a.retry_failed, a.dry, not a.no_optional)
+    run_plan(a.plan, a.only, a.retry_failed, a.dry, not a.no_optional,
+             models=a.models, exclude_models=a.exclude_models)
 
 
 if __name__ == "__main__":

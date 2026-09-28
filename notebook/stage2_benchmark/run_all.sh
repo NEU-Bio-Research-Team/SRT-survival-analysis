@@ -11,8 +11,9 @@ STEPS=${STEPS:-"batch4 batch1"}
 for s in $STEPS; do
   case $s in
     batch4) step "Đợt 4 inference"; $PY -m stage2_benchmark.inference.run_inference 2>&1 | tee -a "$LOG" ;;
-    batch1) step "Đợt 1 screening"; $PY -m stage2_benchmark.runners.batch --plan batch1 >> "$LOG" 2>&1
-            $PY -m stage2_benchmark.runners.aggregate --plan batch1 >> "$LOG" 2>&1 ;;
+    batch1|batch2|batch2_lobo|batch3)
+            step "plan $s"; $PY -m stage2_benchmark.runners.batch --plan $s >> "$LOG" 2>&1
+            $PY -m stage2_benchmark.runners.aggregate --plan $s >> "$LOG" 2>&1 ;;
     *) $PY -m stage2_benchmark.runners.$s >> "$LOG" 2>&1 ;;
   esac
 done
