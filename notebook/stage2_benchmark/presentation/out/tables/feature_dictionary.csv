@@ -1,0 +1,46 @@
+feature,block,block_name,grain,transform,source,missing_semantics,dtype,missing_share_origins_2005plus,median,p01,p99,optional
+age_obs,D,Duration,spell × year,identity,constructed,unknown_is_not_zero,integer,0.0,6.0,1.0,24.0,False
+known_start,D,Duration,spell,identity,constructed,never_missing,binary,0.0,1.0,0.0,1.0,False
+log_age,D,Duration,spell × year,identity,constructed,unknown_is_not_zero,continuous,0.0,1.7917595,0.0,3.178053855895996,False
+log_initial_value,R,Relationship,spell,identity,constructed,unknown_is_not_zero,continuous,0.0,10.656459,9.234656600952148,15.914985656738281,False
+log_value,R,Relationship,importer × product_family × year,identity,log_value,unknown_is_not_zero,continuous,0.0,11.6753,9.258883972167968,17.748877296447752,False
+log_value_lag,R,Relationship,importer × product_family × year,identity,log_value_lag,no_history_first_spell_year,continuous,0.1784,11.91876,0.0,17.82868194580078,False
+unit_value_lag1,R,Relationship,importer × product_family × year,log1p,unit_value_usd_per_kg_lag1,unknown_is_not_zero,continuous,0.1946,2.713051,0.3575751483440399,7.231594562530518,True
+vn_market_share_lag1,R,Relationship,importer × product_family × year,log1p,vn_market_share_pct_lag1,unknown_is_not_zero,continuous,0.1924,0.56679,0.0019980028737336397,3.7066478729248047,False
+volatility_3y_lag1,R,Relationship,importer × product_family × year,identity,volatility_3y_lag1,insufficient_history,continuous,0.2641,0.4632206,0.032376401126384735,7.101745128631592,False
+volatility_5y_lag1,R,Relationship,importer × product_family × year,identity,constructed,unknown_is_not_zero,continuous,0.314,0.6073469,0.08935044705867767,6.123521327972412,True
+importer_gdp_growth_lag1,M,Market/gravity,importer × year,clip_pct,importer_gdp_growth_pct_lag1,unknown_is_not_zero,continuous,0.0,1.9478184,-8.868221282958984,10.108857154846191,False
+importer_inflation_lag1,M,Market/gravity,importer × year,clip_pct,importer_inflation_pct_lag1,unknown_is_not_zero,continuous,0.0,1.985293,-0.8741258978843689,14.60814380645752,False
+log_dist,M,Market/gravity,importer,log,dist,unknown_is_not_zero,continuous,0.0,9.136371,9.039907455444336,9.342683792114258,False
+log_gdp_d_lag1,M,Market/gravity,importer × year,identity,log_gdp_d_lag1,unknown_is_not_zero,continuous,0.0,27.005142,23.869029998779297,29.148828506469727,False
+log_gdpcap_d_lag1,M,Market/gravity,importer × year,identity,log_gdpcap_d_lag1,unknown_is_not_zero,continuous,0.0,10.575663,8.98678970336914,11.6342134475708,False
+log_total_import_cp_lag1,M,Market/gravity,importer × product_family × year,identity,log_total_import_cp_lag1,unknown_is_not_zero,continuous,0.1924,17.28624,12.83061408996582,21.64596176147461,False
+hs2_share_lag1,E,Experience,importer × hs2 × year,identity,hs2_share_lag1,unknown_is_not_zero,continuous,0.0174,0.016613552,2.6678111680666916e-05,0.5191960334777832,False
+log_n_markets_eu27_for_p_lag1,E,Experience,product_family × year,identity,constructed,t-1 before 2002 is null,continuous,0.0,2.4849067,0.0,3.332204580307007,False
+log_n_markets_for_p_lag1,E,Experience,product_family × year,log1p,n_markets_for_p_lag1,unknown_is_not_zero,continuous,0.0052,3.5263605,1.0986123085021973,4.624972820281982,False
+log_n_products_to_c_lag1,E,Experience,importer × year,log1p,n_products_to_c_lag1,unknown_is_not_zero,continuous,0.0,6.331502,4.127134323120117,7.2470808029174805,False
+log_rca_lag,E,Experience,product_family × year,log1p,rca_lag,unknown_is_not_zero,continuous,0.0045,0.891014,0.008959741331636906,3.4157042503356934,False
+vn_product_growth_lag,E,Experience,product_family × year,clip_pct,growth_lag_pct,unknown_is_not_zero,continuous,0.0077,13.2443,-67.4579086303711,500.0,False
+world_growth_lag1,E,Experience,product_family × year,clip_pct,world_growth_pct_lag1,unknown_is_not_zero,continuous,0.0045,4.0669,-30.801799774169922,53.698299407958984,False
+evfta_cut_cum_pp_lag,P,Policy/tariff,product_family × year,identity,evfta_cut_cum_pp_lag,unknown_is_not_zero,continuous,0.0083,0.0,0.0,12.800000190734863,False
+pref_margin_lag,P,Policy/tariff,product_family × year,identity,pref_margin_lag,unknown_is_not_zero,continuous,0.0083,2.4,0.0,13.0,False
+tariff_applied_lag,P,Policy/tariff,product_family × year,identity,tariff_applied_lag,unknown_is_not_zero,continuous,0.0083,0.0,0.0,11.899999618530273,False
+log_ntm_other_survey,N,NTM,importer × product_family × year,identity,constructed,unknown_is_not_zero,continuous,0.166,1.0986123,0.0,3.6375861167907715,False
+log_ntm_sps_survey,N,NTM,importer × product_family × year,log1p,ntm6_sps_survey,reporter_not_yet_collected_or_unmappable,continuous,0.166,0.0,0.0,4.804020881652832,False
+log_ntm_tbt_survey,N,NTM,importer × product_family × year,log1p,ntm6_tbt_survey,unknown_is_not_zero,continuous,0.166,2.0794415,0.0,4.9628448486328125,False
+ntm6_mappable,N,NTM,product_family,identity,ntm6_mappable,unknown_is_not_zero,binary,0.0083,1.0,1.0,1.0,False
+ntm6_observed,N,NTM,importer × year,identity,ntm6_observed,unknown_is_not_zero,binary,0.0083,1.0,0.0,1.0,False
+ntm_source_age,N,NTM,importer × year,identity,constructed,unknown_is_not_zero,binary,0.166,0.0,0.0,1.0,False
+importer_eci,C,Complexity,importer × year,identity,importer_eci,unknown_is_not_zero,continuous,0.0,1.188,0.36500000953674316,1.5829999446868896,False
+log_importer_diversity,C,Complexity,importer × year,log1p,importer_diversity,unknown_is_not_zero,continuous,0.0,6.016157,4.574710845947266,6.309918403625488,False
+pci,C,Complexity,product_hs4 × year,identity,pci,unknown_is_not_zero,continuous,0.0,-0.216,-2.747999906539917,1.3289999961853027,False
+importer_lpi_overall,L,Logistics,importer × survey_wave,identity,importer_lpi_overall,unknown_is_not_zero,continuous,0.0562,3.82,2.8299999237060547,4.225966930389404,False
+lpi_age,L,Logistics,importer × year,identity,constructed,unknown_is_not_zero,integer,0.0562,1.0,0.0,3.0,False
+bilateral_growth_lag1,H,Deep history,importer × product_family × year,identity,constructed,unknown_is_not_zero,continuous,0.2641,0.08751162,-10.50809097290039,9.564350128173828,False
+hhi_dest_p_lag1,H,Deep history,product_family × year,identity,constructed,unknown_is_not_zero,continuous,0.0049,0.2211628,0.06773968786001205,0.9556125402450562,False
+hhi_prod_c_lag1,H,Deep history,importer × year,identity,constructed,unknown_is_not_zero,continuous,0.0,0.07386148,0.021905045956373215,0.5134628415107727,False
+log_active_years_prefix,H,Deep history,importer × product_family × year,identity,constructed,unknown_is_not_zero,continuous,0.0,2.0794415,0.6931471824645996,3.178053855895996,False
+n_prior_spells,H,Deep history,importer × product_family × year,log1p,constructed,never_missing,continuous,0.0,0.0,0.0,1.3862943649291992,False
+trend_3y_lag1,H,Deep history,importer × product_family × year,identity,constructed,unknown_is_not_zero,continuous,0.2641,0.09479065,-6.316098690032959,3.4966652393341064,False
+trend_5y_lag1,H,Deep history,importer × product_family × year,identity,constructed,unknown_is_not_zero,continuous,0.314,0.11035219,-2.1129097938537598,1.9506843090057373,True
+years_since_prior_exit,H,Deep history,importer × product_family × year,log,constructed,no_prior_spell (flagged),continuous,0.7109,2.0794415,1.0986123085021973,3.044522523880005,False

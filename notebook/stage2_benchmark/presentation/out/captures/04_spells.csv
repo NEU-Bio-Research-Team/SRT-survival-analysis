@@ -1,0 +1,4 @@
+spell_id,importer,exporter,product_family,start_year,end_year,duration,event,right_censored,left_trunc,censor_reason,start_reason,n_gap_years,first_year_value_usd,mean_value_usd
+AUT_VNM_H0_080110_2002,AUT,VNM,H0_080110,2002,2007,6,1,0,1,,window_start,0,11735.0,34013.5
+AUT_VNM_H0_080110_2011,AUT,VNM,H0_080110,2011,2021,11,1,0,0,,,1,79922.0,79254.9
+AUT_VNM_H0_080110_2024,AUT,VNM,H0_080110,2024,2025,2,0,1,0,window_end,,0,12648.7,45934.78

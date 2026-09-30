@@ -1,0 +1,48 @@
+dimension,group,exits,origins,exit_rate
+importer,DEU,1864,19440,0.0959
+importer,FRA,1779,17590,0.1011
+importer,CZE,1028,9879,0.1041
+importer,POL,1094,10359,0.1056
+importer,SVN,469,4283,0.1095
+importer,AUT,1020,9265,0.1101
+importer,LUX,246,2203,0.1117
+importer,SVK,709,6060,0.117
+importer,FIN,821,6760,0.1214
+importer,ESP,1532,12165,0.1259
+importer,EST,454,3552,0.1278
+importer,NLD,1757,13330,0.1318
+importer,IRL,819,5976,0.137
+importer,ITA,1874,13460,0.1392
+importer,SWE,1224,8065,0.1518
+importer,BEL,1410,8209,0.1718
+importer,DNK,1247,7177,0.1737
+importer,GRC,755,4230,0.1785
+importer,LTU,294,1535,0.1915
+importer,ROU,716,3660,0.1956
+importer,HRV,507,2490,0.2036
+importer,HUN,590,2884,0.2046
+importer,PRT,684,3193,0.2142
+importer,LVA,303,1334,0.2271
+importer,CYP,304,1290,0.2357
+importer,BGR,574,2235,0.2568
+importer,MLT,213,681,0.3128
+section,Footwear & headgear,611,8224,0.0743
+section,Hides & leather,436,5141,0.0848
+section,Miscellaneous manuf.,1445,15358,0.0941
+section,Textiles & apparel,5423,46710,0.1161
+section,Precious metals,168,1433,0.1172
+section,Prepared food,979,8334,0.1175
+section,Plastics & rubber,1372,11253,0.1219
+section,Wood,572,4513,0.1267
+section,Vegetable products,1200,9203,0.1304
+section,Animal products,680,4775,0.1424
+section,Transport equipment,693,4797,0.1445
+section,Stone & glass,902,6036,0.1494
+section,Base metals,2605,16288,0.1599
+section,Machinery & electrical,3863,24029,0.1608
+section,Instruments,1204,7040,0.171
+section,Paper,682,2773,0.2459
+section,Chemicals,1068,4191,0.2548
+section,Art & other,80,278,0.2878
+section,Fats & oils,66,223,0.296
+section,Mineral products,225,665,0.3383

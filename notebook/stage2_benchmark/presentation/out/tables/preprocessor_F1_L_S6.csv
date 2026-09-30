@@ -1,0 +1,5 @@
+item,value,detail
+input columns (S6),27,"age_obs, log_age, known_start, log_value, log_value_lag, log_initial_value, vn_market_share_lag1, volatility_3y_lag1, log_gdp_d_lag1, log_gdpcap_d_lag1, importer_gdp_growth_lag1, importer_inflation_lag1, log_total_import_cp_lag1, log_dist, log_n_products_to_c_lag1, log_n_markets_for_p_lag1, log_n_markets_eu27_for_p_lag1, hs2_share_lag1, log_rca_lag, vn_product_growth_lag, world_growth_lag1, tariff_applied_lag, pref_margin_lag, evfta_cut_cum_pp_lag, pci, importer_eci, log_importer_diversity"
+missing indicators added,12,"log_value_lag, vn_market_share_lag1, volatility_3y_lag1, log_total_import_cp_lag1, log_n_markets_for_p_lag1, hs2_share_lag1, log_rca_lag, vn_product_growth_lag, world_growth_lag1, tariff_applied_lag, pref_margin_lag, evfta_cut_cum_pp_lag"
+dropped as constant/duplicate in train,4,"evfta_cut_cum_pp_lag, log_total_import_cp_lag1_isna, pref_margin_lag_isna, evfta_cut_cum_pp_lag_isna"
+final model columns,35,

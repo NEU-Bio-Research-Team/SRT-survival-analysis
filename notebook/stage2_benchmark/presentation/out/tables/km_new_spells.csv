@@ -1,0 +1,63 @@
+group,t,S,at_risk,events
+all new spells,0,1.0,34182,0
+all new spells,1,0.5893,34182,14040
+all new spells,2,0.49,18745,3156
+all new spells,3,0.4162,14401,2171
+all new spells,4,0.3705,11119,1221
+all new spells,5,0.3355,9123,862
+all new spells,6,0.3124,7632,525
+all new spells,7,0.2938,6500,387
+all new spells,8,0.28,5546,261
+all new spells,9,0.2676,4813,212
+all new spells,10,0.2574,4144,159
+all new spells,11,0.2501,3548,100
+all new spells,12,0.2436,3055,80
+all new spells,13,0.238,2600,59
+all new spells,14,0.2338,2211,39
+all new spells,15,0.2314,1897,20
+all new spells,16,0.2267,1595,32
+all new spells,17,0.2235,1212,17
+all new spells,18,0.2201,898,14
+all new spells,19,0.2157,561,11
+all new spells,20,0.2135,286,3
+first spell of the relation,0,1.0,21327,0
+first spell of the relation,1,0.5395,21327,9821
+first spell of the relation,2,0.4387,10881,2033
+first spell of the relation,3,0.3665,8344,1373
+first spell of the relation,4,0.3213,6479,799
+first spell of the relation,5,0.2866,5348,578
+first spell of the relation,6,0.2644,4499,349
+first spell of the relation,7,0.2471,3885,254
+first spell of the relation,8,0.2348,3392,169
+first spell of the relation,9,0.2237,3020,142
+first spell of the relation,10,0.2146,2695,110
+first spell of the relation,11,0.2077,2373,76
+first spell of the relation,12,0.202,2118,58
+first spell of the relation,13,0.197,1875,47
+first spell of the relation,14,0.193,1650,33
+first spell of the relation,15,0.1906,1451,18
+first spell of the relation,16,0.1867,1262,26
+first spell of the relation,17,0.1843,991,13
+first spell of the relation,18,0.1812,771,13
+first spell of the relation,19,0.1773,514,11
+first spell of the relation,20,0.1754,286,3
+re-entry spell,0,1.0,12855,0
+re-entry spell,1,0.6718,12855,4219
+re-entry spell,2,0.5759,7864,1123
+re-entry spell,3,0.5,6057,798
+re-entry spell,4,0.4545,4640,422
+re-entry spell,5,0.4203,3775,284
+re-entry spell,6,0.3967,3133,176
+re-entry spell,7,0.3765,2615,133
+re-entry spell,8,0.3605,2154,92
+re-entry spell,9,0.3464,1793,70
+re-entry spell,10,0.3347,1449,49
+re-entry spell,11,0.3278,1175,24
+re-entry spell,12,0.3201,937,22
+re-entry spell,13,0.3148,725,12
+re-entry spell,14,0.3115,561,6
+re-entry spell,15,0.3101,446,2
+re-entry spell,16,0.3045,333,6
+re-entry spell,17,0.299,221,4
+re-entry spell,18,0.2966,127,1
+re-entry spell,19,0.2966,47,0

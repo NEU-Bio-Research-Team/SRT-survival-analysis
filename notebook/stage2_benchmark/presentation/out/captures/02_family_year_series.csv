@@ -1,0 +1,25 @@
+year,importer_filed_hs6,hs_revision,codes_reported,n_vnm_lines_in_file,family_value_usd,active_ge_10k,spell_id,gap_filled,t_start,event,panel_row,status
+2002,True,H2,080111,547,11735.0,True,AUT_VNM_H0_080110_2002,0.0,0.0,0.0,True,active
+2003,True,H2,080111,600,61113.0,True,AUT_VNM_H0_080110_2002,0.0,1.0,0.0,True,active
+2004,True,H2,080111,661,24025.0,True,AUT_VNM_H0_080110_2002,0.0,2.0,0.0,True,active
+2005,True,H2,080111,631,55921.0,True,AUT_VNM_H0_080110_2002,0.0,3.0,0.0,True,active
+2006,True,H2,080111,688,19144.0,True,AUT_VNM_H0_080110_2002,0.0,4.0,0.0,True,active
+2007,True,H3,080111,792,32143.0,True,AUT_VNM_H0_080110_2002,0.0,5.0,1.0,True,last active year (exit confirmed by 2 empty observed years)
+2008,True,H3,080111 + 080119,871,413.0,False,,,,,False,inactive
+2009,True,H3,080111 + 080119,872,333.0,False,,,,,False,inactive
+2010,True,H3,080111,945,387.0,False,,,,,False,inactive
+2011,True,H3,080111,928,79922.0,True,AUT_VNM_H0_080110_2011,0.0,0.0,0.0,True,active
+2012,True,H4,080111,1017,12804.44,True,AUT_VNM_H0_080110_2011,0.0,1.0,0.0,True,active
+2013,True,H4,080111 + 080112,1045,36125.637,True,AUT_VNM_H0_080110_2011,0.0,2.0,0.0,True,active
+2014,True,H4,080111 + 080112 + 080119,1123,42861.338,True,AUT_VNM_H0_080110_2011,0.0,3.0,0.0,True,active
+2015,True,H4,080111 + 080112 + 080119,1203,83534.043,True,AUT_VNM_H0_080110_2011,0.0,4.0,0.0,True,active
+2016,True,H4,080111 + 080119,1251,9011.778,False,AUT_VNM_H0_080110_2011,1.0,5.0,0.0,True,"gap year bridged (below threshold, spell continues)"
+2017,True,H5,080111 + 080112 + 080119,1308,94804.325,True,AUT_VNM_H0_080110_2011,0.0,6.0,0.0,True,active
+2018,True,H5,080111 + 080112,1336,48394.924,True,AUT_VNM_H0_080110_2011,0.0,7.0,0.0,True,active
+2019,True,H5,080111 + 080112,1413,33284.111,True,AUT_VNM_H0_080110_2011,0.0,8.0,0.0,True,active
+2020,True,H5,080111 + 080112 + 080119,1464,80511.076,True,AUT_VNM_H0_080110_2011,0.0,9.0,0.0,True,active
+2021,True,H5,080111 + 080112 + 080119,1569,280307.08800000005,True,AUT_VNM_H0_080110_2011,0.0,10.0,1.0,True,last active year (exit confirmed by 2 empty observed years)
+2022,True,H6,080119,1547,9204.698,False,,,,,False,inactive
+2023,True,H6,080111 + 080119,1612,6112.411,False,,,,,False,inactive
+2024,True,H6,080111 + 080112 + 080119,1795,12648.699,True,AUT_VNM_H0_080110_2024,0.0,0.0,0.0,True,active
+2025,True,H6,080111 + 080112 + 080119,1838,79220.857,True,AUT_VNM_H0_080110_2024,0.0,1.0,0.0,True,active

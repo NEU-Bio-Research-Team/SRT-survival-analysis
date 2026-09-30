@@ -1,0 +1,11 @@
+stage,unit,count
+"Raw Comtrade lines, VNM → EU27, 2002–2025",HS6 line × year,479059
+Summed into product families,importer × family × year,444693
+"Active: value ≥ USD 10,000",importer × family × year,226757
+Spell-years incl. bridged gap years (panel),spell × year,236995
+Spells (relationship lives),spell,44917
+  of which exit confirmed,spell,26660
+Base table: active origins,spell × origin year,226757
+Origins 2005–2025 (training-eligible),spell × origin year,212515
+Origins with a confirmed 1-year outcome (read at 2025),spell × origin year,181305
+  of which exit in next year (y = 1),spell × origin year,24287

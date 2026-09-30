@@ -1,0 +1,12 @@
+quantity,value
+EU27 spells,44917
+… with known start,38969
+"… left-truncated (start not observed: importer's first filed year, or HS switch)",5948
+spells ending in a confirmed exit,26660
+share of spells censored,0.4065
+share of known-start spells observed for exactly 1 active year (incl. censored),0.4475
+re-entry spells (relation died before),15444
+origins with confirmed 1-year outcome (2005–2023),181305
+pooled one-year exit rate,0.134
+importers,27
+product families,3395

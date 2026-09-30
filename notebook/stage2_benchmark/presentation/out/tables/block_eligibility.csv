@@ -1,0 +1,13 @@
+task,fold,stage,train_rows,asof_N,asof_C,asof_L,asof_H,eligible,reason
+D,F1,valid,67225,0.4794,1.0,0.8229,1.0,False,block N: as-of share 47.9% < 50%
+D,F1,test,95514,0.6336,1.0,0.8753,1.0,True,
+L,F1,valid,50289,0.3081,1.0,0.7632,1.0,False,block N: as-of share 30.8% < 50%
+L,F1,test,95514,0.6336,1.0,0.8753,1.0,True,
+D,F2,valid,76355,0.5416,1.0,0.8441,1.0,True,
+D,F2,test,106038,0.6697,1.0,0.8877,1.0,True,
+L,F2,valid,58696,0.4037,1.0,0.7972,1.0,False,block N: as-of share 40.4% < 50%
+L,F2,test,106038,0.6697,1.0,0.8877,1.0,True,
+D,F3,valid,85703,0.5916,1.0,0.8611,1.0,True,
+D,F3,test,117147,0.7008,1.0,0.8984,1.0,True,
+L,F3,valid,67225,0.4794,1.0,0.8229,1.0,False,block N: as-of share 47.9% < 50%
+L,F3,test,117147,0.7008,1.0,0.8984,1.0,True,
